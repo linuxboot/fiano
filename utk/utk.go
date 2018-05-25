@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"encoding/json"
 
 	"github.com/linuxboot/fiano/uefi"
 )
@@ -31,5 +32,9 @@ func main() {
 	if len(errlist) > 0 {
 		os.Exit(1)
 	}
-	fmt.Println(flash.Summary())
+	b, err:= json.MarshalIndent(flash, "", "    ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(b))
 }
