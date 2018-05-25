@@ -10,29 +10,46 @@ import (
 // FlashRegionSectionSize is the size of the Region descriptor. It is made up by 18 fields, each 16-bits large.
 const FlashRegionSectionSize = 36
 
+// Region contains the start and end of a region in flash. This can be a BIOS, ME, PDR or GBE region.
+// This value seems to index blocks of block size 0x1000
+// TODO: figure out of block sizes are read from some location on flash or fixed.
+type Region struct {
+	Base  uint16
+	Limit uint16
+}
+
+// Available checks to see if a region is valid
+func (r *Region) Available() bool {
+	return r.Limit > 0
+}
+
+func (r *Region) String() string {
+	return fmt.Sprintf("[0x%x, 0x%x)", r.Base, r.Limit)
+}
+
 // FlashRegionSection holds the metadata of all the different flash regions like PDR, Gbe and the Bios region.
 type FlashRegionSection struct {
-	Reserved            uint16
+	_                   uint16
 	FlashBlockEraseSize uint16
-	BiosBase, BiosLimit uint16
-	MeBase, MeLimit     uint16
-	GbeBase, GbeLimit   uint16
-	PdrBase, PdrLimit   uint16
+	BIOS                Region
+	ME                  Region
+	GBE                 Region
+	PDR                 Region
 }
 
 // AvailableRegions returns a list of names of the regions with non-zero size.
 func (f FlashRegionSection) AvailableRegions() []string {
 	var regions []string
-	if f.BiosLimit > 0 {
+	if f.BIOS.Available() {
 		regions = append(regions, "BIOS")
 	}
-	if f.MeLimit > 0 {
+	if f.ME.Available() {
 		regions = append(regions, "ME")
 	}
-	if f.GbeLimit > 0 {
+	if f.GBE.Available() {
 		regions = append(regions, "GbE")
 	}
-	if f.PdrLimit > 0 {
+	if f.PDR.Available() {
 		regions = append(regions, "PDR")
 	}
 	return regions
@@ -48,16 +65,16 @@ func (f FlashRegionSection) String() string {
 func (f FlashRegionSection) Summary() string {
 	return fmt.Sprintf("FlashRegionSection{\n"+
 		"    Regions=%v\n"+
-		"    BiosBase=%v (size: %v)\n"+
-		"    MeBase=%v (size: %v)\n"+
-		"    GbeBase=%v (size: %v)\n"+
-		"    PdrBase=%v (size: %v)\n"+
+		"    Bios=%v\n"+
+		"    Me=%v\n"+
+		"    Gbe=%v\n"+
+		"    Pdr=%v\n"+
 		"}",
 		strings.Join(f.AvailableRegions(), ","),
-		f.BiosBase, f.BiosLimit,
-		f.MeBase, f.MeLimit,
-		f.GbeBase, f.GbeLimit,
-		f.PdrBase, f.PdrLimit,
+		f.BIOS,
+		f.ME,
+		f.GBE,
+		f.PDR,
 	)
 }
 

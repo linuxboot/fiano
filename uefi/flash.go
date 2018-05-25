@@ -142,8 +142,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	flash.Master = *master
 
 	// BIOS region
-	biosBase := uint32(uint32(flash.Region.BiosBase) * 0x1000)
-	biosSize := uint32(computeRegionSize(flash.Region.BiosBase, flash.Region.BiosLimit))
+	biosBase := uint32(flash.Region.BIOS.Base) * 0x1000
+	biosSize := computeRegionSize(flash.Region.BIOS.Base, flash.Region.BIOS.Limit)
 	br, err := NewBiosRegion(buf[biosBase : biosBase+biosSize])
 	if err != nil {
 		return nil, err

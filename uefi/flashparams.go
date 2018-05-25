@@ -31,7 +31,7 @@ var FlashFrequencyStringMap = map[FlashFrequency]string{
 }
 
 // FlashParams is a 4-byte object that holds the flash parameters information.
-type FlashParams []byte
+type FlashParams [4]byte
 
 // FirstChipDensity returns the size of the first chip.
 func (p FlashParams) FirstChipDensity() uint {
@@ -122,6 +122,7 @@ func NewFlashParams(buf []byte) (*FlashParams, error) {
 			len(buf),
 		)
 	}
-	p := FlashParams(buf)
+	var p FlashParams
+	copy(p[:], buf[0:FlashParamsSize])
 	return &p, nil
 }

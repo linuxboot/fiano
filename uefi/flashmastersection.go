@@ -9,23 +9,29 @@ import (
 // FlashMasterSectionSize is the size in bytes of the FlashMaster section
 const FlashMasterSectionSize = 12
 
+// RegionPermissions holds the read/write permissions for other regions.
+type RegionPermissions struct {
+	ID    uint16
+	Read  uint8
+	Write uint8
+}
+
+func (r RegionPermissions) String() string {
+	return fmt.Sprintf("RegionPermissions{ID=%v, Read=0x%x, Write=0x%x}",
+		r.ID, r.Read, r.Write)
+}
+
 // FlashMasterSection holds all the IDs and read/write permissions for other regions
 // This controls whether the bios region can read/write to the ME for example.
 type FlashMasterSection struct {
-	BiosID    uint16
-	BiosRead  uint8
-	BiosWrite uint8
-	MeID      uint16
-	MeRead    uint8
-	MeWrite   uint8
-	GbeID     uint16
-	GbeRead   uint8
-	GbeWrite  uint8
+	BIOS RegionPermissions
+	ME   RegionPermissions
+	GBE  RegionPermissions
 }
 
 func (m FlashMasterSection) String() string {
-	return fmt.Sprintf("FlashMasterSection{BiosID=%v, MeID=%v, GbeID=%v}",
-		m.BiosID, m.MeID, m.GbeID)
+	return fmt.Sprintf("FlashMasterSection{Bios %v, Me %v, Gbe %v}",
+		m.BIOS, m.ME, m.GBE)
 }
 
 // Summary prints a multi-line description of the FlashMasterSection
@@ -41,9 +47,9 @@ func (m FlashMasterSection) Summary() string {
 		"    GbeRead=%v\n"+
 		"    GbeWrite=%v\n"+
 		"}",
-		m.BiosID, m.BiosRead, m.BiosWrite,
-		m.MeID, m.MeRead, m.MeWrite,
-		m.GbeID, m.GbeRead, m.GbeWrite,
+		m.BIOS.ID, m.BIOS.Read, m.BIOS.Write,
+		m.ME.ID, m.ME.Read, m.ME.Write,
+		m.GBE.ID, m.GBE.Read, m.GBE.Write,
 	)
 }
 

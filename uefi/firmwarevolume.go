@@ -37,16 +37,16 @@ type Block struct {
 // FirmwareVolumeFixedHeader contains the fixed fields of a firmware volume
 // header
 type FirmwareVolumeFixedHeader struct {
-	Zeros          [16]uint8
+	_              [16]uint8
 	FileSystemGUID [16]uint8
 	Length         uint64
 	Signature      uint32
 	AttrMask       uint8
 	HeaderLen      uint16
 	Checksum       uint16
-	Reserved       [3]uint8
+	Reserved       [3]uint8 `json:"-"`
 	Revision       uint8
-	Unused         [3]uint8
+	_              [3]uint8
 }
 
 // FirmwareVolume represents a firmware volume. It combines the fixed header and
@@ -56,24 +56,14 @@ type FirmwareVolume struct {
 	// there must be at least one that is zeroed and indicates the end of the
 	// block list
 	Blocks []Block
+
+	// Variables not in the binary for us to keep track of stuff/print
+	guidString string
+	guidName   string
 }
 
 // Summary prints a multi-line representation of a FirmwareVolume object
 func (fv FirmwareVolume) Summary() string {
-	var (
-		guidName, guidString string
-		ok                   bool
-	)
-	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
-		guidString = guid.String()
-		guidName, ok = FirmwareVolumeGUIDs[guidString]
-		if !ok {
-			guidName = "Unknown"
-		}
-	} else {
-		guidString = "<invalid GUID>"
-		guidName = "Unknown"
-	}
 	return fmt.Sprintf("FirmwareVolume{\n"+
 		"    FileSystemGUID=%s (%v)\n"+
 		"    Length=%v\n"+
@@ -84,7 +74,7 @@ func (fv FirmwareVolume) Summary() string {
 		"    Revision=%v\n"+
 		"    Blocks=%v\n"+
 		"}",
-		guidString, guidName,
+		fv.guidString, fv.guidName,
 		fv.Length, fv.Signature, fv.AttrMask,
 		fv.HeaderLen, fv.Checksum, fv.Revision,
 		fv.Blocks,
@@ -93,7 +83,7 @@ func (fv FirmwareVolume) Summary() string {
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
 // using 8-byte alignment. If found, returns the offset from the start of the
-// firmware volume, otherwise returns -1.
+// bios region, otherwise returns -1.
 func FindFirmwareVolumeOffset(data []byte) int64 {
 	if len(data) < 32 {
 		return -1
@@ -113,13 +103,15 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 // NewFirmwareVolume parses a sequence of bytes and returns a FirmwareVolume
 // object, if a valid one is passed, or an error
 func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
+	var fv FirmwareVolume
+	var ok bool
+
 	if len(data) < FirmwareVolumeMinSize {
 		return nil, fmt.Errorf("Firmware Volume size too small: expected %v bytes, got %v",
 			FirmwareVolumeMinSize,
 			len(data),
 		)
 	}
-	var fv FirmwareVolume
 	reader := bytes.NewReader(data)
 	if err := binary.Read(reader, binary.LittleEndian, &fv.FirmwareVolumeFixedHeader); err != nil {
 		return nil, err
@@ -138,5 +130,16 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 		blocks = append(blocks, block)
 	}
 	fv.Blocks = blocks
+
+	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
+		fv.guidString = guid.String()
+		fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
+		if !ok {
+			fv.guidName = "Unknown"
+		}
+	} else {
+		fv.guidString = "<invalid GUID>"
+		fv.guidName = "Unknown"
+	}
 	return &fv, nil
 }
