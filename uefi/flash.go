@@ -11,9 +11,13 @@ var (
 	FlashSignature = []byte{0x5a, 0xa5, 0xf0, 0x0f}
 )
 
-// FlashImage is the main structure that represents an Intel Flash image. It
-// implements the Firmware interface.
-type FlashImage struct {
+const (
+	// FlashDescriptorLength represents the size of the IFD.
+	FlashDescriptorLength = 0x1000
+)
+
+// FlashDescriptor is the main structure that represents an Intel Flash Descriptor.
+type FlashDescriptor struct {
 	// Holds the raw buffer
 	buf                []byte
 	DescriptorMapStart uint
@@ -22,8 +26,23 @@ type FlashImage struct {
 	DescriptorMap      FlashDescriptorMap
 	Region             FlashRegionSection
 	Master             FlashMasterSection
+
+	//Metadata for extraction and recovery
+	ExtractPath string
+}
+
+// FlashImage is the main structure that represents an Intel Flash image. It
+// implements the Firmware interface.
+type FlashImage struct {
+	// Holds the raw buffer
+	buf []byte
+	// Holds the Flash Descriptor
+	IFD FlashDescriptor
 	// Actual regions
 	BiosRegion *BiosRegion
+
+	// Metadata for extraction and recovery
+	ExtractPath string
 }
 
 // IsPCH returns whether the flash image has the more recent PCH format, or not.
@@ -57,7 +76,7 @@ func (f FlashImage) Validate() []error {
 	if err != nil {
 		errors = append(errors, err)
 	}
-	errors = append(errors, f.DescriptorMap.Validate()...)
+	errors = append(errors, f.IFD.DescriptorMap.Validate()...)
 	// TODO also validate regions, masters, etc
 	return errors
 }
@@ -65,9 +84,9 @@ func (f FlashImage) Validate() []error {
 func (f FlashImage) String() string {
 	return fmt.Sprintf("FlashImage{Size=%v, Descriptor=%v, Region=%v, Master=%v}",
 		len(f.buf),
-		f.DescriptorMap.String(),
-		f.Region.String(),
-		f.Master.String(),
+		f.IFD.DescriptorMap.String(),
+		f.IFD.Region.String(),
+		f.IFD.Master.String(),
 	)
 }
 
@@ -84,12 +103,12 @@ func (f FlashImage) Summary() string {
 		"    BiosRegion=%v\n"+
 		"}",
 		len(f.buf),
-		f.DescriptorMapStart,
-		f.RegionStart,
-		f.MasterStart,
-		Indent(f.DescriptorMap.Summary(), 4),
-		Indent(f.Region.Summary(), 4),
-		Indent(f.Master.Summary(), 4),
+		f.IFD.DescriptorMapStart,
+		f.IFD.RegionStart,
+		f.IFD.MasterStart,
+		Indent(f.IFD.DescriptorMap.Summary(), 4),
+		Indent(f.IFD.Region.Summary(), 4),
+		Indent(f.IFD.Master.Summary(), 4),
 		Indent(f.BiosRegion.Summary(), 4),
 	)
 }
@@ -111,44 +130,45 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			len(buf),
 		)
 	}
-	flash := FlashImage{buf: buf}
-	descriptorMapStart, err := flash.FindSignature()
+	f := FlashImage{buf: buf}
+	f.IFD.buf = f.buf[:FlashDescriptorLength]
+	descriptorMapStart, err := f.FindSignature()
 	if err != nil {
 		return nil, err
 	}
-	flash.DescriptorMapStart = uint(descriptorMapStart)
+	f.IFD.DescriptorMapStart = uint(descriptorMapStart)
 
 	// Descriptor Map
-	desc, err := NewFlashDescriptorMap(buf[flash.DescriptorMapStart : flash.DescriptorMapStart+FlashDescriptorMapSize])
+	desc, err := NewFlashDescriptorMap(buf[f.IFD.DescriptorMapStart : f.IFD.DescriptorMapStart+FlashDescriptorMapSize])
 	if err != nil {
 		return nil, err
 	}
-	flash.DescriptorMap = *desc
+	f.IFD.DescriptorMap = *desc
 
 	// Region
-	flash.RegionStart = uint(flash.DescriptorMap.RegionBase) * 0x10
-	region, err := NewFlashRegionSection(buf[flash.RegionStart : flash.RegionStart+uint(FlashRegionSectionSize)])
+	f.IFD.RegionStart = uint(f.IFD.DescriptorMap.RegionBase) * 0x10
+	region, err := NewFlashRegionSection(buf[f.IFD.RegionStart : f.IFD.RegionStart+uint(FlashRegionSectionSize)])
 	if err != nil {
 		return nil, err
 	}
-	flash.Region = *region
+	f.IFD.Region = *region
 
 	// Master
-	flash.MasterStart = uint(flash.DescriptorMap.MasterBase) * 0x10
-	master, err := NewFlashMasterSection(buf[flash.MasterStart : flash.MasterStart+uint(FlashMasterSectionSize)])
+	f.IFD.MasterStart = uint(f.IFD.DescriptorMap.MasterBase) * 0x10
+	master, err := NewFlashMasterSection(buf[f.IFD.MasterStart : f.IFD.MasterStart+uint(FlashMasterSectionSize)])
 	if err != nil {
 		return nil, err
 	}
-	flash.Master = *master
+	f.IFD.Master = *master
 
 	// BIOS region
-	biosBase := uint32(flash.Region.BIOS.Base) * 0x1000
-	biosSize := computeRegionSize(flash.Region.BIOS.Base, flash.Region.BIOS.Limit)
+	biosBase := uint32(f.IFD.Region.BIOS.Base) * 0x1000
+	biosSize := computeRegionSize(f.IFD.Region.BIOS.Base, f.IFD.Region.BIOS.Limit)
 	br, err := NewBiosRegion(buf[biosBase : biosBase+biosSize])
 	if err != nil {
 		return nil, err
 	}
-	flash.BiosRegion = br
+	f.BiosRegion = br
 
-	return &flash, nil
+	return &f, nil
 }
