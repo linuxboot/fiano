@@ -24,7 +24,7 @@ func (r *Region) Available() bool {
 }
 
 func (r *Region) String() string {
-	return fmt.Sprintf("[0x%x, 0x%x)", r.Base, r.Limit)
+	return fmt.Sprintf("[%#x, %#x)", r.Base, r.Limit)
 }
 
 // FlashRegionSection holds the metadata of all the different flash regions like PDR, Gbe and the Bios region.

@@ -104,7 +104,6 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 // object, if a valid one is passed, or an error
 func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	var fv FirmwareVolume
-	var ok bool
 
 	if len(data) < FirmwareVolumeMinSize {
 		return nil, fmt.Errorf("Firmware Volume size too small: expected %v bytes, got %v",
@@ -132,6 +131,7 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	fv.Blocks = blocks
 
 	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
+		var ok bool
 		fv.guidString = guid.String()
 		fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
 		if !ok {
