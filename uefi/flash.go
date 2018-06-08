@@ -40,6 +40,9 @@ type FlashImage struct {
 	IFD FlashDescriptor
 	// Actual regions
 	BIOSRegion *BIOSRegion
+	MERegion   *MERegion
+	GBERegion  *GBERegion
+	PDRRegion  *PDRRegion
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -155,11 +158,41 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	f.IFD.Master = *master
 
 	// BIOS region
+	if !f.IFD.Region.BIOS.Available() {
+		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
+	}
 	br, err := NewBIOSRegion(buf[f.IFD.Region.BIOS.BaseOffset():f.IFD.Region.BIOS.EndOffset()], &f.IFD.Region.BIOS)
 	if err != nil {
 		return nil, err
 	}
 	f.BIOSRegion = br
+
+	// ME region
+	if f.IFD.Region.ME.Available() {
+		mer, err := NewMERegion(buf[f.IFD.Region.ME.BaseOffset():f.IFD.Region.ME.EndOffset()], &f.IFD.Region.ME)
+		if err != nil {
+			return nil, err
+		}
+		f.MERegion = mer
+	}
+
+	// GBE region
+	if f.IFD.Region.GBE.Available() {
+		gber, err := NewGBERegion(buf[f.IFD.Region.GBE.BaseOffset():f.IFD.Region.GBE.EndOffset()], &f.IFD.Region.GBE)
+		if err != nil {
+			return nil, err
+		}
+		f.GBERegion = gber
+	}
+
+	// PDR region
+	if f.IFD.Region.PDR.Available() {
+		pdrr, err := NewPDRRegion(buf[f.IFD.Region.PDR.BaseOffset():f.IFD.Region.PDR.EndOffset()], &f.IFD.Region.PDR)
+		if err != nil {
+			return nil, err
+		}
+		f.PDRRegion = pdrr
+	}
 
 	return &f, nil
 }
