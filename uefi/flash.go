@@ -3,7 +3,10 @@ package uefi
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
 // FlashSignature is the sequence of bytes that a Flash image is expected to
@@ -30,6 +33,28 @@ type FlashDescriptor struct {
 
 	//Metadata for extraction and recovery
 	ExtractPath string
+}
+
+// Extract extracts the flash descriptor region to the directory passed in.
+func (fd *FlashDescriptor) Extract(dirPath string) error {
+	// Create the directory if it doesn't exist
+	err := os.MkdirAll(dirPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	// Dump the binary.
+	fd.ExtractPath = dirPath + "/flashdescriptor.bin"
+	binFile, err := os.OpenFile(fd.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	defer binFile.Close()
+	_, err = binFile.Write(fd.buf)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // FlashImage is the main structure that represents an Intel Flash image. It
@@ -88,6 +113,88 @@ func (f *FlashImage) Validate() []error {
 	errors = append(errors, f.IFD.DescriptorMap.Validate()...)
 	// TODO also validate regions, masters, etc
 	return errors
+}
+
+// Extract extracts the flash image to the directory passed in.
+func (f *FlashImage) Extract(dirPath string) error {
+	absDirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return err
+	}
+	// Create the directory if it doesn't exist
+	err = os.MkdirAll(absDirPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	// Extract IFD
+	err = f.IFD.Extract(absDirPath + "/ifd")
+	if err != nil {
+		return err
+	}
+
+	// Extract ME
+	if f.MERegion != nil {
+		err = f.MERegion.Extract(absDirPath + "/me")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Extract GBE
+	if f.GBERegion != nil {
+		err = f.GBERegion.Extract(absDirPath + "/gbe")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Extract PDR
+	if f.PDRRegion != nil {
+		err = f.PDRRegion.Extract(absDirPath + "/pdr")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Extract BIOS
+	if f.BIOSRegion != nil {
+		err = f.BIOSRegion.Extract(absDirPath + "/bios")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Dump the binary.
+	f.ExtractPath = absDirPath + "/flash.rom"
+	binFile, err := os.OpenFile(f.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	defer binFile.Close()
+	_, err = binFile.Write(f.buf)
+	if err != nil {
+		return err
+	}
+
+	// Output summary json. This must be done after all other extract calls so that
+	// any metadata fields in sub structures are generated properly.
+	jsonPath := absDirPath + "/summary.json"
+	summary, err := os.OpenFile(jsonPath, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	defer summary.Close()
+	b, err := json.MarshalIndent(f, "", "    ")
+	if err != nil {
+		return err
+	}
+	_, err = summary.Write(b)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (f *FlashImage) String() string {
