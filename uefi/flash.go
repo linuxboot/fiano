@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -52,6 +53,10 @@ type FlashImage struct {
 // PCH images have the first 16 bytes reserved, and the 4-bytes signature starts
 // immediately after. Older images (ICH8/9/10) have the signature at the
 // beginning.
+// TODO: Check this. What if we have the signature in both places? I feel like the check
+// should be IsICH because I expect the ICH to override PCH if the signature exists in 0:4
+// since in that case 16:20 should be data. If that's the case, FindSignature needs to
+// be fixed as well
 func (f *FlashImage) IsPCH() bool {
 	return bytes.Equal(f.buf[16:16+len(FlashSignature)], FlashSignature)
 }
@@ -68,7 +73,8 @@ func (f *FlashImage) FindSignature() (int, error) {
 		// + 4 since the descriptor starts after the signature
 		return 4, nil
 	}
-	return -1, fmt.Errorf("Flash signature not found")
+	return -1, fmt.Errorf("Flash signature not found: first 20 bytes are:\n%s",
+		hex.Dump(f.buf[:20]))
 }
 
 // Validate runs a set of checks on the flash image and returns a list of
