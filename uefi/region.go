@@ -21,8 +21,8 @@ type Region struct {
 	Limit uint16
 }
 
-// Available checks to see if a region is valid
-func (r *Region) Available() bool {
+// Valid checks to see if a region is valid
+func (r *Region) Valid() bool {
 	return r.Limit > 0
 }
 

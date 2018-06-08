@@ -158,7 +158,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	f.IFD.Master = *master
 
 	// BIOS region
-	if !f.IFD.Region.BIOS.Available() {
+	if !f.IFD.Region.BIOS.Valid() {
 		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
 	}
 	br, err := NewBIOSRegion(buf[f.IFD.Region.BIOS.BaseOffset():f.IFD.Region.BIOS.EndOffset()], &f.IFD.Region.BIOS)
@@ -168,7 +168,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	f.BIOSRegion = br
 
 	// ME region
-	if f.IFD.Region.ME.Available() {
+	if f.IFD.Region.ME.Valid() {
 		mer, err := NewMERegion(buf[f.IFD.Region.ME.BaseOffset():f.IFD.Region.ME.EndOffset()], &f.IFD.Region.ME)
 		if err != nil {
 			return nil, err
@@ -177,7 +177,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	}
 
 	// GBE region
-	if f.IFD.Region.GBE.Available() {
+	if f.IFD.Region.GBE.Valid() {
 		gber, err := NewGBERegion(buf[f.IFD.Region.GBE.BaseOffset():f.IFD.Region.GBE.EndOffset()], &f.IFD.Region.GBE)
 		if err != nil {
 			return nil, err
@@ -186,7 +186,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	}
 
 	// PDR region
-	if f.IFD.Region.PDR.Available() {
+	if f.IFD.Region.PDR.Valid() {
 		pdrr, err := NewPDRRegion(buf[f.IFD.Region.PDR.BaseOffset():f.IFD.Region.PDR.EndOffset()], &f.IFD.Region.PDR)
 		if err != nil {
 			return nil, err
