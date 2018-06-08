@@ -55,7 +55,7 @@ func NewFlashDescriptorMap(buf []byte) (*FlashDescriptorMap, error) {
 	return &descriptor, nil
 }
 
-func (d FlashDescriptorMap) String() string {
+func (d *FlashDescriptorMap) String() string {
 	return fmt.Sprintf("FlashDescriptorMap{NumberOfRegions=%v, NumberOfFlashChips=%v, NumberOfMasters=%v, NumberOfPCHStraps=%v, NumberOfProcessorStraps=%v, NumberOfICCTableEntries=%v, DMITableEntries=%v}",
 		d.NumberOfRegions,
 		d.NumberOfFlashChips,
@@ -68,7 +68,7 @@ func (d FlashDescriptorMap) String() string {
 }
 
 // Summary prints a multi-line description of the flash descriptor map
-func (d FlashDescriptorMap) Summary() string {
+func (d *FlashDescriptorMap) Summary() string {
 	return fmt.Sprintf("FlashDescriptorMap{\n"+
 		"    ComponentBase=%v (0x%02x)\n"+
 		"    NumberOfFlashChips=%v (0x%02x)\n"+
@@ -104,7 +104,7 @@ func (d FlashDescriptorMap) Summary() string {
 
 // Validate runs a set of checks on the flash descriptor and returns a list of
 // errors specifying what is wrong.
-func (d FlashDescriptorMap) Validate() []error {
+func (d *FlashDescriptorMap) Validate() []error {
 	errors := make([]error, 0)
 	if d.MasterBase > FlashDescriptorMapMaxBase {
 		errors = append(errors, fmt.Errorf("MasterBase too large: expected %v bytes, got %v",

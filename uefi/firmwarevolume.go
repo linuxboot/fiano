@@ -63,7 +63,7 @@ type FirmwareVolume struct {
 }
 
 // Summary prints a multi-line representation of a FirmwareVolume object
-func (fv FirmwareVolume) Summary() string {
+func (fv *FirmwareVolume) Summary() string {
 	return fmt.Sprintf("FirmwareVolume{\n"+
 		"    FileSystemGUID=%s (%v)\n"+
 		"    Length=%v\n"+

@@ -21,7 +21,7 @@ type FlashRegionSection struct {
 }
 
 // ValidRegions returns a list of names of the regions with non-zero size.
-func (f FlashRegionSection) ValidRegions() []string {
+func (f *FlashRegionSection) ValidRegions() []string {
 	var regions []string
 	if f.BIOS.Valid() {
 		regions = append(regions, "BIOS")
@@ -38,14 +38,14 @@ func (f FlashRegionSection) ValidRegions() []string {
 	return regions
 }
 
-func (f FlashRegionSection) String() string {
+func (f *FlashRegionSection) String() string {
 	return fmt.Sprintf("FlashRegionSection{Regions=%v}",
 		strings.Join(f.ValidRegions(), ","),
 	)
 }
 
 // Summary prints a multi-line description of the FlashRegionSection
-func (f FlashRegionSection) Summary() string {
+func (f *FlashRegionSection) Summary() string {
 	return fmt.Sprintf("FlashRegionSection{\n"+
 		"    Regions=%v\n"+
 		"    Bios=%v\n"+
