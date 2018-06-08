@@ -52,14 +52,14 @@ type FlashImage struct {
 // PCH images have the first 16 bytes reserved, and the 4-bytes signature starts
 // immediately after. Older images (ICH8/9/10) have the signature at the
 // beginning.
-func (f FlashImage) IsPCH() bool {
+func (f *FlashImage) IsPCH() bool {
 	return bytes.Equal(f.buf[16:16+len(FlashSignature)], FlashSignature)
 }
 
 // FindSignature looks for the Intel flash signature, and returns its offset
 // from the start of the image. The PCH images are located at offset 16, while
 // in ICH8/9/10 they start at 0. If no signature is found, it returns -1.
-func (f FlashImage) FindSignature() (int, error) {
+func (f *FlashImage) FindSignature() (int, error) {
 	if bytes.Equal(f.buf[16:16+len(FlashSignature)], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
@@ -73,7 +73,7 @@ func (f FlashImage) FindSignature() (int, error) {
 
 // Validate runs a set of checks on the flash image and returns a list of
 // errors specifying what is wrong.
-func (f FlashImage) Validate() []error {
+func (f *FlashImage) Validate() []error {
 	errors := make([]error, 0)
 	_, err := f.FindSignature()
 	if err != nil {
@@ -84,7 +84,7 @@ func (f FlashImage) Validate() []error {
 	return errors
 }
 
-func (f FlashImage) String() string {
+func (f *FlashImage) String() string {
 	return fmt.Sprintf("FlashImage{Size=%v, Descriptor=%v, Region=%v, Master=%v}",
 		len(f.buf),
 		f.IFD.DescriptorMap.String(),
@@ -94,7 +94,7 @@ func (f FlashImage) String() string {
 }
 
 // Summary prints a multi-line description of the flash image
-func (f FlashImage) Summary() string {
+func (f *FlashImage) Summary() string {
 	return fmt.Sprintf("FlashImage{\n"+
 		"    Size=%v\n"+
 		"    DescriptorMapStart=%v\n"+
