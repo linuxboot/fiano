@@ -39,7 +39,7 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	BiosRegion *BiosRegion
+	BIOSRegion *BIOSRegion
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -100,7 +100,7 @@ func (f FlashImage) Summary() string {
 		"    Descriptor=%v\n"+
 		"    Region=%v\n"+
 		"    Master=%v\n"+
-		"    BiosRegion=%v\n"+
+		"    BIOSRegion=%v\n"+
 		"}",
 		len(f.buf),
 		f.IFD.DescriptorMapStart,
@@ -109,15 +109,8 @@ func (f FlashImage) Summary() string {
 		Indent(f.IFD.DescriptorMap.Summary(), 4),
 		Indent(f.IFD.Region.Summary(), 4),
 		Indent(f.IFD.Master.Summary(), 4),
-		Indent(f.BiosRegion.Summary(), 4),
+		Indent(f.BIOSRegion.Summary(), 4),
 	)
-}
-
-func computeRegionSize(base, limit uint16) uint32 {
-	if limit == 0 {
-		return 0
-	}
-	return (uint32(limit) + 1 - uint32(base)) * 0x1000
 }
 
 // NewFlashImage tries to create a FlashImage structure, and returns a FlashImage
@@ -162,13 +155,11 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	f.IFD.Master = *master
 
 	// BIOS region
-	biosBase := uint32(f.IFD.Region.BIOS.Base) * 0x1000
-	biosSize := computeRegionSize(f.IFD.Region.BIOS.Base, f.IFD.Region.BIOS.Limit)
-	br, err := NewBiosRegion(buf[biosBase : biosBase+biosSize])
+	br, err := NewBIOSRegion(buf[f.IFD.Region.BIOS.BaseOffset():f.IFD.Region.BIOS.EndOffset()], &f.IFD.Region.BIOS)
 	if err != nil {
 		return nil, err
 	}
-	f.BiosRegion = br
+	f.BIOSRegion = br
 
 	return &f, nil
 }

@@ -10,23 +10,6 @@ import (
 // FlashRegionSectionSize is the size of the Region descriptor. It is made up by 18 fields, each 16-bits large.
 const FlashRegionSectionSize = 36
 
-// Region contains the start and end of a region in flash. This can be a BIOS, ME, PDR or GBE region.
-// This value seems to index blocks of block size 0x1000
-// TODO: figure out of block sizes are read from some location on flash or fixed.
-type Region struct {
-	Base  uint16
-	Limit uint16
-}
-
-// Available checks to see if a region is valid
-func (r *Region) Available() bool {
-	return r.Limit > 0
-}
-
-func (r *Region) String() string {
-	return fmt.Sprintf("[%#x, %#x)", r.Base, r.Limit)
-}
-
 // FlashRegionSection holds the metadata of all the different flash regions like PDR, Gbe and the Bios region.
 type FlashRegionSection struct {
 	_                   uint16
