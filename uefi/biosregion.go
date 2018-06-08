@@ -20,7 +20,7 @@ type BIOSRegion struct {
 }
 
 // Summary prints a multi-line description of the Bios Region
-func (br BIOSRegion) Summary() string {
+func (br *BIOSRegion) Summary() string {
 	var fvols []string
 	for _, fv := range br.FirmwareVolumes {
 		fvols = append(fvols, fv.Summary())

@@ -16,7 +16,7 @@ type RegionPermissions struct {
 	Write uint8
 }
 
-func (r RegionPermissions) String() string {
+func (r *RegionPermissions) String() string {
 	return fmt.Sprintf("RegionPermissions{ID=%v, Read=0x%x, Write=0x%x}",
 		r.ID, r.Read, r.Write)
 }
@@ -29,13 +29,13 @@ type FlashMasterSection struct {
 	GBE  RegionPermissions
 }
 
-func (m FlashMasterSection) String() string {
+func (m *FlashMasterSection) String() string {
 	return fmt.Sprintf("FlashMasterSection{Bios %v, Me %v, Gbe %v}",
 		m.BIOS, m.ME, m.GBE)
 }
 
 // Summary prints a multi-line description of the FlashMasterSection
-func (m FlashMasterSection) Summary() string {
+func (m *FlashMasterSection) Summary() string {
 	return fmt.Sprintf("FlashMasterSection{\n"+
 		"    BiosID=%v\n"+
 		"    BiosRead=%v\n"+
