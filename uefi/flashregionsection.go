@@ -20,19 +20,19 @@ type FlashRegionSection struct {
 	PDR                 Region
 }
 
-// AvailableRegions returns a list of names of the regions with non-zero size.
-func (f FlashRegionSection) AvailableRegions() []string {
+// ValidRegions returns a list of names of the regions with non-zero size.
+func (f FlashRegionSection) ValidRegions() []string {
 	var regions []string
-	if f.BIOS.Available() {
+	if f.BIOS.Valid() {
 		regions = append(regions, "BIOS")
 	}
-	if f.ME.Available() {
+	if f.ME.Valid() {
 		regions = append(regions, "ME")
 	}
-	if f.GBE.Available() {
+	if f.GBE.Valid() {
 		regions = append(regions, "GbE")
 	}
-	if f.PDR.Available() {
+	if f.PDR.Valid() {
 		regions = append(regions, "PDR")
 	}
 	return regions
@@ -40,7 +40,7 @@ func (f FlashRegionSection) AvailableRegions() []string {
 
 func (f FlashRegionSection) String() string {
 	return fmt.Sprintf("FlashRegionSection{Regions=%v}",
-		strings.Join(f.AvailableRegions(), ","),
+		strings.Join(f.ValidRegions(), ","),
 	)
 }
 
@@ -53,7 +53,7 @@ func (f FlashRegionSection) Summary() string {
 		"    Gbe=%v\n"+
 		"    Pdr=%v\n"+
 		"}",
-		strings.Join(f.AvailableRegions(), ","),
+		strings.Join(f.ValidRegions(), ","),
 		f.BIOS,
 		f.ME,
 		f.GBE,
