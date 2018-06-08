@@ -93,29 +93,6 @@ func (f *FlashImage) String() string {
 	)
 }
 
-// Summary prints a multi-line description of the flash image
-func (f *FlashImage) Summary() string {
-	return fmt.Sprintf("FlashImage{\n"+
-		"    Size=%v\n"+
-		"    DescriptorMapStart=%v\n"+
-		"    RegionStart=%v\n"+
-		"    MasterStart=%v\n"+
-		"    Descriptor=%v\n"+
-		"    Region=%v\n"+
-		"    Master=%v\n"+
-		"    BIOSRegion=%v\n"+
-		"}",
-		len(f.buf),
-		f.IFD.DescriptorMapStart,
-		f.IFD.RegionStart,
-		f.IFD.MasterStart,
-		Indent(f.IFD.DescriptorMap.Summary(), 4),
-		Indent(f.IFD.Region.Summary(), 4),
-		Indent(f.IFD.Master.Summary(), 4),
-		Indent(f.BIOSRegion.Summary(), 4),
-	)
-}
-
 // NewFlashImage tries to create a FlashImage structure, and returns a FlashImage
 // and an error if any. This only works with images that operate in Descriptor
 // mode.

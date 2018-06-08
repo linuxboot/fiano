@@ -67,41 +67,6 @@ func (d *FlashDescriptorMap) String() string {
 	)
 }
 
-// Summary prints a multi-line description of the flash descriptor map
-func (d *FlashDescriptorMap) Summary() string {
-	return fmt.Sprintf("FlashDescriptorMap{\n"+
-		"    ComponentBase=%v (0x%02x)\n"+
-		"    NumberOfFlashChips=%v (0x%02x)\n"+
-		"    RegionBase=%v (0x%02x)\n"+
-		"    NumberOfRegions=%v (0x%02x)\n"+
-		"    MasterBase=%v (0x%02x)\n"+
-		"    NumberOfMasters=%v (0x%02x)\n"+
-		"    PCHStrapsBase=%v (0x%02x)\n"+
-		"    NumberOfPCHStraps=%v (0x%02x)\n"+
-		"    ProcessorStrapsBase=%v (0x%02x)\n"+
-		"    NumberOfProcessorStraps=%v (0x%02x)\n"+
-		"    ICCTableEntriesBase=%v (0x%02x)\n"+
-		"    NumberOfICCTableEntries=%v (0x%02x)\n"+
-		"    DMITableEntriesBase=%v (0x%02x)\n"+
-		"    NumberOfDMITableEntries=%v (0x%02x)\n"+
-		"}",
-		d.ComponentBase, d.ComponentBase,
-		d.NumberOfFlashChips, d.NumberOfFlashChips,
-		d.RegionBase, d.RegionBase,
-		d.NumberOfRegions, d.NumberOfRegions,
-		d.MasterBase, d.MasterBase,
-		d.NumberOfMasters, d.NumberOfMasters,
-		d.PchStrapsBase, d.PchStrapsBase,
-		d.NumberOfPchStraps, d.NumberOfPchStraps,
-		d.ProcStrapsBase, d.ProcStrapsBase,
-		d.NumberOfProcStraps, d.NumberOfProcStraps,
-		d.IccTableBase, d.IccTableBase,
-		d.NumberOfIccTableEntries, d.NumberOfIccTableEntries,
-		d.DmiTableBase, d.DmiTableBase,
-		d.NumberOfDmiTableEntries, d.NumberOfDmiTableEntries,
-	)
-}
-
 // Validate runs a set of checks on the flash descriptor and returns a list of
 // errors specifying what is wrong.
 func (d *FlashDescriptorMap) Validate() []error {
