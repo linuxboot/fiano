@@ -4,8 +4,8 @@ import (
 	"os"
 )
 
-// PDRRegion represents the PDR Region in the firmware.
-type PDRRegion struct {
+// PDRegion represents the PD Region in the firmware.
+type PDRegion struct {
 	// holds the raw data
 	buf []byte
 	//Metadata for extraction and recovery
@@ -14,16 +14,16 @@ type PDRRegion struct {
 	Position *Region
 }
 
-// NewPDRRegion parses a sequence of bytes and returns a PDRRegion
+// NewPDRegion parses a sequence of bytes and returns a PDRegion
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
-func NewPDRRegion(buf []byte, r *Region) (*PDRRegion, error) {
-	pdr := PDRRegion{buf: buf, Position: r}
+func NewPDRegion(buf []byte, r *Region) (*PDRegion, error) {
+	pdr := PDRegion{buf: buf, Position: r}
 	return &pdr, nil
 }
 
 // Extract extracts the PDR region to the directory passed in.
-func (pdr *PDRRegion) Extract(dirPath string) error {
+func (pd *PDRegion) Extract(dirPath string) error {
 	// Create the directory if it doesn't exist
 	err := os.MkdirAll(dirPath, 0755)
 	if err != nil {
@@ -31,13 +31,13 @@ func (pdr *PDRRegion) Extract(dirPath string) error {
 	}
 
 	// Dump the binary.
-	pdr.ExtractPath = dirPath + "/pdrregion.bin"
-	binFile, err := os.OpenFile(pdr.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
+	pd.ExtractPath = dirPath + "/pdregion.bin"
+	binFile, err := os.OpenFile(pd.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err
 	}
 	defer binFile.Close()
-	_, err = binFile.Write(pdr.buf)
+	_, err = binFile.Write(pd.buf)
 	if err != nil {
 		return err
 	}

@@ -68,7 +68,7 @@ type FlashImage struct {
 	BIOSRegion *BIOSRegion
 	MERegion   *MERegion
 	GBERegion  *GBERegion
-	PDRRegion  *PDRRegion
+	PDRegion   *PDRegion
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -149,9 +149,9 @@ func (f *FlashImage) Extract(dirPath string) error {
 		}
 	}
 
-	// Extract PDR
-	if f.PDRRegion != nil {
-		err = f.PDRRegion.Extract(absDirPath + "/pdr")
+	// Extract PD
+	if f.PDRegion != nil {
+		err = f.PDRegion.Extract(absDirPath + "/pd")
 		if err != nil {
 			return err
 		}
@@ -275,13 +275,13 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		f.GBERegion = gber
 	}
 
-	// PDR region
-	if f.IFD.Region.PDR.Valid() {
-		pdrr, err := NewPDRRegion(buf[f.IFD.Region.PDR.BaseOffset():f.IFD.Region.PDR.EndOffset()], &f.IFD.Region.PDR)
+	// PD region
+	if f.IFD.Region.PD.Valid() {
+		pdr, err := NewPDRegion(buf[f.IFD.Region.PD.BaseOffset():f.IFD.Region.PD.EndOffset()], &f.IFD.Region.PD)
 		if err != nil {
 			return nil, err
 		}
-		f.PDRRegion = pdrr
+		f.PDRegion = pdr
 	}
 
 	return &f, nil
