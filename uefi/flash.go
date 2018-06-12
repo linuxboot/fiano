@@ -65,10 +65,10 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	BIOSRegion *BIOSRegion
-	MERegion   *MERegion
-	GBERegion  *GBERegion
-	PDRegion   *PDRegion
+	BIOS *BIOSRegion
+	ME   *MERegion
+	GBE  *GBERegion
+	PD   *PDRegion
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -134,32 +134,32 @@ func (f *FlashImage) Extract(dirPath string) error {
 	}
 
 	// Extract ME
-	if f.MERegion != nil {
-		err = f.MERegion.Extract(absDirPath + "/me")
+	if f.ME != nil {
+		err = f.ME.Extract(absDirPath + "/me")
 		if err != nil {
 			return err
 		}
 	}
 
 	// Extract GBE
-	if f.GBERegion != nil {
-		err = f.GBERegion.Extract(absDirPath + "/gbe")
+	if f.GBE != nil {
+		err = f.GBE.Extract(absDirPath + "/gbe")
 		if err != nil {
 			return err
 		}
 	}
 
 	// Extract PD
-	if f.PDRegion != nil {
-		err = f.PDRegion.Extract(absDirPath + "/pd")
+	if f.PD != nil {
+		err = f.PD.Extract(absDirPath + "/pd")
 		if err != nil {
 			return err
 		}
 	}
 
 	// Extract BIOS
-	if f.BIOSRegion != nil {
-		err = f.BIOSRegion.Extract(absDirPath + "/bios")
+	if f.BIOS != nil {
+		err = f.BIOS.Extract(absDirPath + "/bios")
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	if err != nil {
 		return nil, err
 	}
-	f.BIOSRegion = br
+	f.BIOS = br
 
 	// ME region
 	if f.IFD.Region.ME.Valid() {
@@ -263,7 +263,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if err != nil {
 			return nil, err
 		}
-		f.MERegion = mer
+		f.ME = mer
 	}
 
 	// GBE region
@@ -272,7 +272,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if err != nil {
 			return nil, err
 		}
-		f.GBERegion = gber
+		f.GBE = gber
 	}
 
 	// PD region
@@ -281,7 +281,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if err != nil {
 			return nil, err
 		}
-		f.PDRegion = pdr
+		f.PD = pdr
 	}
 
 	return &f, nil
