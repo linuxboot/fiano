@@ -1,9 +1,5 @@
 package uefi
 
-import (
-	"os"
-)
-
 // GBERegion represents the GBE Region in the firmware.
 type GBERegion struct {
 	// holds the raw data
@@ -24,22 +20,8 @@ func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
 
 // Extract extracts the GBE region to the directory passed in.
 func (gbe *GBERegion) Extract(dirPath string) error {
-	// Create the directory if it doesn't exist
-	err := os.MkdirAll(dirPath, 0755)
-	if err != nil {
-		return err
-	}
-
-	// Dump the binary.
-	gbe.ExtractPath = dirPath + "/gberegion.bin"
-	binFile, err := os.OpenFile(gbe.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		return err
-	}
-	defer binFile.Close()
-	_, err = binFile.Write(gbe.buf)
-	if err != nil {
-		return err
-	}
-	return nil
+	var err error
+	// We just dump the binary for now
+	gbe.ExtractPath, err = ExtractBinary(gbe.buf, dirPath, "gberegion.bin")
+	return err
 }

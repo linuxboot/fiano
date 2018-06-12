@@ -37,24 +37,10 @@ type FlashDescriptor struct {
 
 // Extract extracts the flash descriptor region to the directory passed in.
 func (fd *FlashDescriptor) Extract(dirPath string) error {
-	// Create the directory if it doesn't exist
-	err := os.MkdirAll(dirPath, 0755)
-	if err != nil {
-		return err
-	}
-
-	// Dump the binary.
-	fd.ExtractPath = dirPath + "/flashdescriptor.bin"
-	binFile, err := os.OpenFile(fd.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		return err
-	}
-	defer binFile.Close()
-	_, err = binFile.Write(fd.buf)
-	if err != nil {
-		return err
-	}
-	return nil
+	var err error
+	// We just dump the binary for now
+	fd.ExtractPath, err = ExtractBinary(fd.buf, dirPath, "flashdescriptor.bin")
+	return err
 }
 
 // FlashImage is the main structure that represents an Intel Flash image. It
@@ -121,65 +107,48 @@ func (f *FlashImage) Extract(dirPath string) error {
 	if err != nil {
 		return err
 	}
-	// Create the directory if it doesn't exist
-	err = os.MkdirAll(absDirPath, 0755)
+	// Dump the binary
+	f.ExtractPath, err = ExtractBinary(f.buf, absDirPath, "flash.rom")
 	if err != nil {
 		return err
 	}
 
 	// Extract IFD
-	err = f.IFD.Extract(absDirPath + "/ifd")
-	if err != nil {
+	if err = f.IFD.Extract(filepath.Join(absDirPath, "ifd")); err != nil {
 		return err
 	}
 
 	// Extract ME
 	if f.ME != nil {
-		err = f.ME.Extract(absDirPath + "/me")
-		if err != nil {
+		if err = f.ME.Extract(filepath.Join(absDirPath, "me")); err != nil {
 			return err
 		}
 	}
 
 	// Extract GBE
 	if f.GBE != nil {
-		err = f.GBE.Extract(absDirPath + "/gbe")
-		if err != nil {
+		if err = f.GBE.Extract(filepath.Join(absDirPath, "gbe")); err != nil {
 			return err
 		}
 	}
 
 	// Extract PD
 	if f.PD != nil {
-		err = f.PD.Extract(absDirPath + "/pd")
-		if err != nil {
+		if err = f.PD.Extract(filepath.Join(absDirPath, "pd")); err != nil {
 			return err
 		}
 	}
 
 	// Extract BIOS
 	if f.BIOS != nil {
-		err = f.BIOS.Extract(absDirPath + "/bios")
-		if err != nil {
+		if err = f.BIOS.Extract(filepath.Join(absDirPath, "bios")); err != nil {
 			return err
 		}
 	}
 
-	// Dump the binary.
-	f.ExtractPath = absDirPath + "/flash.rom"
-	binFile, err := os.OpenFile(f.ExtractPath, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		return err
-	}
-	defer binFile.Close()
-	_, err = binFile.Write(f.buf)
-	if err != nil {
-		return err
-	}
-
 	// Output summary json. This must be done after all other extract calls so that
 	// any metadata fields in sub structures are generated properly.
-	jsonPath := absDirPath + "/summary.json"
+	jsonPath := filepath.Join(absDirPath, "summary.json")
 	summary, err := os.OpenFile(jsonPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err

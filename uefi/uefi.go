@@ -3,6 +3,8 @@ package uefi
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
 // Firmware is an interface to describe generic firmware types. The
@@ -25,4 +27,25 @@ func Parse(buf []byte) (Firmware, error) {
 	default:
 		return nil, fmt.Errorf("Unknown firmware type")
 	}
+}
+
+// ExtractBinary simply dumps the binary to a specified directory and filename.
+// It creates the directory if it doesn't already exist, and dumps the buffer to it.
+// It returns the filepath of the binary, and an error if it exists.
+// This is meant as a helper function for other Extract functions.
+func ExtractBinary(buf []byte, dirPath string, filename string) (string, error) {
+	// Create the directory if it doesn't exist
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", err
+	}
+
+	// Dump the binary.
+	fp := filepath.Join(dirPath, filename)
+	binFile, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return fp, err
+	}
+	defer binFile.Close()
+	_, err = binFile.Write(buf)
+	return fp, err
 }
