@@ -77,43 +77,6 @@ func (p *FlashParams) String() string {
 	return fmt.Sprintf("FlashParams{...}")
 }
 
-// Summary prints a multi-line description of the FlashParams
-func (p *FlashParams) Summary() string {
-	rcf, ok := FlashFrequencyStringMap[p.ReadClockFrequency()]
-	if !ok {
-		rcf = fmt.Sprintf("Unknown (%v)", p.ReadClockFrequency())
-	}
-	frf, ok := FlashFrequencyStringMap[p.FastReadFrequency()]
-	if !ok {
-		frf = fmt.Sprintf("Unknown (%v)", p.FastReadFrequency())
-	}
-	fwf, ok := FlashFrequencyStringMap[p.FlashWriteFrequency()]
-	if !ok {
-		fwf = fmt.Sprintf("Unknown (%v)", p.FlashWriteFrequency())
-	}
-	frsf, ok := FlashFrequencyStringMap[p.FlashReadStatusFrequency()]
-	if !ok {
-		frsf = fmt.Sprintf("Unknown (%v)", p.FlashReadStatusFrequency())
-	}
-	return fmt.Sprintf("FlashParams{\n"+
-		"    FirstChipDensity=%v\n"+
-		"    SecondChipDensity=%v\n"+
-		"    ReadClockFrequency=%v\n"+
-		"    FastReadEnabled=%v\n"+
-		"    FastReadFrequency=%v\n"+
-		"    FlashWriteFrequency=%v\n"+
-		"    FlashReadStatusFrequency=%v\n"+
-		"}",
-		p.FirstChipDensity(),
-		p.SecondChipDensity(),
-		rcf,
-		p.FastReadEnabled(),
-		frf,
-		fwf,
-		frsf,
-	)
-}
-
 // NewFlashParams initalizes a FlashParam struct from a slice of bytes
 func NewFlashParams(buf []byte) (*FlashParams, error) {
 	if len(buf) != FlashParamsSize {

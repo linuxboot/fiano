@@ -44,23 +44,6 @@ func (f *FlashRegionSection) String() string {
 	)
 }
 
-// Summary prints a multi-line description of the FlashRegionSection
-func (f *FlashRegionSection) Summary() string {
-	return fmt.Sprintf("FlashRegionSection{\n"+
-		"    Regions=%v\n"+
-		"    Bios=%v\n"+
-		"    Me=%v\n"+
-		"    Gbe=%v\n"+
-		"    Pdr=%v\n"+
-		"}",
-		strings.Join(f.ValidRegions(), ","),
-		f.BIOS,
-		f.ME,
-		f.GBE,
-		f.PDR,
-	)
-}
-
 // NewFlashRegionSection initializes a FlashRegionSection from a slice of bytes
 func NewFlashRegionSection(data []byte) (*FlashRegionSection, error) {
 	if len(data) < FlashRegionSectionSize {
