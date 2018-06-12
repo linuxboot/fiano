@@ -3,6 +3,7 @@ package uefi
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -41,11 +42,9 @@ func ExtractBinary(buf []byte, dirPath string, filename string) (string, error) 
 
 	// Dump the binary.
 	fp := filepath.Join(dirPath, filename)
-	binFile, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return fp, err
+	if err := ioutil.WriteFile(fp, buf, 0666); err != nil {
+		// Make sure we return "" since we don't want an invalid path to be serialized out.
+		return "", err
 	}
-	defer binFile.Close()
-	_, err = binFile.Write(buf)
-	return fp, err
+	return fp, nil
 }

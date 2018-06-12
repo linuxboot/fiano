@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"path/filepath"
 )
 
@@ -149,21 +149,11 @@ func (f *FlashImage) Extract(dirPath string) error {
 	// Output summary json. This must be done after all other extract calls so that
 	// any metadata fields in sub structures are generated properly.
 	jsonPath := filepath.Join(absDirPath, "summary.json")
-	summary, err := os.OpenFile(jsonPath, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer summary.Close()
 	b, err := json.MarshalIndent(f, "", "    ")
 	if err != nil {
 		return err
 	}
-	_, err = summary.Write(b)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(jsonPath, b, 0666)
 }
 
 func (f *FlashImage) String() string {
