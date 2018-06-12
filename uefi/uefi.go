@@ -41,7 +41,7 @@ func ExtractBinary(buf []byte, dirPath string, filename string) (string, error) 
 
 	// Dump the binary.
 	fp := filepath.Join(dirPath, filename)
-	binFile, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0755)
+	binFile, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return fp, err
 	}

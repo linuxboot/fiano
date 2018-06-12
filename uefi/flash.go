@@ -149,7 +149,7 @@ func (f *FlashImage) Extract(dirPath string) error {
 	// Output summary json. This must be done after all other extract calls so that
 	// any metadata fields in sub structures are generated properly.
 	jsonPath := filepath.Join(absDirPath, "summary.json")
-	summary, err := os.OpenFile(jsonPath, os.O_RDWR|os.O_CREATE, 0755)
+	summary, err := os.OpenFile(jsonPath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
