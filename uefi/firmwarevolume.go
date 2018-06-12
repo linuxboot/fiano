@@ -62,25 +62,6 @@ type FirmwareVolume struct {
 	guidName   string
 }
 
-// Summary prints a multi-line representation of a FirmwareVolume object
-func (fv *FirmwareVolume) Summary() string {
-	return fmt.Sprintf("FirmwareVolume{\n"+
-		"    FileSystemGUID=%s (%v)\n"+
-		"    Length=%v\n"+
-		"    Signature=0x%08x\n"+
-		"    AttrMask=0x%02x\n"+
-		"    HeaderLen=%v\n"+
-		"    Checksum=0x%04x\n"+
-		"    Revision=%v\n"+
-		"    Blocks=%v\n"+
-		"}",
-		fv.guidString, fv.guidName,
-		fv.Length, fv.Signature, fv.AttrMask,
-		fv.HeaderLen, fv.Checksum, fv.Revision,
-		fv.Blocks,
-	)
-}
-
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
 // using 8-byte alignment. If found, returns the offset from the start of the
 // bios region, otherwise returns -1.

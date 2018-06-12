@@ -1,10 +1,5 @@
 package uefi
 
-import (
-	"fmt"
-	"strings"
-)
-
 // BIOSRegion represents the Bios Region in the firmware.
 // It holds all the FVs as well as padding
 // TODO(ganshun): handle padding
@@ -17,19 +12,6 @@ type BIOSRegion struct {
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
 	Position *Region
-}
-
-// Summary prints a multi-line description of the Bios Region
-func (br *BIOSRegion) Summary() string {
-	var fvols []string
-	for _, fv := range br.FirmwareVolumes {
-		fvols = append(fvols, fv.Summary())
-	}
-	return fmt.Sprintf("BIOSRegion{\n"+
-		"    FirmwareVolumes=[\n"+
-		"        %v\n"+
-		"    ]\n"+
-		"}", Indent(strings.Join(fvols, "\n"), 8))
 }
 
 // NewBIOSRegion parses a sequence of bytes and returns a BIOSRegion

@@ -34,25 +34,6 @@ func (m *FlashMasterSection) String() string {
 		m.BIOS, m.ME, m.GBE)
 }
 
-// Summary prints a multi-line description of the FlashMasterSection
-func (m *FlashMasterSection) Summary() string {
-	return fmt.Sprintf("FlashMasterSection{\n"+
-		"    BiosID=%v\n"+
-		"    BiosRead=%v\n"+
-		"    BiosWrite=%v\n"+
-		"    MeID=%v\n"+
-		"    MeRead=%v\n"+
-		"    MeWrite=%v\n"+
-		"    GbeID=%v\n"+
-		"    GbeRead=%v\n"+
-		"    GbeWrite=%v\n"+
-		"}",
-		m.BIOS.ID, m.BIOS.Read, m.BIOS.Write,
-		m.ME.ID, m.ME.Read, m.ME.Write,
-		m.GBE.ID, m.GBE.Read, m.GBE.Write,
-	)
-}
-
 // NewFlashMasterSection parses a sequence of bytes and returns a FlashMasterSection
 // object, if a valid one is passed, or an error
 func NewFlashMasterSection(buf []byte) (*FlashMasterSection, error) {
