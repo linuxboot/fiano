@@ -17,7 +17,7 @@ type FlashRegionSection struct {
 	BIOS                Region
 	ME                  Region
 	GBE                 Region
-	PDR                 Region
+	PD                  Region
 }
 
 // ValidRegions returns a list of names of the regions with non-zero size.
@@ -32,7 +32,7 @@ func (f *FlashRegionSection) ValidRegions() []string {
 	if f.GBE.Valid() {
 		regions = append(regions, "GbE")
 	}
-	if f.PDR.Valid() {
+	if f.PD.Valid() {
 		regions = append(regions, "PDR")
 	}
 	return regions

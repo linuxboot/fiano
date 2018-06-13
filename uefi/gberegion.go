@@ -17,3 +17,11 @@ func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
 	gbe := GBERegion{buf: buf, Position: r}
 	return &gbe, nil
 }
+
+// Extract extracts the GBE region to the directory passed in.
+func (gbe *GBERegion) Extract(dirPath string) error {
+	var err error
+	// We just dump the binary for now
+	gbe.ExtractPath, err = ExtractBinary(gbe.buf, dirPath, "gberegion.bin")
+	return err
+}

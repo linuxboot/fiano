@@ -3,7 +3,10 @@ package uefi
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 )
 
 // FlashSignature is the sequence of bytes that a Flash image is expected to
@@ -32,6 +35,14 @@ type FlashDescriptor struct {
 	ExtractPath string
 }
 
+// Extract extracts the flash descriptor region to the directory passed in.
+func (fd *FlashDescriptor) Extract(dirPath string) error {
+	var err error
+	// We just dump the binary for now
+	fd.ExtractPath, err = ExtractBinary(fd.buf, dirPath, "flashdescriptor.bin")
+	return err
+}
+
 // FlashImage is the main structure that represents an Intel Flash image. It
 // implements the Firmware interface.
 type FlashImage struct {
@@ -40,10 +51,10 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	BIOSRegion *BIOSRegion
-	MERegion   *MERegion
-	GBERegion  *GBERegion
-	PDRRegion  *PDRRegion
+	BIOS *BIOSRegion
+	ME   *MERegion
+	GBE  *GBERegion
+	PD   *PDRegion
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -88,6 +99,61 @@ func (f *FlashImage) Validate() []error {
 	errors = append(errors, f.IFD.DescriptorMap.Validate()...)
 	// TODO also validate regions, masters, etc
 	return errors
+}
+
+// Extract extracts the flash image to the directory passed in.
+func (f *FlashImage) Extract(dirPath string) error {
+	absDirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return err
+	}
+	// Dump the binary
+	f.ExtractPath, err = ExtractBinary(f.buf, absDirPath, "flash.rom")
+	if err != nil {
+		return err
+	}
+
+	// Extract IFD
+	if err = f.IFD.Extract(filepath.Join(absDirPath, "ifd")); err != nil {
+		return err
+	}
+
+	// Extract ME
+	if f.ME != nil {
+		if err = f.ME.Extract(filepath.Join(absDirPath, "me")); err != nil {
+			return err
+		}
+	}
+
+	// Extract GBE
+	if f.GBE != nil {
+		if err = f.GBE.Extract(filepath.Join(absDirPath, "gbe")); err != nil {
+			return err
+		}
+	}
+
+	// Extract PD
+	if f.PD != nil {
+		if err = f.PD.Extract(filepath.Join(absDirPath, "pd")); err != nil {
+			return err
+		}
+	}
+
+	// Extract BIOS
+	if f.BIOS != nil {
+		if err = f.BIOS.Extract(filepath.Join(absDirPath, "bios")); err != nil {
+			return err
+		}
+	}
+
+	// Output summary json. This must be done after all other extract calls so that
+	// any metadata fields in sub structures are generated properly.
+	jsonPath := filepath.Join(absDirPath, "summary.json")
+	b, err := json.MarshalIndent(f, "", "    ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(jsonPath, b, 0666)
 }
 
 func (f *FlashImage) String() string {
@@ -148,7 +214,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	if err != nil {
 		return nil, err
 	}
-	f.BIOSRegion = br
+	f.BIOS = br
 
 	// ME region
 	if f.IFD.Region.ME.Valid() {
@@ -156,7 +222,7 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if err != nil {
 			return nil, err
 		}
-		f.MERegion = mer
+		f.ME = mer
 	}
 
 	// GBE region
@@ -165,16 +231,16 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if err != nil {
 			return nil, err
 		}
-		f.GBERegion = gber
+		f.GBE = gber
 	}
 
-	// PDR region
-	if f.IFD.Region.PDR.Valid() {
-		pdrr, err := NewPDRRegion(buf[f.IFD.Region.PDR.BaseOffset():f.IFD.Region.PDR.EndOffset()], &f.IFD.Region.PDR)
+	// PD region
+	if f.IFD.Region.PD.Valid() {
+		pdr, err := NewPDRegion(buf[f.IFD.Region.PD.BaseOffset():f.IFD.Region.PD.EndOffset()], &f.IFD.Region.PD)
 		if err != nil {
 			return nil, err
 		}
-		f.PDRRegion = pdrr
+		f.PD = pdr
 	}
 
 	return &f, nil

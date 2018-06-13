@@ -17,3 +17,11 @@ func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
 	me := MERegion{buf: buf, Position: r}
 	return &me, nil
 }
+
+// Extract extracts the ME region to the directory passed in.
+func (me *MERegion) Extract(dirPath string) error {
+	var err error
+	// We just dump the binary for now
+	me.ExtractPath, err = ExtractBinary(me.buf, dirPath, "meregion.bin")
+	return err
+}
