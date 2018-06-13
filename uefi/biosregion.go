@@ -36,3 +36,11 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 	}
 	return &br, nil
 }
+
+// Extract extracts the Bios Region to the directory passed in.
+func (br *BIOSRegion) Extract(dirPath string) error {
+	// We just dump the binary for now
+	var err error
+	br.ExtractPath, err = ExtractBinary(br.buf, dirPath, "biosregion.bin")
+	return err
+}
