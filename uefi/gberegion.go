@@ -1,5 +1,9 @@
 package uefi
 
+import (
+	"fmt"
+)
+
 // GBERegion represents the GBE Region in the firmware.
 type GBERegion struct {
 	// holds the raw data
@@ -16,6 +20,19 @@ type GBERegion struct {
 func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
 	gbe := GBERegion{buf: buf, Position: r}
 	return &gbe, nil
+}
+
+// Validate Region
+func (gbe *GBERegion) Validate() []error {
+	// TODO: Add more verification if needed.
+	errs := make([]error, 0)
+	if gbe.Position == nil {
+		errs = append(errs, fmt.Errorf("GBERegion position is nil"))
+	}
+	if !gbe.Position.Valid() {
+		errs = append(errs, fmt.Errorf("GBERegion is not valid, region was %v", gbe.Position))
+	}
+	return errs
 }
 
 // Extract extracts the GBE region to the directory passed in.

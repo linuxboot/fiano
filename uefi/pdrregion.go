@@ -1,5 +1,9 @@
 package uefi
 
+import (
+	"fmt"
+)
+
 // PDRegion represents the PD Region in the firmware.
 type PDRegion struct {
 	// holds the raw data
@@ -16,6 +20,19 @@ type PDRegion struct {
 func NewPDRegion(buf []byte, r *Region) (*PDRegion, error) {
 	pdr := PDRegion{buf: buf, Position: r}
 	return &pdr, nil
+}
+
+// Validate Region
+func (pd *PDRegion) Validate() []error {
+	// TODO: Add more verification if needed.
+	errs := make([]error, 0)
+	if pd.Position == nil {
+		errs = append(errs, fmt.Errorf("PDRegion position is nil"))
+	}
+	if !pd.Position.Valid() {
+		errs = append(errs, fmt.Errorf("PDRegion is not valid, region was %v", pd.Position))
+	}
+	return errs
 }
 
 // Extract extracts the PDR region to the directory passed in.

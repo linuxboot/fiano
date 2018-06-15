@@ -1,5 +1,9 @@
 package uefi
 
+import (
+	"fmt"
+)
+
 // BIOSRegion represents the Bios Region in the firmware.
 // It holds all the FVs as well as padding
 // TODO(ganshun): handle padding
@@ -35,6 +39,22 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 		// search for FVs (i.e. offset + fv.size)
 	}
 	return &br, nil
+}
+
+// Validate Region
+func (br *BIOSRegion) Validate() []error {
+	// TODO: Add more verification if needed.
+	errs := make([]error, 0)
+	if br.Position == nil {
+		errs = append(errs, fmt.Errorf("BIOSRegion position is nil"))
+	}
+	if !br.Position.Valid() {
+		errs = append(errs, fmt.Errorf("BIOSRegion is not valid, region was %v", br.Position))
+	}
+	if len(br.FirmwareVolumes) == 0 {
+		errs = append(errs, fmt.Errorf("no firmware volumes in BIOS Region"))
+	}
+	return errs
 }
 
 // Extract extracts the Bios Region to the directory passed in.

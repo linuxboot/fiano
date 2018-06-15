@@ -16,7 +16,7 @@ var (
 )
 
 const (
-	// FlashDescriptorLength represents the size of the IFD.
+	// FlashDescriptorLength represents the size of the descriptor region.
 	FlashDescriptorLength = 0x1000
 )
 
@@ -33,6 +33,12 @@ type FlashDescriptor struct {
 
 	//Metadata for extraction and recovery
 	ExtractPath string
+}
+
+// Validate the descriptor region
+func (fd *FlashDescriptor) Validate() []error {
+	// TODO: Validate the other sections too.
+	return fd.DescriptorMap.Validate()
 }
 
 // Extract extracts the flash descriptor region to the directory passed in.
