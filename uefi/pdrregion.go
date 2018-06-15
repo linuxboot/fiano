@@ -1,6 +1,7 @@
 package uefi
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
@@ -28,10 +29,10 @@ func (pd *PDRegion) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
 	if pd.Position == nil {
-		errs = append(errs, fmt.Errorf("PDRegion position is nil"))
+		errs = append(errs, errors.New("PDRegion position is nil"))
 	}
 	if !pd.Position.Valid() {
-		errs = append(errs, fmt.Errorf("PDRegion is not valid, region was %v", pd.Position))
+		errs = append(errs, fmt.Errorf("PDRegion is not valid, region was %v", *pd.Position))
 	}
 	return errs
 }

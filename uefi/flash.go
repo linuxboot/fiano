@@ -65,6 +65,7 @@ type FlashImage struct {
 
 	// Metadata for extraction and recovery
 	ExtractPath string
+	regions     []Firmware
 }
 
 // IsPCH returns whether the flash image has the more recent PCH format, or not.
@@ -120,35 +121,9 @@ func (f *FlashImage) Extract(dirPath string) error {
 		return err
 	}
 
-	// Extract IFD
-	if err = f.IFD.Extract(absDirPath); err != nil {
-		return err
-	}
-
-	// Extract ME
-	if f.ME != nil {
-		if err = f.ME.Extract(absDirPath); err != nil {
-			return err
-		}
-	}
-
-	// Extract GBE
-	if f.GBE != nil {
-		if err = f.GBE.Extract(absDirPath); err != nil {
-			return err
-		}
-	}
-
-	// Extract PD
-	if f.PD != nil {
-		if err = f.PD.Extract(absDirPath); err != nil {
-			return err
-		}
-	}
-
-	// Extract BIOS
-	if f.BIOS != nil {
-		if err = f.BIOS.Extract(absDirPath); err != nil {
+	// Extract all regions.
+	for _, r := range f.regions {
+		if err = r.Extract(absDirPath); err != nil {
 			return err
 		}
 	}
@@ -213,6 +188,9 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	}
 	f.IFD.Master = *master
 
+	// Add to extractable regions
+	f.regions = append(f.regions, &f.IFD)
+
 	// BIOS region
 	if !f.IFD.Region.BIOS.Valid() {
 		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
@@ -222,6 +200,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		return nil, err
 	}
 	f.BIOS = br
+	// Add to extractable regions
+	f.regions = append(f.regions, f.BIOS)
 
 	// ME region
 	if f.IFD.Region.ME.Valid() {
@@ -230,6 +210,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			return nil, err
 		}
 		f.ME = mer
+		// Add to extractable regions
+		f.regions = append(f.regions, f.ME)
 	}
 
 	// GBE region
@@ -239,6 +221,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			return nil, err
 		}
 		f.GBE = gber
+		// Add to extractable regions
+		f.regions = append(f.regions, f.GBE)
 	}
 
 	// PD region
@@ -248,6 +232,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			return nil, err
 		}
 		f.PD = pdr
+		// Add to extractable regions
+		f.regions = append(f.regions, f.PD)
 	}
 
 	return &f, nil

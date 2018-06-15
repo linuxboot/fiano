@@ -1,6 +1,7 @@
 package uefi
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
@@ -28,10 +29,10 @@ func (gbe *GBERegion) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
 	if gbe.Position == nil {
-		errs = append(errs, fmt.Errorf("GBERegion position is nil"))
+		errs = append(errs, errors.New("GBERegion position is nil"))
 	}
 	if !gbe.Position.Valid() {
-		errs = append(errs, fmt.Errorf("GBERegion is not valid, region was %v", gbe.Position))
+		errs = append(errs, fmt.Errorf("GBERegion is not valid, region was %v", *gbe.Position))
 	}
 	return errs
 }

@@ -1,6 +1,7 @@
 package uefi
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
@@ -28,10 +29,10 @@ func (me *MERegion) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
 	if me.Position == nil {
-		errs = append(errs, fmt.Errorf("MERegion position is nil"))
+		errs = append(errs, errors.New("MERegion position is nil"))
 	}
 	if !me.Position.Valid() {
-		errs = append(errs, fmt.Errorf("MERegion is not valid, region was %v", me.Position))
+		errs = append(errs, fmt.Errorf("MERegion is not valid, region was %v", *me.Position))
 	}
 	return errs
 }

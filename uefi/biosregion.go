@@ -1,6 +1,7 @@
 package uefi
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
@@ -47,13 +48,13 @@ func (br *BIOSRegion) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
 	if br.Position == nil {
-		errs = append(errs, fmt.Errorf("BIOSRegion position is nil"))
+		errs = append(errs, errors.New("BIOSRegion position is nil"))
 	}
 	if !br.Position.Valid() {
-		errs = append(errs, fmt.Errorf("BIOSRegion is not valid, region was %v", br.Position))
+		errs = append(errs, fmt.Errorf("BIOSRegion is not valid, region was %v", *br.Position))
 	}
 	if len(br.FirmwareVolumes) == 0 {
-		errs = append(errs, fmt.Errorf("no firmware volumes in BIOS Region"))
+		errs = append(errs, errors.New("no firmware volumes in BIOS Region"))
 	}
 	return errs
 }
