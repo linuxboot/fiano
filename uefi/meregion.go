@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"fmt"
+	"path/filepath"
 )
 
 // MERegion represents the ME Region in the firmware.
@@ -36,8 +37,9 @@ func (me *MERegion) Validate() []error {
 }
 
 // Extract extracts the ME region to the directory passed in.
-func (me *MERegion) Extract(dirPath string) error {
+func (me *MERegion) Extract(parentPath string) error {
 	var err error
+	dirPath := filepath.Join(parentPath, "me")
 	// We just dump the binary for now
 	me.ExtractPath, err = ExtractBinary(me.buf, dirPath, "meregion.bin")
 	return err

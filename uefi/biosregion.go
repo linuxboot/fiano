@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"fmt"
+	"path/filepath"
 )
 
 // BIOSRegion represents the Bios Region in the firmware.
@@ -58,9 +59,10 @@ func (br *BIOSRegion) Validate() []error {
 }
 
 // Extract extracts the Bios Region to the directory passed in.
-func (br *BIOSRegion) Extract(dirPath string) error {
+func (br *BIOSRegion) Extract(parentPath string) error {
 	// We just dump the binary for now
 	var err error
+	dirPath := filepath.Join(parentPath, "bios")
 	br.ExtractPath, err = ExtractBinary(br.buf, dirPath, "biosregion.bin")
 	return err
 }

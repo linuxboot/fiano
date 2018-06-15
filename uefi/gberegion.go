@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"fmt"
+	"path/filepath"
 )
 
 // GBERegion represents the GBE Region in the firmware.
@@ -36,8 +37,9 @@ func (gbe *GBERegion) Validate() []error {
 }
 
 // Extract extracts the GBE region to the directory passed in.
-func (gbe *GBERegion) Extract(dirPath string) error {
+func (gbe *GBERegion) Extract(parentPath string) error {
 	var err error
+	dirPath := filepath.Join(parentPath, "gbe")
 	// We just dump the binary for now
 	gbe.ExtractPath, err = ExtractBinary(gbe.buf, dirPath, "gberegion.bin")
 	return err

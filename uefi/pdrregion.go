@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"fmt"
+	"path/filepath"
 )
 
 // PDRegion represents the PD Region in the firmware.
@@ -36,8 +37,9 @@ func (pd *PDRegion) Validate() []error {
 }
 
 // Extract extracts the PDR region to the directory passed in.
-func (pd *PDRegion) Extract(dirPath string) error {
+func (pd *PDRegion) Extract(parentPath string) error {
 	var err error
+	dirPath := filepath.Join(parentPath, "pd")
 	// We just dump the binary for now
 	pd.ExtractPath, err = ExtractBinary(pd.buf, dirPath, "pdregion.bin")
 	return err

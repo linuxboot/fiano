@@ -42,8 +42,9 @@ func (fd *FlashDescriptor) Validate() []error {
 }
 
 // Extract extracts the flash descriptor region to the directory passed in.
-func (fd *FlashDescriptor) Extract(dirPath string) error {
+func (fd *FlashDescriptor) Extract(parentPath string) error {
 	var err error
+	dirPath := filepath.Join(parentPath, "ifd")
 	// We just dump the binary for now
 	fd.ExtractPath, err = ExtractBinary(fd.buf, dirPath, "flashdescriptor.bin")
 	return err
@@ -120,34 +121,34 @@ func (f *FlashImage) Extract(dirPath string) error {
 	}
 
 	// Extract IFD
-	if err = f.IFD.Extract(filepath.Join(absDirPath, "ifd")); err != nil {
+	if err = f.IFD.Extract(absDirPath); err != nil {
 		return err
 	}
 
 	// Extract ME
 	if f.ME != nil {
-		if err = f.ME.Extract(filepath.Join(absDirPath, "me")); err != nil {
+		if err = f.ME.Extract(absDirPath); err != nil {
 			return err
 		}
 	}
 
 	// Extract GBE
 	if f.GBE != nil {
-		if err = f.GBE.Extract(filepath.Join(absDirPath, "gbe")); err != nil {
+		if err = f.GBE.Extract(absDirPath); err != nil {
 			return err
 		}
 	}
 
 	// Extract PD
 	if f.PD != nil {
-		if err = f.PD.Extract(filepath.Join(absDirPath, "pd")); err != nil {
+		if err = f.PD.Extract(absDirPath); err != nil {
 			return err
 		}
 	}
 
 	// Extract BIOS
 	if f.BIOS != nil {
-		if err = f.BIOS.Extract(filepath.Join(absDirPath, "bios")); err != nil {
+		if err = f.BIOS.Extract(absDirPath); err != nil {
 			return err
 		}
 	}
