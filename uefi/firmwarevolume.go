@@ -60,6 +60,7 @@ type FirmwareVolume struct {
 	// Variables not in the binary for us to keep track of stuff/print
 	guidString string
 	guidName   string
+	buf        []byte
 }
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
@@ -122,5 +123,8 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 		fv.guidString = "<invalid GUID>"
 		fv.guidName = "Unknown"
 	}
+
+	// slice the buffer
+	fv.buf = data[:fv.Length]
 	return &fv, nil
 }
