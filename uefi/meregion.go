@@ -1,5 +1,11 @@
 package uefi
 
+import (
+	"errors"
+	"fmt"
+	"path/filepath"
+)
+
 // MERegion represents the ME Region in the firmware.
 type MERegion struct {
 	// holds the raw data
@@ -18,9 +24,23 @@ func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
 	return &me, nil
 }
 
+// Validate Region
+func (me *MERegion) Validate() []error {
+	// TODO: Add more verification if needed.
+	errs := make([]error, 0)
+	if me.Position == nil {
+		errs = append(errs, errors.New("MERegion position is nil"))
+	}
+	if !me.Position.Valid() {
+		errs = append(errs, fmt.Errorf("MERegion is not valid, region was %v", *me.Position))
+	}
+	return errs
+}
+
 // Extract extracts the ME region to the directory passed in.
-func (me *MERegion) Extract(dirPath string) error {
+func (me *MERegion) Extract(parentPath string) error {
 	var err error
+	dirPath := filepath.Join(parentPath, "me")
 	// We just dump the binary for now
 	me.ExtractPath, err = ExtractBinary(me.buf, dirPath, "meregion.bin")
 	return err
