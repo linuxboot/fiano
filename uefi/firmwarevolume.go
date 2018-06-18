@@ -67,8 +67,10 @@ type FirmwareVolume struct {
 	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
 	FirmwareVolumeExtHeader
+	Files []FirmwareFile
 
 	// Variables not in the binary for us to keep track of stuff/print
+	DataOffset uint64
 	guidString string
 	guidName   string
 	buf        []byte
@@ -91,6 +93,10 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 		}
 	}
 	return -1
+}
+
+func align8(val uint64) uint64 {
+	return (val + 7) & ^uint64(7)
 }
 
 // NewFirmwareVolume parses a sequence of bytes and returns a FirmwareVolume
@@ -123,20 +129,44 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	}
 	fv.Blocks = blocks
 
-	// Parse the extended header.
+	// Parse the extended header and figure out the start of data
+	fv.DataOffset = uint64(fv.HeaderLen)
 	if fv.ExtHeaderOffset != 0 && uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
 		// jump to ext header offset.
 		r := bytes.NewReader(data[fv.ExtHeaderOffset:])
 		if err := binary.Read(r, binary.LittleEndian, &fv.FirmwareVolumeExtHeader); err != nil {
 			return nil, fmt.Errorf("unable to parse FV extended header, got: %v", err)
 		}
+		// TODO: will the ext header ever end before the regular header? I don't believe so. Add a check?
+		fv.DataOffset = uint64(fv.ExtHeaderOffset) + uint64(fv.ExtHeaderSize)
 	}
+	// Make sure DataOffset is 8 byte aligned at least.
+	// TODO: handle alignment field in header.
+	fv.DataOffset = align8(fv.DataOffset)
 
 	var ok bool
 	fv.guidString = fv.FileSystemGUID.String()
 	fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
 	if !ok {
 		fv.guidName = "Unknown"
+	}
+
+	// Parse the files.
+	// TODO: handle fv data alignment.
+	// Start from the end of the fv header.
+	lh := fv.Length - FileHeaderMinLength
+	for offset, prevLen := fv.DataOffset, uint64(0); offset < lh; offset += prevLen {
+		offset = align8(offset)
+		file, err := NewFirmwareFile(data[offset:])
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct firmware file at offset %#x into FV: %v", offset, err)
+		}
+		if file == nil {
+			// We've reached free space. Terminate
+			break
+		}
+		fv.Files = append(fv.Files, *file)
+		prevLen = file.Header.ExtendedSize
 	}
 
 	// slice the buffer
