@@ -17,13 +17,13 @@ const (
 // Region holds the base and limit of every type of region. Each region such as the bios region
 // should point back to it.
 type Region struct {
-	Base  uint16
-	Limit uint16
+	Base  uint16 // Index of first 4k block
+	Limit uint16 // Index of last block
 }
 
 // Valid checks to see if a region is valid
 func (r *Region) Valid() bool {
-	return r.Limit > 0
+	return r.Limit > 0 && r.Limit >= r.Base
 }
 
 func (r *Region) String() string {
