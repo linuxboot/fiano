@@ -10,8 +10,9 @@ import (
 
 // FirmwareVolume constants
 const (
-	FirmwareVolumeFixedHeaderSize = 56
-	FirmwareVolumeMinSize         = FirmwareVolumeFixedHeaderSize + 8 // +8 for the null block that terminates the block list
+	FirmwareVolumeFixedHeaderSize  = 56
+	FirmwareVolumeMinSize          = FirmwareVolumeFixedHeaderSize + 8 // +8 for the null block that terminates the block list
+	FirmwareVolumeExtHeaderMinSize = 20
 )
 
 // FirmwareVolumeGUIDs maps the known FV GUIDs. These values come from
@@ -50,6 +51,13 @@ type FirmwareVolumeFixedHeader struct {
 	// _               [3]uint8
 }
 
+// FirmwareVolumeExtHeader contains the fields of an extended firmware volume
+// header
+type FirmwareVolumeExtHeader struct {
+	FVName        [16]uint8
+	ExtHeaderSize uint32
+}
+
 // FirmwareVolume represents a firmware volume. It combines the fixed header and
 // a variable list of blocks
 type FirmwareVolume struct {
@@ -58,6 +66,7 @@ type FirmwareVolume struct {
 	// block list
 	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
+	FirmwareVolumeExtHeader
 
 	// Variables not in the binary for us to keep track of stuff/print
 	guidString string
@@ -113,6 +122,15 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 		blocks = append(blocks, block)
 	}
 	fv.Blocks = blocks
+
+	// Parse the extended header.
+	if fv.ExtHeaderOffset != 0 && uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
+		// jump to ext header offset.
+		r := bytes.NewReader(data[fv.ExtHeaderOffset:])
+		if err := binary.Read(r, binary.LittleEndian, &fv.FirmwareVolumeExtHeader); err != nil {
+			return nil, fmt.Errorf("unable to parse FV extended header, got: %v", err)
+		}
+	}
 
 	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
 		var ok bool
