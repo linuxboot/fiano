@@ -37,16 +37,17 @@ type Block struct {
 // FirmwareVolumeFixedHeader contains the fixed fields of a firmware volume
 // header
 type FirmwareVolumeFixedHeader struct {
-	_              [16]uint8
-	FileSystemGUID [16]uint8
-	Length         uint64
-	Signature      uint32
-	AttrMask       uint8
-	HeaderLen      uint16
-	Checksum       uint16
-	Reserved       [3]uint8 `json:"-"`
-	Revision       uint8
-	_              [3]uint8
+	_               [16]uint8
+	FileSystemGUID  [16]uint8
+	Length          uint64
+	Signature       uint32
+	Attributes      uint32 // UEFI PI spec volume 3.2.1 EFI_FIRMWARE_VOLUME_HEADER
+	HeaderLen       uint16
+	Checksum        uint16
+	ExtHeaderOffset uint16
+	Reserved        uint8 `json:"-"`
+	Revision        uint8
+	// _               [3]uint8
 }
 
 // FirmwareVolume represents a firmware volume. It combines the fixed header and
@@ -55,6 +56,7 @@ type FirmwareVolume struct {
 	FirmwareVolumeFixedHeader
 	// there must be at least one that is zeroed and indicates the end of the
 	// block list
+	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
 
 	// Variables not in the binary for us to keep track of stuff/print
