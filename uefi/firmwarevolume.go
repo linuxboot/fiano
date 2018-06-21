@@ -10,8 +10,9 @@ import (
 
 // FirmwareVolume constants
 const (
-	FirmwareVolumeFixedHeaderSize = 56
-	FirmwareVolumeMinSize         = FirmwareVolumeFixedHeaderSize + 8 // +8 for the null block that terminates the block list
+	FirmwareVolumeFixedHeaderSize  = 56
+	FirmwareVolumeMinSize          = FirmwareVolumeFixedHeaderSize + 8 // +8 for the null block that terminates the block list
+	FirmwareVolumeExtHeaderMinSize = 20
 )
 
 // FirmwareVolumeGUIDs maps the known FV GUIDs. These values come from
@@ -37,16 +38,24 @@ type Block struct {
 // FirmwareVolumeFixedHeader contains the fixed fields of a firmware volume
 // header
 type FirmwareVolumeFixedHeader struct {
-	_              [16]uint8
-	FileSystemGUID [16]uint8
-	Length         uint64
-	Signature      uint32
-	AttrMask       uint8
-	HeaderLen      uint16
-	Checksum       uint16
-	Reserved       [3]uint8 `json:"-"`
-	Revision       uint8
-	_              [3]uint8
+	_               [16]uint8
+	FileSystemGUID  [16]uint8
+	Length          uint64
+	Signature       uint32
+	Attributes      uint32 // UEFI PI spec volume 3.2.1 EFI_FIRMWARE_VOLUME_HEADER
+	HeaderLen       uint16
+	Checksum        uint16
+	ExtHeaderOffset uint16
+	Reserved        uint8 `json:"-"`
+	Revision        uint8
+	// _               [3]uint8
+}
+
+// FirmwareVolumeExtHeader contains the fields of an extended firmware volume
+// header
+type FirmwareVolumeExtHeader struct {
+	FVName        [16]uint8
+	ExtHeaderSize uint32
 }
 
 // FirmwareVolume represents a firmware volume. It combines the fixed header and
@@ -55,11 +64,14 @@ type FirmwareVolume struct {
 	FirmwareVolumeFixedHeader
 	// there must be at least one that is zeroed and indicates the end of the
 	// block list
+	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
+	FirmwareVolumeExtHeader
 
 	// Variables not in the binary for us to keep track of stuff/print
 	guidString string
 	guidName   string
+	buf        []byte
 }
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
@@ -111,6 +123,15 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	}
 	fv.Blocks = blocks
 
+	// Parse the extended header.
+	if fv.ExtHeaderOffset != 0 && uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
+		// jump to ext header offset.
+		r := bytes.NewReader(data[fv.ExtHeaderOffset:])
+		if err := binary.Read(r, binary.LittleEndian, &fv.FirmwareVolumeExtHeader); err != nil {
+			return nil, fmt.Errorf("unable to parse FV extended header, got: %v", err)
+		}
+	}
+
 	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
 		var ok bool
 		fv.guidString = guid.String()
@@ -122,5 +143,8 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 		fv.guidString = "<invalid GUID>"
 		fv.guidName = "Unknown"
 	}
+
+	// slice the buffer
+	fv.buf = data[:fv.Length]
 	return &fv, nil
 }
