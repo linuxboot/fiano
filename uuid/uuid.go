@@ -1,74 +1,74 @@
-package uefi
+package uuid
 
 // This package implements the mixed-endian UUID as implemented by Microsoft.
 
 import (
 	"encoding/hex"
-	"errors"
+	"fmt"
+	"strings"
 )
-
-var ErrInvalidUUID = errors.New("Invalid UUID")
 
 const (
-	SizeAsBytes  = 16
-	SizeAsString = 36
+	// Size represents number of bytes in a UUID
+	Size = 16
+	// UExample is a example of a string UUID
+	UExample  = "01234567-89AB-CDEF-0123-456789ABCDEF"
+	textLen   = len(UExample)
+	strFormat = "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X"
 )
 
-type UUID struct {
-	Data []byte
+var (
+	fields = [...]int{4, 2, 2, 2, 1, 1, 1, 1, 1, 1}
+)
+
+// UUID represents a unique identifier.
+type UUID [Size]byte
+
+func reverse(b []byte) {
+	for i := 0; i < len(b)/2; i++ {
+		other := len(b) - i - 1
+		b[other], b[i] = b[i], b[other]
+	}
 }
 
+// Parse parses a uuid string.
 func Parse(s string) (*UUID, error) {
-	if len(s) != SizeAsString {
-		return nil, ErrInvalidUUID
+	// remove all hyphens to make it easier to parse.
+	stripped := strings.Replace(s, "-", "", -1)
+	decoded, err := hex.DecodeString(stripped)
+	if err != nil {
+		return nil, fmt.Errorf("uuid string not correct, need string of the format \n%v\n, got \n%v",
+			UExample, s)
 	}
-	if s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
-		return nil, ErrInvalidUUID
-	}
-	uuid := UUID{}
-	// first three parts are little-endian
-	offsets := []int{
-		// first three parts are little-endian
-		6, 4, 2, 0,
-		11, 9,
-		16, 14,
-		// last two parts are big-endian
-		19, 21,
-		24, 26, 28, 30, 32, 34,
-	}
-	for _, off := range offsets {
-		d, err := hex.DecodeString(s[off : off+2])
-		if err != nil {
-			return nil, err
-		}
-		uuid.Data = append(uuid.Data, d...)
-	}
-	return &uuid, nil
-}
 
-func FromBytes(data []byte) (*UUID, error) {
-	var uuid UUID
-	if len(data) != SizeAsBytes {
-		return nil, ErrInvalidUUID
+	if len(decoded) != Size {
+		return nil, fmt.Errorf("uuid string has incorrect length, need string of the format \n%v\n, got \n%v",
+			UExample, s)
 	}
-	uuid.Data = append(uuid.Data, data...)
-	return &uuid, nil
+
+	u := UUID{}
+	i := 0
+	copy(u[:], decoded[:])
+	// Correct for endianness.
+	for _, fieldlen := range fields {
+		reverse(u[i : i+fieldlen])
+		i += fieldlen
+	}
+	return &u, nil
 }
 
 func (u UUID) String() string {
-	var r string
-	offsets := []int{
-		3, 2, 1, 0,
-		5, 4,
-		7, 6,
-		8, 9,
-		10, 11, 12, 13, 14, 15,
+	// Not a pointer receiver so we don't have to manually copy.
+	i := 0
+	// reverse endianness.
+	for _, fieldlen := range fields {
+		reverse(u[i : i+fieldlen])
+		i += fieldlen
 	}
-	for idx, off := range offsets {
-		r += hex.EncodeToString([]byte{u.Data[off]})
-		if idx == 3 || idx == 5 || idx == 7 || idx == 9 {
-			r += "-"
-		}
+	// Convert to []interface{} for easy printing.
+	b := make([]interface{}, Size)
+	for i := range u[:] {
+		b[i] = u[i]
 	}
-	return r
+	return fmt.Sprintf(strFormat, b...)
 }
