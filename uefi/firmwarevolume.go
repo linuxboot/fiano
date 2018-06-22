@@ -39,7 +39,7 @@ type Block struct {
 // header
 type FirmwareVolumeFixedHeader struct {
 	_               [16]uint8
-	FileSystemGUID  [16]uint8
+	FileSystemGUID  uuid.UUID
 	Length          uint64
 	Signature       uint32
 	Attributes      uint32 // UEFI PI spec volume 3.2.1 EFI_FIRMWARE_VOLUME_HEADER
@@ -54,7 +54,7 @@ type FirmwareVolumeFixedHeader struct {
 // FirmwareVolumeExtHeader contains the fields of an extended firmware volume
 // header
 type FirmwareVolumeExtHeader struct {
-	FVName        [16]uint8
+	FVName        uuid.UUID
 	ExtHeaderSize uint32
 }
 
@@ -132,15 +132,10 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 		}
 	}
 
-	if guid, err := uuid.FromBytes(fv.FileSystemGUID[:]); err == nil {
-		var ok bool
-		fv.guidString = guid.String()
-		fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
-		if !ok {
-			fv.guidName = "Unknown"
-		}
-	} else {
-		fv.guidString = "<invalid GUID>"
+	var ok bool
+	fv.guidString = fv.FileSystemGUID.String()
+	fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
+	if !ok {
 		fv.guidName = "Unknown"
 	}
 
