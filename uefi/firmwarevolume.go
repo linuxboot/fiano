@@ -15,18 +15,44 @@ const (
 	FirmwareVolumeExtHeaderMinSize = 20
 )
 
-// FirmwareVolumeGUIDs maps the known FV GUIDs. These values come from
-// uefi-firmware-parser
-var FirmwareVolumeGUIDs = map[string]string{
-	"7a9354d9-0468-444a-81ce-0bf617d890df": "FFS1",
-	"8c8ce578-8a3d-4f1c-9935-896185c32dd3": "FFS2",
-	"5473c07a-3dcb-4dca-bd6f-1e9689e7349a": "FFS3",
-	"fff12b8d-7696-4c8b-a985-2747075b4f50": "NVRAM_EVSA",
-	"cef5b9a3-476d-497f-9fdc-e98143e0422c": "NVRAM_NVAR",
-	"00504624-8a59-4eeb-bd0f-6b36e96128e0": "NVRAM_EVSA2",
-	"04adeead-61ff-4d31-b6ba-64f8bf901f5a": "APPLE_BOOT",
-	"16b45da2-7d70-4aea-a58d-760e9ecb841d": "PFH1",
-	"e360bdba-c3ce-46be-8f37-b231e5cb9f35": "PFH2",
+// FVGUIDs holds common FV type names
+var FVGUIDs map[uuid.UUID]string
+
+// Valid FV GUIDs
+var (
+	FFS1      *uuid.UUID
+	FFS2      *uuid.UUID
+	FFS3      *uuid.UUID
+	EVSA      *uuid.UUID
+	NVAR      *uuid.UUID
+	EVSA2     *uuid.UUID
+	AppleBoot *uuid.UUID
+	PFH1      *uuid.UUID
+	PFH2      *uuid.UUID
+)
+
+func init() {
+	FFS1, _ = uuid.Parse("7a9354d9-0468-444a-81ce-0bf617d890df")
+	FFS2, _ = uuid.Parse("8c8ce578-8a3d-4f1c-9935-896185c32dd3")
+	FFS3, _ = uuid.Parse("5473c07a-3dcb-4dca-bd6f-1e9689e7349a")
+	EVSA, _ = uuid.Parse("fff12b8d-7696-4c8b-a985-2747075b4f50")
+	NVAR, _ = uuid.Parse("cef5b9a3-476d-497f-9fdc-e98143e0422c")
+	EVSA2, _ = uuid.Parse("00504624-8a59-4eeb-bd0f-6b36e96128e0")
+	AppleBoot, _ = uuid.Parse("04adeead-61ff-4d31-b6ba-64f8bf901f5a")
+	PFH1, _ = uuid.Parse("16b45da2-7d70-4aea-a58d-760e9ecb841d")
+	PFH2, _ = uuid.Parse("e360bdba-c3ce-46be-8f37-b231e5cb9f35")
+
+	// Add names to map
+	FVGUIDs = make(map[uuid.UUID]string)
+	FVGUIDs[*FFS1] = "FFS1"
+	FVGUIDs[*FFS2] = "FFS2"
+	FVGUIDs[*FFS3] = "FFS3"
+	FVGUIDs[*EVSA] = "NVRAM_EVSA"
+	FVGUIDs[*NVAR] = "NVRAM_NVAR"
+	FVGUIDs[*EVSA2] = "NVRAM_EVSA2"
+	FVGUIDs[*AppleBoot] = "APPLE_BOOT"
+	FVGUIDs[*PFH1] = "PFH1"
+	FVGUIDs[*PFH2] = "PFH2"
 }
 
 // Block describes number and size of the firmware volume blocks
@@ -71,8 +97,7 @@ type FirmwareVolume struct {
 
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset uint64
-	guidString string
-	guidName   string
+	fvType     string
 	buf        []byte
 }
 
@@ -144,12 +169,7 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	// TODO: handle alignment field in header.
 	fv.DataOffset = align8(fv.DataOffset)
 
-	var ok bool
-	fv.guidString = fv.FileSystemGUID.String()
-	fv.guidName, ok = FirmwareVolumeGUIDs[fv.guidString]
-	if !ok {
-		fv.guidName = "Unknown"
-	}
+	fv.fvType = FVGUIDs[fv.FileSystemGUID]
 
 	// Parse the files.
 	// TODO: handle fv data alignment.
