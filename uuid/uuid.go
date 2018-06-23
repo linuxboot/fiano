@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	fields = [...]int{4, 2, 2, 2, 1, 1, 1, 1, 1, 1}
+	fields = [...]int{4, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1}
 )
 
 // UUID represents a unique identifier.
