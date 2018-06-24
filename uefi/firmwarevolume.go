@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"path/filepath"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -96,9 +97,20 @@ type FirmwareVolume struct {
 	Files []FirmwareFile
 
 	// Variables not in the binary for us to keep track of stuff/print
-	DataOffset uint64
-	fvType     string
-	buf        []byte
+	DataOffset  uint64
+	fvType      string
+	buf         []byte
+	FVOffset    uint64 // Byte offset from start of BIOS region.
+	ExtractPath string
+}
+
+// Extract extracts the Firmware Volume to the directory passed in.
+func (fv *FirmwareVolume) Extract(parentPath string) error {
+	// We just dump the binary for now
+	var err error
+	dirPath := filepath.Join(parentPath, fmt.Sprintf("%#x", fv.FVOffset))
+	fv.ExtractPath, err = ExtractBinary(fv.buf, dirPath, "fv.bin")
+	return err
 }
 
 // Validate Firmware Volume
@@ -183,7 +195,7 @@ func align8(val uint64) uint64 {
 
 // NewFirmwareVolume parses a sequence of bytes and returns a FirmwareVolume
 // object, if a valid one is passed, or an error
-func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
+func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	var fv FirmwareVolume
 
 	if len(data) < FirmwareVolumeMinSize {
@@ -227,6 +239,7 @@ func NewFirmwareVolume(data []byte) (*FirmwareVolume, error) {
 	fv.DataOffset = align8(fv.DataOffset)
 
 	fv.fvType = FVGUIDs[fv.FileSystemGUID]
+	fv.FVOffset = fvOffset
 
 	// Parse the files.
 	// TODO: handle fv data alignment.

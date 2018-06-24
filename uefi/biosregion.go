@@ -25,16 +25,19 @@ type BIOSRegion struct {
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 	br := BIOSRegion{buf: buf, Position: r}
+	var absOffset uint64
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
-		if offset == -1 {
+		if offset < 0 {
 			// no firmware volume found, stop searching
 			break
 		}
-		fv, err := NewFirmwareVolume(buf[offset:])
+		absOffset += uint64(offset) // Find start of volume relative to bios region.
+		fv, err := NewFirmwareVolume(buf[offset:], absOffset)
 		if err != nil {
 			return nil, err
 		}
+		absOffset += fv.Length
 		buf = buf[uint64(offset)+fv.Length:]
 		br.FirmwareVolumes = append(br.FirmwareVolumes, *fv)
 		// FIXME remove the `break` and move the offset to the next location to
@@ -64,9 +67,17 @@ func (br *BIOSRegion) Validate() []error {
 
 // Extract extracts the Bios Region to the directory passed in.
 func (br *BIOSRegion) Extract(parentPath string) error {
-	// We just dump the binary for now
+	// Dump the binary
 	var err error
 	dirPath := filepath.Join(parentPath, "bios")
 	br.ExtractPath, err = ExtractBinary(br.buf, dirPath, "biosregion.bin")
+
+	// Extract all FVs.
+	for _, fv := range br.FirmwareVolumes {
+		if err = fv.Extract(dirPath); err != nil {
+			return err
+		}
+	}
+
 	return err
 }
