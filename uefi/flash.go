@@ -106,6 +106,7 @@ func (f *FlashImage) Validate() []error {
 	}
 	errors = append(errors, f.IFD.DescriptorMap.Validate()...)
 	// TODO also validate regions, masters, etc
+	errors = append(errors, f.BIOS.Validate()...)
 	return errors
 }
 

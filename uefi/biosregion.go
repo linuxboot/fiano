@@ -56,6 +56,9 @@ func (br *BIOSRegion) Validate() []error {
 	if len(br.FirmwareVolumes) == 0 {
 		errs = append(errs, errors.New("no firmware volumes in BIOS Region"))
 	}
+	for _, fv := range br.FirmwareVolumes {
+		errs = append(errs, fv.Validate()...)
+	}
 	return errs
 }
 
