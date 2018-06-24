@@ -4,6 +4,7 @@ package uuid
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -71,4 +72,26 @@ func (u UUID) String() string {
 		b[i] = u[i]
 	}
 	return fmt.Sprintf(strFormat, b...)
+}
+
+// MarshalJSON implements the marshaller interface.
+// This allows us to actually read and edit the json file
+func (u *UUID) MarshalJSON() ([]byte, error) {
+	return []byte(`{"UUID" : "` + u.String() + `"}`), nil
+}
+
+// UnmarshalJSON implements the unmarshaller interface.
+// This allows us to actually read and edit the json file
+func (u *UUID) UnmarshalJSON(b []byte) error {
+	j := make(map[string]string)
+
+	if err := json.Unmarshal(b, &j); err != nil {
+		return err
+	}
+	g, err := Parse(j["UUID"])
+	if err != nil {
+		return err
+	}
+	copy(u[:], g[:])
+	return nil
 }
