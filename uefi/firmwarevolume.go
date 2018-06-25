@@ -178,6 +178,9 @@ func (fv *FirmwareVolume) Validate() []error {
 		errs = append(errs, fmt.Errorf("header did not sum to 0, got: %#x", sum))
 	}
 
+	for _, f := range fv.Files {
+		errs = append(errs, f.Validate()...)
+	}
 	return errs
 }
 
