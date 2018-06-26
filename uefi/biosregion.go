@@ -71,6 +71,9 @@ func (br *BIOSRegion) Extract(parentPath string) error {
 	var err error
 	dirPath := filepath.Join(parentPath, "bios")
 	br.ExtractPath, err = ExtractBinary(br.buf, dirPath, "biosregion.bin")
+	if err != nil {
+		return err
+	}
 
 	// Extract all FVs.
 	for _, fv := range br.FirmwareVolumes {
@@ -79,5 +82,5 @@ func (br *BIOSRegion) Extract(parentPath string) error {
 		}
 	}
 
-	return err
+	return nil
 }
