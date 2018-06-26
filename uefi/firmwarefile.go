@@ -67,6 +67,18 @@ type FirmwareFileHeaderExtended struct {
 type FirmwareFile struct {
 	Header FirmwareFileHeaderExtended
 	buf    []byte
+
+	//Metadata for extraction and recovery
+	ExtractPath string
+}
+
+// Extract extracts the FFS to the directory passed in.
+func (f *FirmwareFile) Extract(parentPath string) error {
+	// Dump the binary
+	var err error
+	// For files we just extract to the parentpath
+	f.ExtractPath, err = ExtractBinary(f.buf, parentPath, fmt.Sprintf("%v.ffs", f.Header.Name))
+	return err
 }
 
 // NewFirmwareFile parses a sequence of bytes and returns a FirmwareFile

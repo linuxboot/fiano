@@ -110,7 +110,18 @@ func (fv *FirmwareVolume) Extract(parentPath string) error {
 	var err error
 	dirPath := filepath.Join(parentPath, fmt.Sprintf("%#x", fv.FVOffset))
 	fv.ExtractPath, err = ExtractBinary(fv.buf, dirPath, "fv.bin")
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Extract all filess.
+	for _, f := range fv.Files {
+		if err = f.Extract(dirPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Validate Firmware Volume
