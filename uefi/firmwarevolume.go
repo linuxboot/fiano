@@ -164,20 +164,16 @@ func (fv *FirmwareVolume) Validate() []error {
 		errs = append(errs, fmt.Errorf("length mismatch!, header has %#x, buffer is %#x bytes long", fv.Length, fvlen))
 	}
 	// Check checksum
-	r := bytes.NewReader(fv.buf)
-	var temp, sum uint16
-	for i := uint16(0); i < fv.HeaderLen; i += 2 {
-		if err := binary.Read(r, binary.LittleEndian, &temp); err != nil {
-			errs = append(errs, fmt.Errorf("failed to read header for checksum, got %v", err))
-			// Terminate here
-			return errs
-		}
-		sum += temp
-	}
-	if sum != 0 {
+	sum, err := Checksum16(fv.buf[:fv.HeaderLen])
+	if err != nil {
+		errs = append(errs, fmt.Errorf("unable to checksum FV header: %v", err))
+	} else if sum != 0 {
 		errs = append(errs, fmt.Errorf("header did not sum to 0, got: %#x", sum))
 	}
 
+	for _, f := range fv.Files {
+		errs = append(errs, f.Validate()...)
+	}
 	return errs
 }
 
