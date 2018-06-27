@@ -2,6 +2,7 @@ package uefi
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,4 +48,31 @@ func ExtractBinary(buf []byte, dirPath string, filename string) (string, error) 
 		return "", err
 	}
 	return fp, nil
+}
+
+// Checksum8 does a 8 bit checksum of the slice passed in.
+func Checksum8(buf []byte) uint8 {
+	var sum uint8
+	for _, val := range buf {
+		sum += val
+	}
+	return sum
+}
+
+// Checksum16 does a 16 bit checksum of the byte slice passed in.
+func Checksum16(buf []byte) (uint16, error) {
+	r := bytes.NewReader(buf)
+	buflen := len(buf)
+	if buflen%2 != 0 {
+		return 0, fmt.Errorf("byte slice does not have even length, not able to do 16 bit checksum. Length was %v",
+			buflen)
+	}
+	var temp, sum uint16
+	for i := 0; i < buflen; i += 2 {
+		if err := binary.Read(r, binary.LittleEndian, &temp); err != nil {
+			return 0, err
+		}
+		sum += temp
+	}
+	return sum, nil
 }

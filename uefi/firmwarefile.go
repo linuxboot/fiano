@@ -41,16 +41,42 @@ const (
 const (
 	// FileHeaderMinLength is the minimum length of a firmware file header.
 	FileHeaderMinLength = 0x18
+	// FileHeaderExtMinLength is the minimum length of an extended firmware file header.
+	FileHeaderExtMinLength       = 0x20
+	emptyBodyChecksum      uint8 = 0xAA
 )
+
+// IntegrityCheck holds the two 8 bit checksums for the file header and body separately.
+type IntegrityCheck struct {
+	Header uint8
+	File   uint8
+}
+
+type fileAttr uint8
 
 // FirmwareFileHeader represents an EFI File header.
 type FirmwareFileHeader struct {
-	Name           uuid.UUID // This is the GUID of the file.
-	IntegrityCheck [2]uint8
-	Type           FVFileType
-	Attributes     uint8
-	Size           [3]uint8
-	State          uint8
+	Name       uuid.UUID // This is the GUID of the file.
+	Checksum   IntegrityCheck
+	Type       FVFileType
+	Attributes fileAttr
+	Size       [3]uint8
+	State      uint8
+}
+
+// Checks if the large file attribute is set
+func (a fileAttr) isLarge() bool {
+	return a&0x01 != 0
+}
+
+// Checks if we need to checksum the file body
+func (a fileAttr) hasChecksum() bool {
+	return a&0x40 != 0
+}
+
+func (f *FirmwareFile) size() uint64 {
+	return uint64(f.Header.Size[2])<<16 |
+		uint64(f.Header.Size[1])<<8 | uint64(f.Header.Size[0])
 }
 
 // FirmwareFileHeaderExtended represents an EFI File header with the
@@ -81,6 +107,71 @@ func (f *FirmwareFile) Extract(parentPath string) error {
 	return err
 }
 
+// Validate Firmware File
+func (f *FirmwareFile) Validate() []error {
+	errs := make([]error, 0)
+	buflen := uint64(len(f.buf))
+	blankSize := [3]byte{0xFF, 0xFF, 0xFF}
+	if buflen < FileHeaderMinLength {
+		errs = append(errs, fmt.Errorf("length too small!, buffer is only %#x bytes long", buflen))
+		return errs
+	}
+
+	// Size Checks
+	fh := &f.Header
+	if fh.Size == blankSize {
+		if buflen < FileHeaderExtMinLength {
+			errs = append(errs, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
+				fh.Name, buflen))
+			return errs
+		}
+		if !fh.Attributes.isLarge() {
+			errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
+				fh.Name))
+			return errs
+		}
+	} else if f.size() != fh.ExtendedSize {
+		errs = append(errs, fmt.Errorf("file %v size not copied into extendedsize",
+			fh.Name))
+		return errs
+	}
+	if buflen != fh.ExtendedSize {
+		errs = append(errs, fmt.Errorf("file %v size mismatch! Size is %#x, buf length is %#x",
+			fh.Name, fh.ExtendedSize, buflen))
+		return errs
+	}
+
+	// Header Checksums
+	headerSize := FileHeaderMinLength
+	if fh.Attributes.isLarge() {
+		headerSize = FileHeaderExtMinLength
+	}
+	// Sum over header without State and IntegrityCheck.File.
+	// To do that we just sum over the whole header and subtract.
+	// UEFI PI Spec 3.2.3 EFI_FFS_FILE_HEADER
+	sum := Checksum8(f.buf[:headerSize])
+	sum -= fh.Checksum.File
+	sum -= fh.State
+	if sum != 0 {
+		errs = append(errs, fmt.Errorf("file %v header checksum failure! sum was %v",
+			fh.Name, sum))
+	}
+
+	// Body Checksum
+	if !fh.Attributes.hasChecksum() && fh.Checksum.File != emptyBodyChecksum {
+		errs = append(errs, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
+			fh.Name, sum, emptyBodyChecksum))
+	} else if fh.Attributes.hasChecksum() {
+		sum = Checksum8(f.buf[headerSize:])
+		if sum != 0 {
+			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
+				fh.Name, sum))
+		}
+	}
+
+	return errs
+}
+
 // NewFirmwareFile parses a sequence of bytes and returns a FirmwareFile
 // object, if a valid one is passed, or an error. If no error is returned and the FirmwareFile
 // pointer is nil, it means we've reached the volume free space at the end of the FV.
@@ -107,8 +198,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 	} else {
 		// Copy small size into big for easier handling.
 		// Damn the 3 byte sizes.
-		f.Header.ExtendedSize = uint64(f.Header.Size[2])<<16 |
-			uint64(f.Header.Size[1])<<8 | uint64(f.Header.Size[0])
+		f.Header.ExtendedSize = f.size()
 	}
 
 	if buflen := len(buf); f.Header.ExtendedSize > uint64(buflen) {
