@@ -70,11 +70,11 @@ func (a fileAttr) isLarge() bool {
 }
 
 // Checks if we need to checksum the file body
-func (a fileAttr) checksum() bool {
+func (a fileAttr) hasChecksum() bool {
 	return a&0x40 != 0
 }
 
-func (f *FirmwareFile) readSize() uint64 {
+func (f *FirmwareFile) size() uint64 {
 	return uint64(f.Header.Size[2])<<16 |
 		uint64(f.Header.Size[1])<<8 | uint64(f.Header.Size[0])
 }
@@ -119,12 +119,18 @@ func (f *FirmwareFile) Validate() []error {
 
 	// Size Checks
 	fh := &f.Header
-	if fh.Size == blankSize && buflen < FileHeaderExtMinLength {
-		errs = append(errs, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
-			fh.Name, buflen))
-		return errs
-	}
-	if fh.Size != blankSize && f.readSize() != fh.ExtendedSize {
+	if fh.Size == blankSize {
+		if buflen < FileHeaderExtMinLength {
+			errs = append(errs, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
+				fh.Name, buflen))
+			return errs
+		}
+		if !fh.Attributes.isLarge() {
+			errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
+				fh.Name))
+			return errs
+		}
+	} else if f.size() != fh.ExtendedSize {
 		errs = append(errs, fmt.Errorf("file %v size not copied into extendedsize",
 			fh.Name))
 		return errs
@@ -134,26 +140,16 @@ func (f *FirmwareFile) Validate() []error {
 			fh.Name, fh.ExtendedSize, buflen))
 		return errs
 	}
-	if fh.Size == blankSize && !fh.Attributes.isLarge() {
-		errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
-			fh.Name))
-		return errs
-	}
 
 	// Header Checksums
-	var headerSize int
+	headerSize := FileHeaderMinLength
 	if fh.Attributes.isLarge() {
 		headerSize = FileHeaderExtMinLength
-	} else {
-		headerSize = FileHeaderMinLength
 	}
 	// Sum over header without State and IntegrityCheck.File.
 	// To do that we just sum over the whole header and subtract.
-	var sum uint8
-	h := f.buf[:headerSize]
-	for _, val := range h {
-		sum += val
-	}
+	// UEFI PI Spec 3.2.3 EFI_FFS_FILE_HEADER
+	sum := Checksum8(f.buf[:headerSize])
 	sum -= fh.Checksum.File
 	sum -= fh.State
 	if sum != 0 {
@@ -162,15 +158,11 @@ func (f *FirmwareFile) Validate() []error {
 	}
 
 	// Body Checksum
-	if !fh.Attributes.checksum() && fh.Checksum.File != emptyBodyChecksum {
+	if !fh.Attributes.hasChecksum() && fh.Checksum.File != emptyBodyChecksum {
 		errs = append(errs, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
 			fh.Name, sum, emptyBodyChecksum))
-	} else if fh.Attributes.checksum() {
-		sum = 0
-		bufbody := f.buf[headerSize:]
-		for _, val := range bufbody {
-			sum += val
-		}
+	} else if fh.Attributes.hasChecksum() {
+		sum = Checksum8(f.buf[headerSize:])
 		if sum != 0 {
 			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
 				fh.Name, sum))
@@ -206,7 +198,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 	} else {
 		// Copy small size into big for easier handling.
 		// Damn the 3 byte sizes.
-		f.Header.ExtendedSize = f.readSize()
+		f.Header.ExtendedSize = f.size()
 	}
 
 	if buflen := len(buf); f.Header.ExtendedSize > uint64(buflen) {
