@@ -3,6 +3,7 @@ package uefi
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 )
 
@@ -44,4 +45,14 @@ func (pd *PDRegion) Extract(parentPath string) error {
 	// We just dump the binary for now
 	pd.ExtractPath, err = ExtractBinary(pd.buf, dirPath, "pdregion.bin")
 	return err
+}
+
+// Assemble assembles the Bios Region from the binary file.
+func (pd *PDRegion) Assemble() ([]byte, error) {
+	var err error
+	pd.buf, err = ioutil.ReadFile(pd.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return pd.buf, nil
 }

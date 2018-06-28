@@ -15,6 +15,7 @@ import (
 type Firmware interface {
 	Validate() []error
 	Extract(dirpath string) error
+	Assemble() ([]byte, error)
 }
 
 // Parse exposes a high-level parser for generic firmware types. It does not

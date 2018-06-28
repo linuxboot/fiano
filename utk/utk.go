@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/google/subcommands"
 	"github.com/linuxboot/fiano/uefi"
@@ -119,12 +120,63 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	}
 	return subcommands.ExitSuccess
 }
+
+// Assemble subcommand
+type assembleCmd struct {
+}
+
+func (*assembleCmd) Name() string {
+	return "assemble"
+}
+
+func (*assembleCmd) Synopsis() string {
+	return "Assemble rom file from directory tree."
+}
+
+func (*assembleCmd) Usage() string {
+	return "assemble <directory-to-assemble-from> <newromfile>\n"
+}
+
+func (*assembleCmd) SetFlags(_ *flag.FlagSet) {}
+
+func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+	args := f.Args()
+	if len(args) < 2 {
+		log.Print(a.Usage())
+		return subcommands.ExitUsageError
+	}
+
+	dir := args[0]
+	jsonFile := filepath.Join(dir, "summary.json")
+	jsonbuf, err := ioutil.ReadFile(jsonFile)
+	var flash uefi.FlashImage
+	if err := json.Unmarshal(jsonbuf, &flash); err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+
+	buf, err := flash.Assemble()
+	if err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	romfile := args[1]
+	err = ioutil.WriteFile(romfile, buf, 0644)
+	if err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+
+	return subcommands.ExitSuccess
+}
+
 func main() {
 	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.FlagsCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&parseCmd{}, "")
 	subcommands.Register(&extractCmd{}, "")
+	subcommands.Register(&assembleCmd{}, "")
 	flag.Parse()
 
 	ctx := context.Background()

@@ -3,6 +3,7 @@ package uefi
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 )
 
@@ -83,4 +84,14 @@ func (br *BIOSRegion) Extract(parentPath string) error {
 	}
 
 	return nil
+}
+
+// Assemble assembles the Bios Region from the binary file.
+func (br *BIOSRegion) Assemble() ([]byte, error) {
+	var err error
+	br.buf, err = ioutil.ReadFile(br.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return br.buf, nil
 }

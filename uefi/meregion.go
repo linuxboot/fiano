@@ -3,6 +3,7 @@ package uefi
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 )
 
@@ -44,4 +45,14 @@ func (me *MERegion) Extract(parentPath string) error {
 	// We just dump the binary for now
 	me.ExtractPath, err = ExtractBinary(me.buf, dirPath, "meregion.bin")
 	return err
+}
+
+// Assemble assembles the ME Region from the binary file.
+func (me *MERegion) Assemble() ([]byte, error) {
+	var err error
+	me.buf, err = ioutil.ReadFile(me.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return me.buf, nil
 }
