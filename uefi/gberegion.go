@@ -3,6 +3,7 @@ package uefi
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 )
 
@@ -44,4 +45,14 @@ func (gbe *GBERegion) Extract(parentPath string) error {
 	// We just dump the binary for now
 	gbe.ExtractPath, err = ExtractBinary(gbe.buf, dirPath, "gberegion.bin")
 	return err
+}
+
+// Assemble assembles the GBE Region from the binary file.
+func (gbe *GBERegion) Assemble() ([]byte, error) {
+	var err error
+	gbe.buf, err = ioutil.ReadFile(gbe.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return gbe.buf, nil
 }
