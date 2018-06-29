@@ -13,7 +13,7 @@ import (
 type BIOSRegion struct {
 	// holds the raw data
 	buf             []byte
-	FirmwareVolumes []FirmwareVolume
+	FirmwareVolumes []*FirmwareVolume
 
 	//Metadata for extraction and recovery
 	ExtractPath string
@@ -40,7 +40,7 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 		}
 		absOffset += fv.Length
 		buf = buf[uint64(offset)+fv.Length:]
-		br.FirmwareVolumes = append(br.FirmwareVolumes, *fv)
+		br.FirmwareVolumes = append(br.FirmwareVolumes, fv)
 		// FIXME remove the `break` and move the offset to the next location to
 		// search for FVs (i.e. offset + fv.size)
 	}
@@ -93,5 +93,18 @@ func (br *BIOSRegion) Assemble() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Assemble the Firmware Volumes
+	for _, fv := range br.FirmwareVolumes {
+		buf, err := fv.Assemble()
+		if err != nil {
+			return nil, err
+		}
+		// copy the fv over the original
+		// TODO: handle different sizes.
+		// We'll have to FF out the new regions/ check for clashes
+		copy(br.buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
+	}
+
 	return br.buf, nil
 }

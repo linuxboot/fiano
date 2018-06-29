@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
 	uuid "github.com/linuxboot/fiano/uuid"
@@ -94,7 +95,7 @@ type FirmwareVolume struct {
 	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
 	FirmwareVolumeExtHeader
-	Files []FirmwareFile
+	Files []*FirmwareFile
 
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset  uint64
@@ -175,6 +176,20 @@ func (fv *FirmwareVolume) Validate() []error {
 		errs = append(errs, f.Validate()...)
 	}
 	return errs
+}
+
+// Assemble assembles the Firmware Volume from the binary file.
+// TODO: HANDLE HEADER CHANGES.
+// We assume the FV length hasn't changed, and we assume the FV offset is the same as specified in
+// the JSON. We also don't check that the extended header or data offset is the same.
+// This is not something that's expected to change easily.
+func (fv *FirmwareVolume) Assemble() ([]byte, error) {
+	var err error
+	fv.buf, err = ioutil.ReadFile(fv.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return fv.buf, nil
 }
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
@@ -262,7 +277,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 			// We've reached free space. Terminate
 			break
 		}
-		fv.Files = append(fv.Files, *file)
+		fv.Files = append(fv.Files, file)
 		prevLen = file.Header.ExtendedSize
 	}
 
