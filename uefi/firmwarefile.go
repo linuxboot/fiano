@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -96,6 +97,16 @@ type FirmwareFile struct {
 
 	//Metadata for extraction and recovery
 	ExtractPath string
+}
+
+// Assemble assembles the Firmware File from the binary
+func (f *FirmwareFile) Assemble() ([]byte, error) {
+	var err error
+	f.buf, err = ioutil.ReadFile(f.ExtractPath)
+	if err != nil {
+		return nil, err
+	}
+	return f.buf, nil
 }
 
 // Extract extracts the FFS to the directory passed in.

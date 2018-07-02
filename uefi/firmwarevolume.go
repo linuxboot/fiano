@@ -115,7 +115,7 @@ func (fv *FirmwareVolume) Extract(parentPath string) error {
 		return err
 	}
 
-	// Extract all filess.
+	// Extract all files.
 	for _, f := range fv.Files {
 		if err = f.Extract(dirPath); err != nil {
 			return err
@@ -178,6 +178,12 @@ func (fv *FirmwareVolume) Validate() []error {
 	return errs
 }
 
+func fillFFs(b []byte) {
+	for i := range b {
+		b[i] = 0xFF
+	}
+}
+
 // Assemble assembles the Firmware Volume from the binary file.
 // TODO: HANDLE HEADER CHANGES.
 // We assume the FV length hasn't changed, and we assume the FV offset is the same as specified in
@@ -188,6 +194,38 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 	fv.buf, err = ioutil.ReadFile(fv.ExtractPath)
 	if err != nil {
 		return nil, err
+	}
+	// Make sure we don't go over the size.
+	fvLen := uint64(len(fv.buf))
+	fOffset := fv.DataOffset
+	for _, f := range fv.Files {
+		fBuf, err := f.Assemble()
+		if err != nil {
+			return nil, err
+		}
+		fLen := uint64(len(fBuf))
+		// We have to pad to the 8 byte alignments.
+		alignedOffset := align8(fOffset)
+		if alignedOffset > fvLen {
+			return nil, fmt.Errorf("insufficient space in %#x bytes FV, files too big", fvLen)
+		}
+		fillFFs(fv.buf[fOffset:alignedOffset])
+		fOffset = alignedOffset
+
+		// Check size
+		if fLen+fOffset > fvLen {
+			// TODO: Actually loop through and calculate the full size so we know how much to reduce by.
+			// For now we just return early
+			return nil, fmt.Errorf("insufficient space in %#x bytes FV, files too big", fvLen)
+		}
+		// Overwrite old data in the firmware volume.
+		copy(fv.buf[fOffset:], fBuf)
+		fOffset += fLen
+	}
+
+	// Fill to the end with FFs
+	if fOffset < fvLen {
+		fillFFs(fv.buf[fOffset:fvLen])
 	}
 	return fv.buf, nil
 }
