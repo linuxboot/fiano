@@ -18,7 +18,7 @@ type BIOSRegion struct {
 	//Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
-	Position *Region
+	Position *Region `json:",omitempty"`
 }
 
 // NewBIOSRegion parses a sequence of bytes and returns a BIOSRegion

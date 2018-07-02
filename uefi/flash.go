@@ -131,10 +131,10 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	BIOS *BIOSRegion
-	ME   *MERegion
-	GBE  *GBERegion
-	PD   *PDRegion
+	BIOS *BIOSRegion `json:",omitempty"`
+	ME   *MERegion   `json:",omitempty"`
+	GBE  *GBERegion  `json:",omitempty"`
+	PD   *PDRegion   `json:",omitempty"`
 
 	// Metadata for extraction and recovery
 	ExtractPath string
