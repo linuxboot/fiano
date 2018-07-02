@@ -70,6 +70,7 @@ func (*parseCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) s
 
 // Extract subcommand
 type extractCmd struct {
+	force bool
 }
 
 func (*extractCmd) Name() string {
@@ -84,7 +85,9 @@ func (*extractCmd) Usage() string {
 	return "extract <path-to-rom-file> <directory-to-extract-into>\n"
 }
 
-func (*extractCmd) SetFlags(_ *flag.FlagSet) {}
+func (e *extractCmd) SetFlags(f *flag.FlagSet) {
+	f.BoolVar(&e.force, "force", false, "force extract to non empty directory")
+}
 
 func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	args := f.Args()
@@ -111,6 +114,21 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	}
 	if len(errlist) > 0 {
 		return subcommands.ExitFailure
+	}
+
+	if !e.force {
+		// check that directory doesn't exist or is empty
+		files, err := ioutil.ReadDir(args[1])
+		if err == nil {
+			if len(files) != 0 {
+				log.Print("Existing directory not empty, use --force to override")
+				return subcommands.ExitFailure
+			}
+		} else if !os.IsNotExist(err) {
+			// error was not EEXIST, we don't know what went wrong.
+			log.Print(err)
+			return subcommands.ExitFailure
+		}
 	}
 
 	err = flash.Extract(args[1])
