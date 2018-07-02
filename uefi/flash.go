@@ -221,6 +221,10 @@ func (f *FlashImage) Assemble() ([]byte, error) {
 		buf []byte
 	}
 	regions := make([]region, 0, 4)
+
+	if f.BIOS == nil {
+		return nil, errors.New("bios struct is nil, json is probably malformed")
+	}
 	// Point position to struct read from IFD rather than json.
 	f.BIOS.Position = &f.IFD.Region.BIOS
 	biosbuf, err := f.BIOS.Assemble()
