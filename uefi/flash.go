@@ -39,7 +39,8 @@ type FlashDescriptor struct {
 	ExtractPath string
 }
 
-func findSignature(buf []byte) (int, error) {
+// FindSignature searchs for an Intel flash signature.
+func FindSignature(buf []byte) (int, error) {
 	if bytes.Equal(buf[16:16+FlashSignatureLength], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
@@ -58,7 +59,7 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 		return fmt.Errorf("flash descriptor length not %#x, was %#x", FlashDescriptorLength, buflen)
 	}
 
-	descriptorMapStart, err := findSignature(fd.buf)
+	descriptorMapStart, err := FindSignature(fd.buf)
 	if err != nil {
 		return err
 	}
@@ -157,7 +158,7 @@ func (f *FlashImage) IsPCH() bool {
 // from the start of the image. The PCH images are located at offset 16, while
 // in ICH8/9/10 they start at 0. If no signature is found, it returns -1.
 func (f *FlashImage) FindSignature() (int, error) {
-	return findSignature(f.buf)
+	return FindSignature(f.buf)
 }
 
 // Validate runs a set of checks on the flash image and returns a list of
