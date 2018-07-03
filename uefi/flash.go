@@ -3,7 +3,6 @@ package uefi
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -194,14 +193,7 @@ func (f *FlashImage) Extract(dirPath string) error {
 		}
 	}
 
-	// Output summary json. This must be done after all other extract calls so that
-	// any metadata fields in sub structures are generated properly.
-	jsonPath := filepath.Join(absDirPath, "summary.json")
-	b, err := json.MarshalIndent(f, "", "    ")
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(jsonPath, b, 0666)
+	return nil
 }
 
 // Assemble assembles the FlashImage starting from the bottom up.
