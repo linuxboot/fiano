@@ -51,10 +51,7 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 func (br *BIOSRegion) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
-	if br.Position == nil {
-		errs = append(errs, errors.New("BIOSRegion position is nil"))
-	}
-	if !br.Position.Valid() {
+	if br.Position != nil && !br.Position.Valid() {
 		errs = append(errs, fmt.Errorf("BIOSRegion is not valid, region was %v", *br.Position))
 	}
 	if len(br.FirmwareVolumes) == 0 {

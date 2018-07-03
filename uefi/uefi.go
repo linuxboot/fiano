@@ -22,14 +22,13 @@ type Firmware interface {
 // implement any parser itself, but it calls known parsers that implement the
 // Firmware interface.
 func Parse(buf []byte) (Firmware, error) {
-	switch {
-	case len(buf) >= 20 && bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature):
+	if _, err := FindSignature(buf); err == nil {
+		// Intel rom.
 		return NewFlashImage(buf)
-	case bytes.Equal(buf[:len(FlashSignature)], FlashSignature):
-		return NewFlashImage(buf)
-	default:
-		return nil, fmt.Errorf("Unknown firmware type")
 	}
+	// Non intel image such as edk2's OVMF
+	// We don't know how to parse this header, so treat it as a large BIOSRegion
+	return NewBIOSRegion(buf, nil)
 }
 
 // ExtractBinary simply dumps the binary to a specified directory and filename.
