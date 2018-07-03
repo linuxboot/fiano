@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -46,12 +45,12 @@ func (*parseCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) s
 		return subcommands.ExitFailure
 	}
 
-	flash, err := uefi.Parse(buf)
+	firmware, err := uefi.Parse(buf)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
-	errlist := flash.Validate()
+	errlist := firmware.Validate()
 	for _, err := range errlist {
 		log.Printf("Error found: %v\n", err.Error())
 	}
@@ -59,7 +58,7 @@ func (*parseCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) s
 		return subcommands.ExitFailure
 	}
 
-	b, err := json.MarshalIndent(flash, "", "    ")
+	b, err := uefi.MarshalFirmware(firmware)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
@@ -103,12 +102,12 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		return subcommands.ExitFailure
 	}
 
-	flash, err := uefi.Parse(buf)
+	firmware, err := uefi.Parse(buf)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
-	errlist := flash.Validate()
+	errlist := firmware.Validate()
 	for _, err := range errlist {
 		log.Printf("Error found: %v\n", err.Error())
 	}
@@ -131,7 +130,21 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		}
 	}
 
-	err = flash.Extract(args[1])
+	// Extract all elements.
+	err = firmware.Extract(args[1])
+	if err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	// Output summary json. This must be done after all other extract calls so that
+	// any metadata fields in sub structures are generated properly.
+	jsonPath := filepath.Join(args[1], "summary.json")
+	json, err := uefi.MarshalFirmware(firmware)
+	if err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	err = ioutil.WriteFile(jsonPath, json, 0666)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
@@ -167,13 +180,13 @@ func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 	dir := args[0]
 	jsonFile := filepath.Join(dir, "summary.json")
 	jsonbuf, err := ioutil.ReadFile(jsonFile)
-	var flash uefi.FlashImage
-	if err := json.Unmarshal(jsonbuf, &flash); err != nil {
+	firmware, err := uefi.UnmarshalFirmware(jsonbuf)
+	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
 
-	buf, err := flash.Assemble()
+	buf, err := firmware.Assemble()
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
