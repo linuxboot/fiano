@@ -3,10 +3,12 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 // Firmware is an interface to describe generic firmware types. The
@@ -16,6 +18,44 @@ type Firmware interface {
 	Validate() []error
 	Extract(dirpath string) error
 	Assemble() ([]byte, error)
+}
+
+// This should never be exposed, it is only used for marshalling different types to json.
+type marshalFirmware struct {
+	FType           string
+	FirmwareElement json.RawMessage
+}
+
+var firmwareTypes = map[string]Firmware{}
+
+func init() {
+	firmwareTypes["*uefi.FlashImage"] = new(FlashImage)
+	firmwareTypes["*uefi.BIOSRegion"] = new(BIOSRegion)
+}
+
+// MarshalFirmware marshals the firmware element to JSON, including the type information at the top.
+func MarshalFirmware(f Firmware) ([]byte, error) {
+	b, err := json.MarshalIndent(f, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	m := marshalFirmware{FType: reflect.TypeOf(f).String(), FirmwareElement: json.RawMessage(b)}
+	return json.MarshalIndent(m, "", "    ")
+}
+
+// UnmarshalFirmware unmarshals the firmware element from JSON, using the type information at the top.
+func UnmarshalFirmware(b []byte) (Firmware, error) {
+	var m marshalFirmware
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+	f, ok := firmwareTypes[m.FType]
+	if !ok {
+		return nil, fmt.Errorf("unknown Firmware type %s, unable to unmarshal", m.FType)
+	}
+	err := json.Unmarshal(m.FirmwareElement, &f)
+	return f, err
 }
 
 // Parse exposes a high-level parser for generic firmware types. It does not
