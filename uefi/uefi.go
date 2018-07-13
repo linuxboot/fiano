@@ -116,3 +116,23 @@ func Checksum16(buf []byte) (uint16, error) {
 	}
 	return sum, nil
 }
+
+// Read3Size reads a 3-byte size and returns it as a uint64
+func Read3Size(size [3]uint8) uint64 {
+	return uint64(size[2])<<16 |
+		uint64(size[1])<<8 | uint64(size[0])
+}
+
+func align(val uint64, base uint64) uint64 {
+	return (val + base - 1) & ^(base - 1)
+}
+
+// Align4 aligns an address to 4 bytes
+func Align4(val uint64) uint64 {
+	return align(val, 4)
+}
+
+// Align8 aligns an address to 8 bytes
+func Align8(val uint64) uint64 {
+	return align(val, 8)
+}
