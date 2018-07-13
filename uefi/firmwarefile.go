@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -75,11 +76,6 @@ func (a fileAttr) hasChecksum() bool {
 	return a&0x40 != 0
 }
 
-func (f *FirmwareFile) size() uint64 {
-	return uint64(f.Header.Size[2])<<16 |
-		uint64(f.Header.Size[1])<<8 | uint64(f.Header.Size[0])
-}
-
 // FirmwareFileHeaderExtended represents an EFI File header with the
 // large file attribute set.
 // We also use this as the generic header for all EFI files, regardless of whether
@@ -92,11 +88,13 @@ type FirmwareFileHeaderExtended struct {
 
 // FirmwareFile represents an EFI File.
 type FirmwareFile struct {
-	Header FirmwareFileHeaderExtended
-	buf    []byte
+	Header   FirmwareFileHeaderExtended
+	Sections []*FileSection
 
 	//Metadata for extraction and recovery
+	buf         []byte
 	ExtractPath string
+	DataOffset  uint64
 }
 
 // Assemble assembles the Firmware File from the binary
@@ -113,9 +111,20 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 func (f *FirmwareFile) Extract(parentPath string) error {
 	// Dump the binary
 	var err error
-	// For files we just extract to the parentpath
-	f.ExtractPath, err = ExtractBinary(f.buf, parentPath, fmt.Sprintf("%v.ffs", f.Header.Name))
-	return err
+	// For files we use the GUID as the folder name.
+	dirPath := filepath.Join(parentPath, f.Header.Name.String())
+	f.ExtractPath, err = ExtractBinary(f.buf, dirPath, fmt.Sprintf("%v.ffs", f.Header.Name))
+	if err != nil {
+		return err
+	}
+	// extract the sections
+	for _, s := range f.Sections {
+		err = s.Extract(dirPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Validate Firmware File
@@ -141,7 +150,7 @@ func (f *FirmwareFile) Validate() []error {
 				fh.Name))
 			return errs
 		}
-	} else if f.size() != fh.ExtendedSize {
+	} else if Read3Size(f.Header.Size) != fh.ExtendedSize {
 		errs = append(errs, fmt.Errorf("file %v size not copied into extendedsize",
 			fh.Name))
 		return errs
@@ -180,6 +189,9 @@ func (f *FirmwareFile) Validate() []error {
 		}
 	}
 
+	for _, s := range f.Sections {
+		errs = append(errs, s.Validate()...)
+	}
 	return errs
 }
 
@@ -188,6 +200,7 @@ func (f *FirmwareFile) Validate() []error {
 // pointer is nil, it means we've reached the volume free space at the end of the FV.
 func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 	f := FirmwareFile{}
+	f.DataOffset = FileHeaderMinLength
 	// Read in standard header.
 	r := bytes.NewReader(buf)
 	if err := binary.Read(r, binary.LittleEndian, &f.Header.FirmwareFileHeader); err != nil {
@@ -206,19 +219,39 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 			// Note: this is not a pad file. Pad files also have valid headers.
 			return nil, nil
 		}
+		f.DataOffset = FileHeaderExtMinLength
 	} else {
 		// Copy small size into big for easier handling.
 		// Damn the 3 byte sizes.
-		f.Header.ExtendedSize = f.size()
+		f.Header.ExtendedSize = Read3Size(f.Header.Size)
 	}
 
 	if buflen := len(buf); f.Header.ExtendedSize > uint64(buflen) {
-		// Our size is exactly the size of a guid. No error will be returned.
 		return nil, fmt.Errorf("File size too big! File with GUID: %v has length %v, but is only %v bytes big",
 			f.Header.Name, f.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
 	f.buf = buf[:f.Header.ExtendedSize]
+
+	// Parse sections
+	switch f.Header.Type {
+	case fvFileTypeRaw:
+		fallthrough
+	case fvFileTypePad:
+		// We don't handle sections for all of the above
+		return &f, nil
+	}
+	for offset := f.DataOffset; offset < f.Header.ExtendedSize; {
+		s, err := NewFileSection(f.buf[offset:])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.Name, err)
+		}
+		offset += uint64(s.Header.ExtendedSize)
+		// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
+		// but UEFITool aligns to 4 bytes, and this seems to work on everything I have.
+		offset = Align4(offset)
+		f.Sections = append(f.Sections, s)
+	}
 
 	return &f, nil
 }
