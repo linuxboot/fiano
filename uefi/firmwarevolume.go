@@ -205,7 +205,7 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 		}
 		fLen := uint64(len(fBuf))
 		// We have to pad to the 8 byte alignments.
-		alignedOffset := align8(fOffset)
+		alignedOffset := Align8(fOffset)
 		if alignedOffset > fvLen {
 			return nil, fmt.Errorf("insufficient space in %#x bytes FV, files too big", fvLen)
 		}
@@ -247,10 +247,6 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 		}
 	}
 	return -1
-}
-
-func align8(val uint64) uint64 {
-	return (val + 7) & ^uint64(7)
 }
 
 // NewFirmwareVolume parses a sequence of bytes and returns a FirmwareVolume
@@ -296,7 +292,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	}
 	// Make sure DataOffset is 8 byte aligned at least.
 	// TODO: handle alignment field in header.
-	fv.DataOffset = align8(fv.DataOffset)
+	fv.DataOffset = Align8(fv.DataOffset)
 
 	fv.fvType = FVGUIDs[fv.FileSystemGUID]
 	fv.FVOffset = fvOffset
@@ -306,7 +302,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	// Start from the end of the fv header.
 	lh := fv.Length - FileHeaderMinLength
 	for offset, prevLen := fv.DataOffset, uint64(0); offset < lh; offset += prevLen {
-		offset = align8(offset)
+		offset = Align8(offset)
 		file, err := NewFirmwareFile(data[offset:])
 		if err != nil {
 			return nil, fmt.Errorf("unable to construct firmware file at offset %#x into FV: %v", offset, err)
