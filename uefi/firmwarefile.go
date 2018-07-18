@@ -133,7 +133,7 @@ func (f *FirmwareFile) Validate() []error {
 	buflen := uint64(len(f.buf))
 	blankSize := [3]byte{0xFF, 0xFF, 0xFF}
 	if buflen < FileHeaderMinLength {
-		errs = append(errs, fmt.Errorf("length too small!, buffer is only %#x bytes long", buflen))
+		errs = append(errs, fmt.Errorf("file length too small!, buffer is only %#x bytes long", buflen))
 		return errs
 	}
 
