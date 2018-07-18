@@ -20,6 +20,8 @@ const (
 // FVGUIDs holds common FV type names
 var FVGUIDs map[uuid.UUID]string
 
+var supportedFVs map[uuid.UUID]bool
+
 // Valid FV GUIDs
 var (
 	FFS1      *uuid.UUID
@@ -55,6 +57,12 @@ func init() {
 	FVGUIDs[*AppleBoot] = "APPLE_BOOT"
 	FVGUIDs[*PFH1] = "PFH1"
 	FVGUIDs[*PFH2] = "PFH2"
+
+	// These are the FVs we actually try to parse beyond the header
+	// We don't parse anything except FFS2 and FFS3
+	supportedFVs = make(map[uuid.UUID]bool)
+	supportedFVs[*FFS2] = true
+	supportedFVs[*FFS3] = true
 }
 
 // Block describes number and size of the firmware volume blocks
@@ -195,6 +203,11 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok {
+		// we don't support this fv type, just return the raw buffer.
+		return fv.buf, nil
+	}
 	// Make sure we don't go over the size.
 	fvLen := uint64(len(fv.buf))
 	fOffset := fv.DataOffset
@@ -303,12 +316,8 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	// Parse the files.
 	// TODO: handle fv data alignment.
 	// Start from the end of the fv header.
-	// We don't parse anything except FFS2 and FFS3
-	switch fv.FileSystemGUID {
-	case *FFS2:
-	case *FFS3:
-	default:
-		// In all others, we don't know what to do, just return.
+	// Test if the fv type is supported.
+	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok {
 		return &fv, nil
 	}
 	lh := fv.Length - FileHeaderMinLength
