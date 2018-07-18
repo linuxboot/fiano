@@ -297,9 +297,20 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	fv.fvType = FVGUIDs[fv.FileSystemGUID]
 	fv.FVOffset = fvOffset
 
+	// slice the buffer
+	fv.buf = data[:fv.Length]
+
 	// Parse the files.
 	// TODO: handle fv data alignment.
 	// Start from the end of the fv header.
+	// We don't parse anything except FFS2 and FFS3
+	switch fv.FileSystemGUID {
+	case *FFS2:
+	case *FFS3:
+	default:
+		// In all others, we don't know what to do, just return.
+		return &fv, nil
+	}
 	lh := fv.Length - FileHeaderMinLength
 	for offset, prevLen := fv.DataOffset, uint64(0); offset < lh; offset += prevLen {
 		offset = Align8(offset)
@@ -314,8 +325,5 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 		fv.Files = append(fv.Files, file)
 		prevLen = file.Header.ExtendedSize
 	}
-
-	// slice the buffer
-	fv.buf = data[:fv.Length]
 	return &fv, nil
 }
