@@ -40,6 +40,24 @@ const (
 	fvFileTypeFFSMax   FVFileType = 0xFF
 )
 
+var supportedFiles = map[FVFileType]bool{
+	// These are the file types that we'll actually try to parse sections for.
+	fvFileTypeFreeForm:           true,
+	fvFileTypeSECCore:            true,
+	fvFileTypePEICore:            true,
+	fvFileTypeDXECore:            true,
+	fvFileTypePEIM:               true,
+	fvFileTypeDriver:             true,
+	fvFileTypeCombinedPEIMDriver: true,
+	fvFileTypeApplication:        true,
+	fvFileTypeSMM:                true,
+	fvFileTypeVolumeImage:        true,
+	fvFileTypeCombinedSMMDXE:     true,
+	fvFileTypeSMMCore:            true,
+	fvFileTypeSMMStandalone:      true,
+	fvFileTypeSMMCoreStandalone:  true,
+}
+
 const (
 	// FileHeaderMinLength is the minimum length of a firmware file header.
 	FileHeaderMinLength = 0x18
@@ -234,11 +252,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 	f.buf = buf[:f.Header.ExtendedSize]
 
 	// Parse sections
-	switch f.Header.Type {
-	case fvFileTypeRaw:
-		fallthrough
-	case fvFileTypePad:
-		// We don't handle sections for all of the above
+	if _, ok := supportedFiles[f.Header.Type]; !ok {
 		return &f, nil
 	}
 	for offset := f.DataOffset; offset < f.Header.ExtendedSize; {
