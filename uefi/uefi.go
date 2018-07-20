@@ -123,6 +123,15 @@ func Read3Size(size [3]uint8) uint64 {
 		uint64(size[1])<<8 | uint64(size[0])
 }
 
+// Write3Size writes a size into a 3-byte array
+func Write3Size(size uint64) [3]uint8 {
+	if size >= 0xFFFFFF {
+		return [3]uint8{0xFF, 0xFF, 0xFF}
+	}
+	b := [3]uint8{uint8(size), uint8(size >> 8), uint8(size >> 16)}
+	return b
+}
+
 func align(val uint64, base uint64) uint64 {
 	return (val + base - 1) & ^(base - 1)
 }
