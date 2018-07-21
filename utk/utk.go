@@ -76,8 +76,9 @@ func (p *parseCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{})
 
 // Extract subcommand
 type extractCmd struct {
-	force bool
-	warn  bool
+	force  bool
+	warn   bool
+	remove bool
 }
 
 func (*extractCmd) Name() string {
@@ -95,6 +96,7 @@ func (*extractCmd) Usage() string {
 func (e *extractCmd) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&e.force, "force", false, "force extract to non empty directory")
 	f.BoolVar(&e.warn, "warn", false, "warn instead of fail on validation errors")
+	f.BoolVar(&e.remove, "remove", false, "remove existing directory before extracting")
 }
 
 func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
@@ -125,6 +127,11 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		return subcommands.ExitFailure
 	}
 
+	if e.remove {
+		if err := os.RemoveAll(args[1]); err != nil {
+			log.Printf("Error removing path %v, got %v\n", args[1], err)
+		}
+	}
 	if !e.force {
 		// check that directory doesn't exist or is empty
 		files, err := ioutil.ReadDir(args[1])
