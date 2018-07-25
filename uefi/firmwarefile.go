@@ -144,8 +144,9 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 	var err error
 
 	fh := &f.Header
-	if _, ok := supportedFiles[fh.Type]; !ok {
+	if _, ok := supportedFiles[fh.Type]; !ok || len(f.Sections) == 0 {
 		// we don't support this file type, just return the raw buffer.
+		// Or we've removed the sections and just want to replace the file directly
 		f.buf, err = ioutil.ReadFile(f.ExtractPath)
 		if err != nil {
 			return nil, err
