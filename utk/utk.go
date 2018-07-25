@@ -148,20 +148,29 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	}
 
 	// Extract all elements.
-	err = firmware.Extract(args[1])
+	// Create the directory if it doesn't exist
+	if err := os.MkdirAll(args[1], 0755); err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	// Change working directory so we can use relative paths
+	if err := os.Chdir(args[1]); err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	err = firmware.Extract(".")
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
 	// Output summary json. This must be done after all other extract calls so that
 	// any metadata fields in sub structures are generated properly.
-	jsonPath := filepath.Join(args[1], "summary.json")
 	json, err := uefi.MarshalFirmware(firmware)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
-	err = ioutil.WriteFile(jsonPath, json, 0666)
+	err = ioutil.WriteFile("summary.json", json, 0666)
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
@@ -198,9 +207,17 @@ func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitUsageError
 	}
 
-	dir := args[0]
-	jsonFile := filepath.Join(dir, "summary.json")
-	jsonbuf, err := ioutil.ReadFile(jsonFile)
+	romfile, err := filepath.Abs(args[1])
+	if err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	// Change working directory so we can use relative paths
+	if err := os.Chdir(args[0]); err != nil {
+		log.Print(err)
+		return subcommands.ExitFailure
+	}
+	jsonbuf, err := ioutil.ReadFile("summary.json")
 	firmware, err := uefi.UnmarshalFirmware(jsonbuf)
 	if err != nil {
 		log.Print(err)
@@ -212,7 +229,6 @@ func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
-	romfile := args[1]
 	err = ioutil.WriteFile(romfile, buf, 0644)
 	if err != nil {
 		log.Print(err)

@@ -176,19 +176,16 @@ func (f *FlashImage) Validate() []error {
 
 // Extract extracts the flash image to the directory passed in.
 func (f *FlashImage) Extract(dirPath string) error {
-	absDirPath, err := filepath.Abs(dirPath)
-	if err != nil {
-		return err
-	}
+	var err error
 	// Dump the binary
-	f.ExtractPath, err = ExtractBinary(f.buf, absDirPath, "flash.rom")
+	f.ExtractPath, err = ExtractBinary(f.buf, dirPath, "flash.rom")
 	if err != nil {
 		return err
 	}
 
 	// Extract all regions.
 	for _, r := range f.regions {
-		if err = r.Extract(absDirPath); err != nil {
+		if err = r.Extract(dirPath); err != nil {
 			return err
 		}
 	}

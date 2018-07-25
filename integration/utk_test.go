@@ -98,13 +98,13 @@ func TestExtractAssembleExtract(t *testing.T) {
 			)
 
 			// Warnings are acceptable.
-			cmd := exec.Command(utk, "extract", "--warn", tt, dir1)
+			cmd := exec.Command(utk, "extract", "--warn", "--remove", tt, dir1)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
 			cmd = exec.Command(utk, "assemble", dir1, tmpRom)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
-			cmd = exec.Command(utk, "extract", "--warn", tmpRom, dir2)
+			cmd = exec.Command(utk, "extract", "--warn", "--remove", tmpRom, dir2)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
 
@@ -118,9 +118,6 @@ func TestExtractAssembleExtract(t *testing.T) {
 					t.Errorf("no files in directory %q", d)
 				}
 			}
-
-			// TODO: make summary.json paths relative so this hack can be removed.
-			exec.Command("sed", "-i", "s/dir2/dir1/", filepath.Join(dir2, "summary.json")).Run()
 
 			// Recursively test for equality.
 			cmd = exec.Command("diff", "-r", dir1, dir2)
