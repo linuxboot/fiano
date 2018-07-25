@@ -103,7 +103,7 @@ type FirmwareVolume struct {
 	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
 	FirmwareVolumeExtHeader
-	Files []*FirmwareFile
+	Files []*FirmwareFile `json:",omitempty"`
 
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset  uint64

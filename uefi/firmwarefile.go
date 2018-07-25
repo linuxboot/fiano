@@ -76,11 +76,11 @@ type fileAttr uint8
 
 // FirmwareFileHeader represents an EFI File header.
 type FirmwareFileHeader struct {
-	Name       uuid.UUID // This is the GUID of the file.
-	Checksum   IntegrityCheck
+	Name       uuid.UUID      // This is the GUID of the file.
+	Checksum   IntegrityCheck `json:"-"`
 	Type       FVFileType
 	Attributes fileAttr
-	Size       [3]uint8
+	Size       [3]uint8 `json:"-"`
 	State      uint8
 }
 
@@ -125,13 +125,13 @@ func (f *FirmwareFile) checksumHeader() uint8 {
 // All sizes are also copied into the ExtendedSize field so we only have to check once
 type FirmwareFileHeaderExtended struct {
 	FirmwareFileHeader
-	ExtendedSize uint64
+	ExtendedSize uint64 `json:"-"`
 }
 
 // FirmwareFile represents an EFI File.
 type FirmwareFile struct {
 	Header   FirmwareFileHeaderExtended
-	Sections []*FileSection
+	Sections []*FileSection `json:",omitempty"`
 
 	//Metadata for extraction and recovery
 	buf         []byte
