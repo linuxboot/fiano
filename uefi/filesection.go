@@ -19,7 +19,7 @@ type SectionType uint8
 // FileSectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
 type FileSectionHeader struct {
-	Size [3]uint8
+	Size [3]uint8 `json:"-"`
 	Type SectionType
 }
 
@@ -27,7 +27,7 @@ type FileSectionHeader struct {
 // UEFI PI Spec 3.2.4 Firmware File Section
 type FileSectionExtHeader struct {
 	FileSectionHeader
-	ExtendedSize uint32
+	ExtendedSize uint32 `json:"-"`
 }
 
 // FileSection represents a Firmware File Section
