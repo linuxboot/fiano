@@ -81,7 +81,7 @@ type FirmwareFileHeader struct {
 	Type       FVFileType
 	Attributes fileAttr
 	Size       [3]uint8 `json:"-"`
-	State      uint8
+	State      uint8    `json:"-"`
 }
 
 // Checks if the large file attribute is set
@@ -147,10 +147,18 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 	if _, ok := supportedFiles[fh.Type]; !ok || len(f.Sections) == 0 {
 		// we don't support this file type, just return the raw buffer.
 		// Or we've removed the sections and just want to replace the file directly
+		// We have to make sure the state is correct, so we still need to write out
+		// the file header.
+
+		// Set state to valid based on erase polarity
+		// We really should redo the whole header
+		// TODO: Reconstruct header from JSON
+		fh.State = 0x07 ^ Attributes.ErasePolarity
 		f.buf, err = ioutil.ReadFile(f.ExtractPath)
 		if err != nil {
 			return nil, err
 		}
+		f.buf[0x17] = fh.State
 		return f.buf, nil
 	}
 
@@ -192,6 +200,9 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 	}
 	// This will set size to 0xFFFFFF if too big.
 	fh.Size = Write3Size(fh.ExtendedSize)
+
+	// Set state to valid based on erase polarity
+	fh.State = 0x07 ^ Attributes.ErasePolarity
 
 	// Checksum the header and body, then write out the header.
 	// To checksum the header we write the temporary header to the file buffer first.
