@@ -44,6 +44,9 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 		// FIXME remove the `break` and move the offset to the next location to
 		// search for FVs (i.e. offset + fv.size)
 	}
+	if len(br.FirmwareVolumes) > 0 {
+		Attributes.ErasePolarity = br.FirmwareVolumes[0].GetErasePolarity()
+	}
 	return &br, nil
 }
 
@@ -57,8 +60,19 @@ func (br *BIOSRegion) Validate() []error {
 	if len(br.FirmwareVolumes) == 0 {
 		errs = append(errs, errors.New("no firmware volumes in BIOS Region"))
 	}
-	for _, fv := range br.FirmwareVolumes {
+
+	for i, fv := range br.FirmwareVolumes {
 		errs = append(errs, fv.Validate()...)
+		if i == 0 {
+			Attributes.ErasePolarity = br.FirmwareVolumes[i].GetErasePolarity()
+		}
+		// We have to do this because they didn't put an encapsulating structure around the FVs.
+		// This means it's possible for different firmware volumes to report different erase polarities.
+		// Now we have to check to see if we're in some insane state.
+		if ep := fv.GetErasePolarity(); ep != Attributes.ErasePolarity {
+			errs = append(errs, fmt.Errorf("erase polarity mismatch! fv 0 has %#x and fv %d has %#x",
+				Attributes.ErasePolarity, i, ep))
+		}
 	}
 	return errs
 }
@@ -92,7 +106,11 @@ func (br *BIOSRegion) Assemble() ([]byte, error) {
 	}
 
 	// Assemble the Firmware Volumes
-	for _, fv := range br.FirmwareVolumes {
+	for i, fv := range br.FirmwareVolumes {
+		// We have to trust the JSON's polarity
+		if i == 0 {
+			Attributes.ErasePolarity = fv.GetErasePolarity()
+		}
 		buf, err := fv.Assemble()
 		if err != nil {
 			return nil, err

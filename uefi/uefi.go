@@ -11,6 +11,15 @@ import (
 	"reflect"
 )
 
+// ROMAttributes is used to hold global variables that apply across the whole image.
+// We have to do this to avoid passing too many things down each time.
+type ROMAttributes struct {
+	ErasePolarity byte // Either 0xFF or 0
+}
+
+// Attributes holds the global attributes
+var Attributes ROMAttributes
+
 // Firmware is an interface to describe generic firmware types. The
 // implementations (e.g. Flash image, or FirmwareVolume) must implement this
 // interface.
