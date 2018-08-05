@@ -113,6 +113,14 @@ type FirmwareVolume struct {
 	ExtractPath string
 }
 
+// GetErasePolarity gets the erase polarity
+func (fv *FirmwareVolume) GetErasePolarity() uint8 {
+	if fv.Attributes&0x800 != 0 {
+		return 0xFF
+	}
+	return 0
+}
+
 // Extract extracts the Firmware Volume to the directory passed in.
 func (fv *FirmwareVolume) Extract(parentPath string) error {
 	// We just dump the binary for now
