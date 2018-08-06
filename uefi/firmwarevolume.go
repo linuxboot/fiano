@@ -200,6 +200,28 @@ func fillFFs(b []byte) {
 	}
 }
 
+func (fv *FirmwareVolume) insertFile(fOffset uint64, alignedOffset uint64, fBuf []byte) error {
+	fvLen := uint64(len(fv.buf))
+	if alignedOffset > fvLen {
+		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x",
+			fvLen, alignedOffset)
+	}
+	// TODO: Change to ErasePolarity
+	fillFFs(fv.buf[fOffset:alignedOffset])
+
+	// Check size
+	fLen := uint64(len(fBuf))
+	if fLen+alignedOffset > fvLen {
+		// TODO: Actually loop through and calculate the full size so we know how much to reduce by.
+		// For now we just return early
+		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x, length was %#x",
+			fvLen, alignedOffset, len(fBuf))
+	}
+	// Overwrite old data in the firmware volume.
+	copy(fv.buf[alignedOffset:], fBuf)
+	return nil
+}
+
 // Assemble assembles the Firmware Volume from the binary file.
 // TODO: HANDLE HEADER CHANGES.
 // We assume the FV length hasn't changed, and we assume the FV offset is the same as specified in
@@ -225,26 +247,44 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 			return nil, err
 		}
 		fLen := uint64(len(fBuf))
-		// We have to pad to the 8 byte alignments.
-		alignedOffset := Align8(fOffset)
-		if alignedOffset > fvLen {
-			return nil, fmt.Errorf("insufficient space in %#x bytes FV, files too big", fvLen)
-		}
-		fillFFs(fv.buf[fOffset:alignedOffset])
-		fOffset = alignedOffset
 
-		// Check size
-		if fLen+fOffset > fvLen {
-			// TODO: Actually loop through and calculate the full size so we know how much to reduce by.
-			// For now we just return early
-			return nil, fmt.Errorf("insufficient space in %#x bytes FV, files too big", fvLen)
+		// Pad to the 8 byte alignments.
+		alignedOffset := Align8(fOffset)
+		// Read out the file alignment requirements
+		if alignBase := f.Header.Attributes.GetAlignment(); alignBase != 1 {
+			hl := f.HeaderLen()
+			// We need to align the data, not the header. This is so terrible.
+			dataOffset := Align(alignedOffset+hl, alignBase)
+			// Calculate the starting offset of the file
+			newOffset := dataOffset - hl
+			if gap := (newOffset - alignedOffset); gap >= 8 && gap < FileHeaderMinLength {
+				// We need to re align to the next boundary cause we can't put a pad file in here.
+				// Who thought this was a good idea?
+				dataOffset = Align(dataOffset+1, alignBase)
+				newOffset = dataOffset - hl
+			}
+			if newOffset != alignedOffset {
+				// Add a pad file starting from alignedOffset to newOffset
+				pf, err := CreatePadFile(newOffset - alignedOffset)
+				if err != nil {
+					return nil, err
+				}
+				if err = fv.insertFile(fOffset, alignedOffset, pf.buf); err != nil {
+					return nil, err
+				}
+				// Set up offsets for the actual file
+				fOffset = newOffset
+			}
+			alignedOffset = newOffset
 		}
-		// Overwrite old data in the firmware volume.
-		copy(fv.buf[fOffset:], fBuf)
-		fOffset += fLen
+		if err = fv.insertFile(fOffset, alignedOffset, fBuf); err != nil {
+			return nil, err
+		}
+		fOffset = alignedOffset + fLen
 	}
 
 	// Fill to the end with FFs
+	// TODO: handle ErasePolarity
 	if fOffset < fvLen {
 		fillFFs(fv.buf[fOffset:fvLen])
 	}
