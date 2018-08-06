@@ -141,16 +141,17 @@ func Write3Size(size uint64) [3]uint8 {
 	return b
 }
 
-func align(val uint64, base uint64) uint64 {
+// Align aligns an address
+func Align(val uint64, base uint64) uint64 {
 	return (val + base - 1) & ^(base - 1)
 }
 
 // Align4 aligns an address to 4 bytes
 func Align4(val uint64) uint64 {
-	return align(val, 4)
+	return Align(val, 4)
 }
 
 // Align8 aligns an address to 8 bytes
 func Align8(val uint64) uint64 {
-	return align(val, 8)
+	return Align(val, 8)
 }

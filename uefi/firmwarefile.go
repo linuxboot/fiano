@@ -69,6 +69,27 @@ func init() {
 	FFGUID, _ = uuid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
 }
 
+// FileAlignments specifies the correct alignments based on the field in the file header.
+var fileAlignments = []uint64{
+	// These alignments not computable, we have to look them up.
+	1,
+	16,
+	128,
+	512,
+	1024,
+	4 * 1024,
+	32 * 1024,
+	64 * 1024,
+	128 * 1024,
+	256 * 1024,
+	512 * 1024,
+	1024 * 1024,
+	2 * 1024 * 1024,
+	4 * 1024 * 1024,
+	8 * 1024 * 1024,
+	16 * 1024 * 1024,
+}
+
 const (
 	// FileHeaderMinLength is the minimum length of a firmware file header.
 	FileHeaderMinLength = 0x18
@@ -100,6 +121,13 @@ func (a fileAttr) isLarge() bool {
 	return a&0x01 != 0
 }
 
+// GetAlignment returns the byte alignment specified by the file header.
+func (a fileAttr) GetAlignment() uint64 {
+	alignVal := (a & 0x38) >> 3
+	alignVal |= (a & 0x02) << 2
+	return fileAlignments[alignVal]
+}
+
 // Sets the large file attribute.
 func (a *fileAttr) setLarge(large bool) {
 	if large {
@@ -112,6 +140,15 @@ func (a *fileAttr) setLarge(large bool) {
 // Checks if we need to checksum the file body
 func (a fileAttr) hasChecksum() bool {
 	return a&0x40 != 0
+}
+
+// HeaderLen is a helper function to return the length of the file header
+// depending on the file size
+func (f *FirmwareFile) HeaderLen() uint64 {
+	if f.Header.Attributes.isLarge() {
+		return FileHeaderExtMinLength
+	}
+	return FileHeaderMinLength
 }
 
 func (f *FirmwareFile) checksumHeader() uint8 {
