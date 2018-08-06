@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"unsafe"
+
+	"github.com/linuxboot/fiano/unicode"
 )
 
 const (
@@ -15,6 +18,43 @@ const (
 
 // SectionType holds a section type value
 type SectionType uint8
+
+const (
+	SectionTypeAll                 SectionType = 0x00
+	SectionTypeCompression         SectionType = 0x01
+	SectionTypeGUIDDefined         SectionType = 0x02
+	SectionTypeDisposable          SectionType = 0x03
+	SectionTypePE32                SectionType = 0x10
+	SectionTypePIC                 SectionType = 0x11
+	SectionTypeTE                  SectionType = 0x12
+	SectionTypeDXEDepEx            SectionType = 0x13
+	SectionTypeVersion             SectionType = 0x14
+	SectionTypeUserInterface       SectionType = 0x15
+	SectionTypeCompatibility16     SectionType = 0x16
+	SectionTypeFirmwareVolumeImage SectionType = 0x17
+	SectionTypeFreeformSubtypeGUID SectionType = 0x18
+	SectionTypeRaw                 SectionType = 0x19
+	SectionTypePEIDepEx            SectionType = 0x1b
+	SectionMMDepEx                 SectionType = 0x1c
+)
+
+var sectionNames = map[SectionType]string{
+	SectionTypeCompression:         "EFI_SECTION_COMPRESSION",
+	SectionTypeGUIDDefined:         "EFI_SECTION_GUID_DEFINED",
+	SectionTypeDisposable:          "EFI_SECTION_DISPOSABLE",
+	SectionTypePE32:                "EFI_SECTION_PE32",
+	SectionTypePIC:                 "EFI_SECTION_PIC",
+	SectionTypeTE:                  "EFI_SECTION_TE",
+	SectionTypeDXEDepEx:            "EFI_SECTION_DXE_DEPEX",
+	SectionTypeVersion:             "EFI_SECTION_VERSION",
+	SectionTypeUserInterface:       "EFI_SECTION_USER_INTERFACE",
+	SectionTypeCompatibility16:     "EFI_SECTION_COMPATIBILITY16",
+	SectionTypeFirmwareVolumeImage: "EFI_SECTION_FIRMWARE_VOLUME_IMAGE",
+	SectionTypeFreeformSubtypeGUID: "EFI_SECTION_FREEFORM_SUBTYPE_GUID",
+	SectionTypeRaw:                 "EFI_SECTION_RAW",
+	SectionTypePEIDepEx:            "EFI_SECTION_PEI_DEPEX",
+	SectionMMDepEx:                 "EFI_SECTION_MM_DEPEX",
+}
 
 // FileSectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
@@ -33,11 +73,15 @@ type FileSectionExtHeader struct {
 // FileSection represents a Firmware File Section
 type FileSection struct {
 	Header FileSectionExtHeader
+	Type   string
 	buf    []byte
 
 	//Metadata for extraction and recovery
 	ExtractPath string
 	fileOrder   int
+
+	// Type specific fields
+	Name string `json:",omitempty"`
 }
 
 // Assemble assembles the section from the binary
@@ -97,6 +141,12 @@ func NewFileSection(buf []byte, fileOrder int) (*FileSection, error) {
 		return nil, err
 	}
 
+	// Map type to string
+	if t, ok := sectionNames[f.Header.Type]; ok {
+		f.Type = t
+	}
+
+	headerSize := unsafe.Sizeof(FileSectionHeader{})
 	if f.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
 		// Extended Header
 		if err := binary.Read(r, binary.LittleEndian, &f.Header.ExtendedSize); err != nil {
@@ -105,6 +155,7 @@ func NewFileSection(buf []byte, fileOrder int) (*FileSection, error) {
 		if f.Header.ExtendedSize == 0xFFFFFFFF {
 			return nil, errors.New("section size and extended size are all FFs! there should not be free space inside a file")
 		}
+		headerSize = unsafe.Sizeof(FileSectionExtHeader{})
 	} else {
 		// Copy small size into big for easier handling.
 		// Section's extended size is 32 bits unlike file's
@@ -117,6 +168,11 @@ func NewFileSection(buf []byte, fileOrder int) (*FileSection, error) {
 	}
 	// Slice buffer to the correct size.
 	f.buf = buf[:f.Header.ExtendedSize]
+
+	// Get the name.
+	if f.Header.Type == SectionTypeUserInterface {
+		f.Name = unicode.UCS2ToUTF8(f.buf[headerSize:])
+	}
 
 	return &f, nil
 }
