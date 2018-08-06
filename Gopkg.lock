@@ -7,9 +7,34 @@
   packages = ["."]
   revision = "a3682377147edf596d303faabd89f81977b3f678"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/u-root/u-root"
+  packages = [
+    "pkg/golang",
+    "pkg/testutil"
+  ]
+  revision = "0c647f6bc6b55616717fcd2edb8d469f32b0459c"
+
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "encoding",
+    "encoding/internal",
+    "encoding/internal/identifier",
+    "encoding/unicode",
+    "internal/gen",
+    "internal/utf8internal",
+    "runes",
+    "transform",
+    "unicode/cldr"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fa6b6a3e45c7f321def35a1a52c85a6f56864f02464ba64a12c3b0dfbcb02a33"
+  inputs-digest = "f6ae389a70e219ddecf45e1fd65fab5d34a53d205e333932da322051b63cb858"
   solver-name = "gps-cdcl"
   solver-version = 1
