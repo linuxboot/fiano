@@ -76,7 +76,7 @@ type fileAttr uint8
 
 // FirmwareFileHeader represents an EFI File header.
 type FirmwareFileHeader struct {
-	Name       uuid.UUID      // This is the GUID of the file.
+	UUID       uuid.UUID      // This is the GUID of the file.
 	Checksum   IntegrityCheck `json:"-"`
 	Type       FVFileType
 	Attributes fileAttr
@@ -130,6 +130,7 @@ type FirmwareFileHeaderExtended struct {
 
 // FirmwareFile represents an EFI File.
 type FirmwareFile struct {
+	Name     string
 	Header   FirmwareFileHeaderExtended
 	Sections []*FileSection `json:",omitempty"`
 
@@ -210,7 +211,7 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 	err = binary.Write(header, binary.LittleEndian, fh)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct binary header of file %v, got %v",
-			fh.Name, err)
+			fh.UUID, err)
 	}
 	f.buf = header.Bytes()
 	// We need to get rid of whatever it sums to so that the overall sum is zero
@@ -248,8 +249,8 @@ func (f *FirmwareFile) Extract(parentPath string) error {
 	// Dump the binary
 	var err error
 	// For files we use the GUID as the folder name.
-	dirPath := filepath.Join(parentPath, f.Header.Name.String())
-	f.ExtractPath, err = ExtractBinary(f.buf, dirPath, fmt.Sprintf("%v.ffs", f.Header.Name))
+	dirPath := filepath.Join(parentPath, f.Header.UUID.String())
+	f.ExtractPath, err = ExtractBinary(f.buf, dirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
 	if err != nil {
 		return err
 	}
@@ -278,35 +279,35 @@ func (f *FirmwareFile) Validate() []error {
 	if fh.Size == blankSize {
 		if buflen < FileHeaderExtMinLength {
 			errs = append(errs, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
-				fh.Name, buflen))
+				fh.UUID, buflen))
 			return errs
 		}
 		if !fh.Attributes.isLarge() {
 			errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
-				fh.Name))
+				fh.UUID))
 			return errs
 		}
 	} else if Read3Size(f.Header.Size) != fh.ExtendedSize {
 		errs = append(errs, fmt.Errorf("file %v size not copied into extendedsize",
-			fh.Name))
+			fh.UUID))
 		return errs
 	}
 	if buflen != fh.ExtendedSize {
 		errs = append(errs, fmt.Errorf("file %v size mismatch! Size is %#x, buf length is %#x",
-			fh.Name, fh.ExtendedSize, buflen))
+			fh.UUID, fh.ExtendedSize, buflen))
 		return errs
 	}
 
 	// Header Checksums
 	if sum := f.checksumHeader(); sum != 0 {
 		errs = append(errs, fmt.Errorf("file %v header checksum failure! sum was %v",
-			fh.Name, sum))
+			fh.UUID, sum))
 	}
 
 	// Body Checksum
 	if !fh.Attributes.hasChecksum() && fh.Checksum.File != emptyBodyChecksum {
 		errs = append(errs, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
-			fh.Name, fh.Checksum.File, emptyBodyChecksum))
+			fh.UUID, fh.Checksum.File, emptyBodyChecksum))
 	} else if fh.Attributes.hasChecksum() {
 		headerSize := FileHeaderMinLength
 		if fh.Attributes.isLarge() {
@@ -314,7 +315,7 @@ func (f *FirmwareFile) Validate() []error {
 		}
 		if sum := Checksum8(f.buf[headerSize:]); sum != 0 {
 			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
-				fh.Name, sum))
+				fh.UUID, sum))
 		}
 	}
 
@@ -357,7 +358,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 
 	if buflen := len(buf); f.Header.ExtendedSize > uint64(buflen) {
 		return nil, fmt.Errorf("File size too big! File with GUID: %v has length %v, but is only %v bytes big",
-			f.Header.Name, f.Header.ExtendedSize, buflen)
+			f.Header.UUID, f.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
 	f.buf = buf[:f.Header.ExtendedSize]
@@ -369,7 +370,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
 		s, err := NewFileSection(f.buf[offset:], i)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.Name, err)
+			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.UUID, err)
 		}
 		offset += uint64(s.Header.ExtendedSize)
 		// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
