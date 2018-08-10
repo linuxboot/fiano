@@ -41,7 +41,7 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/linuxboot/fiano/fmap/pkg"
+	"github.com/linuxboot/fiano/pkg/fmap"
 )
 
 var cmds = map[string]struct {
