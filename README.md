@@ -1,5 +1,6 @@
 # fiano
-reworked EDK2 tools and code we need in a form the open source community is used to
+
+Go-based tools for modifying UEFI firmware.
 
 ## Available tools
 
@@ -15,3 +16,14 @@ reworked EDK2 tools and code we need in a form the open source community is used
   + `fmap summary FILE`
   + `fmap usage FILE`
   + `fmap verify FILE`
+
+## Installation
+
+    # Golang version 1.10 is required
+    go version
+
+    # For UTK:
+    go get github.com/linuxboot/fiano/utk
+
+    # For fmap:
+    go get github.com/linuxboot/fiano/fmap
