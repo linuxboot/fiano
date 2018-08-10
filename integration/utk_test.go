@@ -90,11 +90,16 @@ func TestExtractAssembleExtract(t *testing.T) {
 
 	for _, tt := range romList(t) {
 		t.Run(tt, func(t *testing.T) {
+			tmpDirT := filepath.Join(tmpDir, filepath.Base(tt))
+			if err := os.Mkdir(tmpDirT, 0777); err != nil {
+				t.Fatal(err)
+			}
+
 			// Test paths
 			var (
-				dir1   = filepath.Join(tmpDir, "dir1")
-				tmpRom = filepath.Join(tmpDir, "tmp.rom")
-				dir2   = filepath.Join(tmpDir, "dir2")
+				dir1   = filepath.Join(tmpDirT, "dir1")
+				tmpRom = filepath.Join(tmpDirT, "tmp.rom")
+				dir2   = filepath.Join(tmpDirT, "dir2")
 			)
 
 			// Warnings are acceptable.
