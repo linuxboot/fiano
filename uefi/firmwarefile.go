@@ -58,6 +58,17 @@ var supportedFiles = map[FVFileType]bool{
 	fvFileTypeSMMCoreStandalone:  true,
 }
 
+// Stock GUIDS
+var (
+	ZeroGUID *uuid.UUID
+	FFGUID   *uuid.UUID
+)
+
+func init() {
+	ZeroGUID, _ = uuid.Parse("00000000-0000-0000-0000-000000000000")
+	FFGUID, _ = uuid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
+}
+
 const (
 	// FileHeaderMinLength is the minimum length of a firmware file header.
 	FileHeaderMinLength = 0x18
@@ -130,7 +141,6 @@ type FirmwareFileHeaderExtended struct {
 
 // FirmwareFile represents an EFI File.
 type FirmwareFile struct {
-	Name     string
 	Header   FirmwareFileHeaderExtended
 	Sections []*FileSection `json:",omitempty"`
 
@@ -138,6 +148,66 @@ type FirmwareFile struct {
 	buf         []byte
 	ExtractPath string
 	DataOffset  uint64
+}
+
+func (f *FirmwareFile) setSize(size uint64, resizeFile bool) {
+	fh := &f.Header
+	// See if we need the extended size
+	// Check if size > 3 bytes size field
+	fh.ExtendedSize = size
+	fh.Attributes.setLarge(false)
+	if fh.ExtendedSize > 0xFFFFFF {
+		// Can't fit, need extended header
+		if resizeFile {
+			// Increase the file size by the additional space needed
+			// for the extended header.
+			fh.ExtendedSize += FileHeaderExtMinLength - FileHeaderMinLength
+		}
+		fh.Attributes.setLarge(true)
+	}
+	// This will set size to 0xFFFFFF if too big.
+	fh.Size = Write3Size(fh.ExtendedSize)
+}
+
+func (f *FirmwareFile) checksumAndAssemble(fileData []byte) error {
+	// Checksum the header and body, then write out the header.
+	// To checksum the header we write the temporary header to the file buffer first.
+	fh := &f.Header
+
+	header := new(bytes.Buffer)
+	err := binary.Write(header, binary.LittleEndian, fh)
+	if err != nil {
+		return fmt.Errorf("unable to construct binary header of file %v, got %v",
+			fh.UUID, err)
+	}
+	f.buf = header.Bytes()
+	// We need to get rid of whatever it sums to so that the overall sum is zero
+	// Sorry about the name :(
+	fh.Checksum.Header -= f.checksumHeader()
+
+	// Checksum the body
+	fh.Checksum.File = emptyBodyChecksum
+	if fh.Attributes.hasChecksum() {
+		// if the empty checksum had been set to 0 instead of 0xAA
+		// this could have been a bit nicer. BUT NOOOOOOO.
+		fh.Checksum.File = 0 - Checksum8(fileData)
+	}
+
+	// Write out the updated header to the buffer with the new checksums.
+	// Write the extended header only if the large attribute flag is set.
+	header = new(bytes.Buffer)
+	if fh.Attributes.isLarge() {
+		err = binary.Write(header, binary.LittleEndian, fh)
+	} else {
+		err = binary.Write(header, binary.LittleEndian, fh.FirmwareFileHeader)
+	}
+	if err != nil {
+		return err
+	}
+	f.buf = header.Bytes()
+
+	f.buf = append(f.buf, fileData...)
+	return nil
 }
 
 // Assemble assembles the Firmware File
@@ -190,57 +260,14 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 		fileData = append(fileData, sData...)
 	}
 
-	// See if we need the extended size
-	// Check if size > 3 bytes size field
-	fh.ExtendedSize = FileHeaderMinLength + dLen
-	fh.Attributes.setLarge(false)
-	if fh.ExtendedSize > 0xFFFFFF {
-		// Can't fit, need extended header
-		fh.ExtendedSize = FileHeaderExtMinLength + dLen
-		fh.Attributes.setLarge(true)
-	}
-	// This will set size to 0xFFFFFF if too big.
-	fh.Size = Write3Size(fh.ExtendedSize)
+	f.setSize(FileHeaderMinLength+dLen, true)
 
 	// Set state to valid based on erase polarity
 	fh.State = 0x07 ^ Attributes.ErasePolarity
 
-	// Checksum the header and body, then write out the header.
-	// To checksum the header we write the temporary header to the file buffer first.
-	header := new(bytes.Buffer)
-	err = binary.Write(header, binary.LittleEndian, fh)
-	if err != nil {
-		return nil, fmt.Errorf("unable to construct binary header of file %v, got %v",
-			fh.UUID, err)
-	}
-	f.buf = header.Bytes()
-	// We need to get rid of whatever it sums to so that the overall sum is zero
-	// Sorry about the name :(
-	fh.Checksum.Header -= f.checksumHeader()
-
-	// Checksum the body
-	fh.Checksum.File = emptyBodyChecksum
-	if fh.Attributes.hasChecksum() {
-		// if the empty checksum had been set to 0 instead of 0xAA
-		// this could have been a bit nicer. BUT NOOOOOOO.
-		fh.Checksum.File = 0 - Checksum8(fileData)
-	}
-
-	// Write out the updated header to the buffer with the new checksums.
-	// Write the extended header only if the large attribute flag is set.
-	header = new(bytes.Buffer)
-	if fh.Attributes.isLarge() {
-		err = binary.Write(header, binary.LittleEndian, fh)
-	} else {
-		err = binary.Write(header, binary.LittleEndian, fh.FirmwareFileHeader)
-	}
-	if err != nil {
+	if err = f.checksumAndAssemble(fileData); err != nil {
 		return nil, err
 	}
-	f.buf = header.Bytes()
-
-	f.buf = append(f.buf, fileData...)
-
 	return f.buf, nil
 }
 
@@ -323,6 +350,54 @@ func (f *FirmwareFile) Validate() []error {
 		errs = append(errs, s.Validate()...)
 	}
 	return errs
+}
+
+// CreatePadFile creates an empty pad file in order to align the next file.
+func CreatePadFile(size uint64) (*FirmwareFile, error) {
+	if size < FileHeaderMinLength {
+		return nil, fmt.Errorf("size too small! min size required is %#x bytes, requested %#x",
+			FileHeaderMinLength, size)
+	}
+
+	f := FirmwareFile{}
+	fh := &f.Header
+
+	// Create empty guid
+	if Attributes.ErasePolarity == 0xFF {
+		fh.UUID = *FFGUID
+	} else if Attributes.ErasePolarity == 0 {
+		fh.UUID = *ZeroGUID
+	} else {
+		return nil, fmt.Errorf("erase polarity not 0x00 or 0xFF, got %#x", Attributes.ErasePolarity)
+	}
+
+	// TODO: I see examples of this where the attributes are just 0 and not dependent on the
+	// erase polarity. Is that right? Check and handle.
+	fh.Attributes = 0
+
+	// Set the size. If the file is too big, we take up more of the padding for the header.
+	// This also sets the large file attribute if file is big.
+	f.setSize(size, false)
+	fh.Type = fvFileTypePad
+
+	// Create empty pad filedata based on size
+	var fileData []byte
+	fileData = make([]byte, size-FileHeaderMinLength)
+	if fh.Attributes.isLarge() {
+		fileData = make([]byte, size-FileHeaderExtMinLength)
+	}
+	// Fill with empty bytes
+	for i, dataLen := 0, len(fileData); i < dataLen; i++ {
+		fileData[i] = Attributes.ErasePolarity
+	}
+
+	fh.State = 0x07 ^ Attributes.ErasePolarity
+
+	// Everything has been setup. Checksum and create.
+	if err := f.checksumAndAssemble(fileData); err != nil {
+		return nil, err
+	}
+	return &f, nil
 }
 
 // NewFirmwareFile parses a sequence of bytes and returns a FirmwareFile
