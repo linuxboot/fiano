@@ -19,6 +19,7 @@ const (
 // SectionType holds a section type value
 type SectionType uint8
 
+// UEFI Section types
 const (
 	SectionTypeAll                 SectionType = 0x00
 	SectionTypeCompression         SectionType = 0x01
@@ -56,23 +57,23 @@ var sectionNames = map[SectionType]string{
 	SectionMMDepEx:                 "EFI_SECTION_MM_DEPEX",
 }
 
-// FileSectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
+// SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
-type FileSectionHeader struct {
+type SectionHeader struct {
 	Size [3]uint8 `json:"-"`
 	Type SectionType
 }
 
-// FileSectionExtHeader represents an EFI_COMMON_SECTION_HEADER2 as specified in
+// SectionExtHeader represents an EFI_COMMON_SECTION_HEADER2 as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
-type FileSectionExtHeader struct {
-	FileSectionHeader
+type SectionExtHeader struct {
+	SectionHeader
 	ExtendedSize uint32 `json:"-"`
 }
 
-// FileSection represents a Firmware File Section
-type FileSection struct {
-	Header FileSectionExtHeader
+// Section represents a Firmware File Section
+type Section struct {
+	Header SectionExtHeader
 	Type   string
 	buf    []byte
 
@@ -85,94 +86,93 @@ type FileSection struct {
 }
 
 // Assemble assembles the section from the binary
-func (f *FileSection) Assemble() ([]byte, error) {
+func (s *Section) Assemble() ([]byte, error) {
 	var err error
-	f.buf, err = ioutil.ReadFile(f.ExtractPath)
+	s.buf, err = ioutil.ReadFile(s.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return f.buf, nil
+	return s.buf, nil
 }
 
 // Extract extracts the Section to the directory passed in.
-func (f *FileSection) Extract(parentPath string) error {
+func (s *Section) Extract(parentPath string) error {
 	// Dump the binary
 	var err error
 	// For sections we just extract to the parentpath
-	f.ExtractPath, err = ExtractBinary(f.buf, parentPath, fmt.Sprintf("%v.sec", f.fileOrder))
+	s.ExtractPath, err = ExtractBinary(s.buf, parentPath, fmt.Sprintf("%v.sec", s.fileOrder))
 	return err
 }
 
 // Validate File Section
-func (f *FileSection) Validate() []error {
+func (s *Section) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint32(len(f.buf))
+	buflen := uint32(len(s.buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 
 	// Size Checks
-	fh := &f.Header
-	if fh.Size == blankSize {
+	sh := &s.Header
+	if sh.Size == blankSize {
 		if buflen < SectionMinLength {
 			errs = append(errs, fmt.Errorf("section length too small!, buffer is only %#x bytes long for extended header",
 				buflen))
 			return errs
 		}
-	} else if uint32(Read3Size(f.Header.Size)) != fh.ExtendedSize {
+	} else if uint32(Read3Size(s.Header.Size)) != sh.ExtendedSize {
 		errs = append(errs, errors.New("section size not copied into extendedsize"))
 		return errs
 	}
-	if buflen != fh.ExtendedSize {
+	if buflen != sh.ExtendedSize {
 		errs = append(errs, fmt.Errorf("section size mismatch! Size is %#x, buf length is %#x",
-			fh.ExtendedSize, buflen))
+			sh.ExtendedSize, buflen))
 		return errs
 	}
 
 	return errs
 }
 
-// NewFileSection parses a sequence of bytes and returns a FirmwareFile
-// object, if a valid one is passed, or an error. If no error is returned and the FirmwareFile
-// pointer is nil, it means we've reached the volume free space at the end of the FV.
-func NewFileSection(buf []byte, fileOrder int) (*FileSection, error) {
-	f := FileSection{fileOrder: fileOrder}
+// NewSection parses a sequence of bytes and returns a Section
+// object, if a valid one is passed, or an error.
+func NewSection(buf []byte, fileOrder int) (*Section, error) {
+	s := Section{fileOrder: fileOrder}
 	// Read in standard header.
 	r := bytes.NewReader(buf)
-	if err := binary.Read(r, binary.LittleEndian, &f.Header.FileSectionHeader); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &s.Header.SectionHeader); err != nil {
 		return nil, err
 	}
 
 	// Map type to string
-	if t, ok := sectionNames[f.Header.Type]; ok {
-		f.Type = t
+	if t, ok := sectionNames[s.Header.Type]; ok {
+		s.Type = t
 	}
 
-	headerSize := unsafe.Sizeof(FileSectionHeader{})
-	if f.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
+	headerSize := unsafe.Sizeof(SectionHeader{})
+	if s.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
 		// Extended Header
-		if err := binary.Read(r, binary.LittleEndian, &f.Header.ExtendedSize); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &s.Header.ExtendedSize); err != nil {
 			return nil, err
 		}
-		if f.Header.ExtendedSize == 0xFFFFFFFF {
+		if s.Header.ExtendedSize == 0xFFFFFFFF {
 			return nil, errors.New("section size and extended size are all FFs! there should not be free space inside a file")
 		}
-		headerSize = unsafe.Sizeof(FileSectionExtHeader{})
+		headerSize = unsafe.Sizeof(SectionExtHeader{})
 	} else {
 		// Copy small size into big for easier handling.
 		// Section's extended size is 32 bits unlike file's
-		f.Header.ExtendedSize = uint32(Read3Size(f.Header.Size))
+		s.Header.ExtendedSize = uint32(Read3Size(s.Header.Size))
 	}
 
-	if buflen := len(buf); int(f.Header.ExtendedSize) > buflen {
+	if buflen := len(buf); int(s.Header.ExtendedSize) > buflen {
 		return nil, fmt.Errorf("section size too big! Section has length %v, but is only %v bytes big",
-			f.Header.ExtendedSize, buflen)
+			s.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	f.buf = buf[:f.Header.ExtendedSize]
+	s.buf = buf[:s.Header.ExtendedSize]
 
 	// Get the name.
-	if f.Header.Type == SectionTypeUserInterface {
-		f.Name = unicode.UCS2ToUTF8(f.buf[headerSize:])
+	if s.Header.Type == SectionTypeUserInterface {
+		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
 	}
 
-	return &f, nil
+	return &s, nil
 }

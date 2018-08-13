@@ -179,7 +179,7 @@ type FirmwareFileHeaderExtended struct {
 // FirmwareFile represents an EFI File.
 type FirmwareFile struct {
 	Header   FirmwareFileHeaderExtended
-	Sections []*FileSection `json:",omitempty"`
+	Sections []*Section `json:",omitempty"`
 
 	//Metadata for extraction and recovery
 	buf         []byte
@@ -480,7 +480,7 @@ func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
 		return &f, nil
 	}
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
-		s, err := NewFileSection(f.buf[offset:], i)
+		s, err := NewSection(f.buf[offset:], i)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.UUID, err)
 		}
