@@ -163,7 +163,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	}
 
 	if buflen := len(buf); int(s.Header.ExtendedSize) > buflen {
-		return nil, fmt.Errorf("section size too big! Section has length %v, but is only %v bytes big",
+		return nil, fmt.Errorf("section size mismatch! Section has size %v, but buffer is %v bytes big",
 			s.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
