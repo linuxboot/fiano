@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"unsafe"
 
+	"github.com/linuxboot/fiano/pkg/lzma"
 	"github.com/linuxboot/fiano/unicode"
+	"github.com/linuxboot/fiano/uuid"
 )
 
 const (
@@ -57,6 +59,17 @@ var sectionNames = map[SectionType]string{
 	SectionMMDepEx:                 "EFI_SECTION_MM_DEPEX",
 }
 
+// GUIDEDSectionAttribute holds a GUIDED section attribute bitfield
+type GUIDEDSectionAttribute uint16
+
+// UEFI GUIDED Section Attributes
+const (
+	GUIDEDSectionProcessingRequired GUIDEDSectionAttribute = 0x01
+	GUIDEDSectionAuthStatusValid    GUIDEDSectionAttribute = 0x02
+)
+
+var lzmaGUID = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
+
 // SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
 type SectionHeader struct {
@@ -71,18 +84,32 @@ type SectionExtHeader struct {
 	ExtendedSize uint32 `json:"-"`
 }
 
+// SectionGUIDDefined contains the fields for a EFI_SECTION_GUID_DEFINED
+// section.
+type SectionGUIDDefined struct {
+	GUID       uuid.UUID
+	DataOffset uint16
+	Attributes uint16
+}
+
 // Section represents a Firmware File Section
 type Section struct {
 	Header SectionExtHeader
 	Type   string
 	buf    []byte
 
-	//Metadata for extraction and recovery
+	// Metadata for extraction and recovery
 	ExtractPath string
 	fileOrder   int
 
 	// Type specific fields
+	TypeSpecific interface{} `json:",omitempty"`
+
+	// For EFI_SECTION_USER_INTERFACE
 	Name string `json:",omitempty"`
+
+	// Encapsulated firmware
+	Encapsulated Firmware `json:",omitempty"`
 }
 
 // Assemble assembles the section from the binary
@@ -169,8 +196,39 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	// Slice buffer to the correct size.
 	s.buf = buf[:s.Header.ExtendedSize]
 
-	// Get the name.
-	if s.Header.Type == SectionTypeUserInterface {
+	// Section type specific data
+	switch s.Header.Type {
+	case SectionTypeGUIDDefined:
+		typeSpec := &SectionGUIDDefined{}
+		if err := binary.Read(r, binary.LittleEndian, typeSpec); err != nil {
+			return nil, err
+		}
+		s.TypeSpecific = &typeSpec
+
+		// Determine whether the encapsulated section needs processing.
+		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) == 0 {
+			// No processing required
+			var err error
+			s.Encapsulated, err = NewSection(buf[typeSpec.DataOffset:], 0)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// Determine how to decode the section based on the GUID.
+			switch typeSpec.GUID {
+			case lzmaGUID:
+				decoded, err := lzma.Decode(buf[typeSpec.DataOffset:])
+				if err != nil {
+					return nil, err
+				}
+				s.Encapsulated, err = NewSection(decoded, 0)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+	case SectionTypeUserInterface:
 		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
 	}
 
