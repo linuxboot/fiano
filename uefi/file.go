@@ -106,8 +106,8 @@ type IntegrityCheck struct {
 
 type fileAttr uint8
 
-// FirmwareFileHeader represents an EFI File header.
-type FirmwareFileHeader struct {
+// FileHeader represents an EFI File header.
+type FileHeader struct {
 	UUID       uuid.UUID      // This is the GUID of the file.
 	Checksum   IntegrityCheck `json:"-"`
 	Type       FVFileType
@@ -144,14 +144,14 @@ func (a fileAttr) hasChecksum() bool {
 
 // HeaderLen is a helper function to return the length of the file header
 // depending on the file size
-func (f *FirmwareFile) HeaderLen() uint64 {
+func (f *File) HeaderLen() uint64 {
 	if f.Header.Attributes.isLarge() {
 		return FileHeaderExtMinLength
 	}
 	return FileHeaderMinLength
 }
 
-func (f *FirmwareFile) checksumHeader() uint8 {
+func (f *File) checksumHeader() uint8 {
 	fh := f.Header
 	headerSize := FileHeaderMinLength
 	if fh.Attributes.isLarge() {
@@ -166,19 +166,19 @@ func (f *FirmwareFile) checksumHeader() uint8 {
 	return sum
 }
 
-// FirmwareFileHeaderExtended represents an EFI File header with the
+// FileHeaderExtended represents an EFI File header with the
 // large file attribute set.
 // We also use this as the generic header for all EFI files, regardless of whether
 // they are actually large. This makes it easier for us to just return one type
 // All sizes are also copied into the ExtendedSize field so we only have to check once
-type FirmwareFileHeaderExtended struct {
-	FirmwareFileHeader
+type FileHeaderExtended struct {
+	FileHeader
 	ExtendedSize uint64 `json:"-"`
 }
 
-// FirmwareFile represents an EFI File.
-type FirmwareFile struct {
-	Header   FirmwareFileHeaderExtended
+// File represents an EFI File.
+type File struct {
+	Header   FileHeaderExtended
 	Sections []*Section `json:",omitempty"`
 
 	//Metadata for extraction and recovery
@@ -187,7 +187,7 @@ type FirmwareFile struct {
 	DataOffset  uint64
 }
 
-func (f *FirmwareFile) setSize(size uint64, resizeFile bool) {
+func (f *File) setSize(size uint64, resizeFile bool) {
 	fh := &f.Header
 	// See if we need the extended size
 	// Check if size > 3 bytes size field
@@ -206,7 +206,7 @@ func (f *FirmwareFile) setSize(size uint64, resizeFile bool) {
 	fh.Size = Write3Size(fh.ExtendedSize)
 }
 
-func (f *FirmwareFile) checksumAndAssemble(fileData []byte) error {
+func (f *File) checksumAndAssemble(fileData []byte) error {
 	// Checksum the header and body, then write out the header.
 	// To checksum the header we write the temporary header to the file buffer first.
 	fh := &f.Header
@@ -236,7 +236,7 @@ func (f *FirmwareFile) checksumAndAssemble(fileData []byte) error {
 	if fh.Attributes.isLarge() {
 		err = binary.Write(header, binary.LittleEndian, fh)
 	} else {
-		err = binary.Write(header, binary.LittleEndian, fh.FirmwareFileHeader)
+		err = binary.Write(header, binary.LittleEndian, fh.FileHeader)
 	}
 	if err != nil {
 		return err
@@ -248,7 +248,7 @@ func (f *FirmwareFile) checksumAndAssemble(fileData []byte) error {
 }
 
 // Assemble assembles the Firmware File
-func (f *FirmwareFile) Assemble() ([]byte, error) {
+func (f *File) Assemble() ([]byte, error) {
 	var err error
 
 	fh := &f.Header
@@ -309,7 +309,7 @@ func (f *FirmwareFile) Assemble() ([]byte, error) {
 }
 
 // Extract extracts the FFS to the directory passed in.
-func (f *FirmwareFile) Extract(parentPath string) error {
+func (f *File) Extract(parentPath string) error {
 	// Dump the binary
 	var err error
 	// For files we use the GUID as the folder name.
@@ -329,7 +329,7 @@ func (f *FirmwareFile) Extract(parentPath string) error {
 }
 
 // Validate Firmware File
-func (f *FirmwareFile) Validate() []error {
+func (f *File) Validate() []error {
 	errs := make([]error, 0)
 	buflen := uint64(len(f.buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
@@ -390,13 +390,13 @@ func (f *FirmwareFile) Validate() []error {
 }
 
 // CreatePadFile creates an empty pad file in order to align the next file.
-func CreatePadFile(size uint64) (*FirmwareFile, error) {
+func CreatePadFile(size uint64) (*File, error) {
 	if size < FileHeaderMinLength {
 		return nil, fmt.Errorf("size too small! min size required is %#x bytes, requested %#x",
 			FileHeaderMinLength, size)
 	}
 
-	f := FirmwareFile{}
+	f := File{}
 	fh := &f.Header
 
 	// Create empty guid
@@ -437,15 +437,15 @@ func CreatePadFile(size uint64) (*FirmwareFile, error) {
 	return &f, nil
 }
 
-// NewFirmwareFile parses a sequence of bytes and returns a FirmwareFile
-// object, if a valid one is passed, or an error. If no error is returned and the FirmwareFile
+// NewFile parses a sequence of bytes and returns a File
+// object, if a valid one is passed, or an error. If no error is returned and the File
 // pointer is nil, it means we've reached the volume free space at the end of the FV.
-func NewFirmwareFile(buf []byte) (*FirmwareFile, error) {
-	f := FirmwareFile{}
+func NewFile(buf []byte) (*File, error) {
+	f := File{}
 	f.DataOffset = FileHeaderMinLength
 	// Read in standard header.
 	r := bytes.NewReader(buf)
-	if err := binary.Read(r, binary.LittleEndian, &f.Header.FirmwareFileHeader); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &f.Header.FileHeader); err != nil {
 		return nil, err
 	}
 
