@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -56,6 +57,15 @@ func Parse(s string) (*UUID, error) {
 		i += fieldlen
 	}
 	return &u, nil
+}
+
+// MustParse parses a uuid string or panics.
+func MustParse(s string) *UUID {
+	uuid, err := Parse(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return uuid
 }
 
 func (u UUID) String() string {
