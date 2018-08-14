@@ -103,7 +103,7 @@ type FirmwareVolume struct {
 	// We don't really have to care about blocks because we just read everything in.
 	Blocks []Block
 	FirmwareVolumeExtHeader
-	Files []*FirmwareFile `json:",omitempty"`
+	Files []*File `json:",omitempty"`
 
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset  uint64
@@ -371,7 +371,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	lh := fv.Length - FileHeaderMinLength
 	for offset, prevLen := fv.DataOffset, uint64(0); offset < lh; offset += prevLen {
 		offset = Align8(offset)
-		file, err := NewFirmwareFile(data[offset:])
+		file, err := NewFile(data[offset:])
 		if err != nil {
 			return nil, fmt.Errorf("unable to construct firmware file at offset %#x into FV: %v", offset, err)
 		}
