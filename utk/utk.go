@@ -218,6 +218,9 @@ func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitFailure
 	}
 	jsonbuf, err := ioutil.ReadFile("summary.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	firmware, err := uefi.UnmarshalFirmware(jsonbuf)
 	if err != nil {
 		log.Print(err)
