@@ -60,14 +60,9 @@ var supportedFiles = map[FVFileType]bool{
 
 // Stock GUIDS
 var (
-	ZeroGUID *uuid.UUID
-	FFGUID   *uuid.UUID
+	ZeroGUID = uuid.MustParse("00000000-0000-0000-0000-000000000000")
+	FFGUID   = uuid.MustParse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
 )
-
-func init() {
-	ZeroGUID, _ = uuid.Parse("00000000-0000-0000-0000-000000000000")
-	FFGUID, _ = uuid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
-}
 
 // FileAlignments specifies the correct alignments based on the field in the file header.
 var fileAlignments = []uint64{
@@ -94,8 +89,9 @@ const (
 	// FileHeaderMinLength is the minimum length of a firmware file header.
 	FileHeaderMinLength = 0x18
 	// FileHeaderExtMinLength is the minimum length of an extended firmware file header.
-	FileHeaderExtMinLength       = 0x20
-	emptyBodyChecksum      uint8 = 0xAA
+	FileHeaderExtMinLength = 0x20
+	// EmptyBodyChecksum is the value placed in the File IntegrityCheck field if the body checksum bit isn't set.
+	EmptyBodyChecksum uint8 = 0xAA
 )
 
 // IntegrityCheck holds the two 8 bit checksums for the file header and body separately.
@@ -223,7 +219,7 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 	fh.Checksum.Header -= f.checksumHeader()
 
 	// Checksum the body
-	fh.Checksum.File = emptyBodyChecksum
+	fh.Checksum.File = EmptyBodyChecksum
 	if fh.Attributes.hasChecksum() {
 		// if the empty checksum had been set to 0 instead of 0xAA
 		// this could have been a bit nicer. BUT NOOOOOOO.
@@ -369,9 +365,9 @@ func (f *File) Validate() []error {
 	}
 
 	// Body Checksum
-	if !fh.Attributes.hasChecksum() && fh.Checksum.File != emptyBodyChecksum {
+	if !fh.Attributes.hasChecksum() && fh.Checksum.File != EmptyBodyChecksum {
 		errs = append(errs, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
-			fh.UUID, fh.Checksum.File, emptyBodyChecksum))
+			fh.UUID, fh.Checksum.File, EmptyBodyChecksum))
 	} else if fh.Attributes.hasChecksum() {
 		headerSize := FileHeaderMinLength
 		if fh.Attributes.isLarge() {
