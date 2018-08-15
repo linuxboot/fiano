@@ -14,11 +14,11 @@ func TestEncode(t *testing.T) {
 	}
 
 	// Encoded and decode
-	encoded, err := Encode(want)
+	encoded, err := Default.Encode(want)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := Decode(encoded)
+	got, err := Default.Decode(encoded)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestDecode(t *testing.T) {
 	}
 
 	// Decode
-	got, err := Decode(encoded)
+	got, err := Default.Decode(encoded)
 	if err != nil {
 		t.Fatal(err)
 	}
