@@ -2,6 +2,12 @@
 
 Go-based tools for modifying UEFI firmware.
 
+[![Build Status](https://travis-ci.com/linuxboot/fiano.png)](https://travis-ci.com/linuxboot/fiano/)
+[![Go Report
+Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://goreportcard.com/report/github.com/linuxboot/fiano)
+[![GoDoc](https://godoc.org/github.com/linuxboot/fiano?status.svg)](https://godoc.org/github.com/linuxboot/fiano)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/linuxboot/fiano/blob/master/LICENSE)
+
 ## Available tools
 
 * [utk](utk/): generic UEFI tool kit meant to handle rom images. Usage:
