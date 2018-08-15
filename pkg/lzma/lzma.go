@@ -31,8 +31,8 @@ func Encode(decodedData []byte) ([]byte, error) {
 	return EncodeLevel(decodedData, 6)
 }
 
-// Encode encodes a byte slice with LZMA. `level` is a value in the range 0..9
-// where 9 gives the best compression.
+// EncodeLevel encodes a byte slice with LZMA. `level` is a value in the range
+// 0..9 where 9 gives the best compression.
 func EncodeLevel(decodedData []byte, level int) ([]byte, error) {
 	if level < 0 || 9 < level {
 		return nil, errors.New("lzma level must be in range 0..9")

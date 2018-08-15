@@ -38,7 +38,7 @@ type FlashDescriptor struct {
 	ExtractPath string
 }
 
-// FindSignature searchs for an Intel flash signature.
+// FindSignature searches for an Intel flash signature.
 func FindSignature(buf []byte) (int, error) {
 	if bytes.Equal(buf[16:16+FlashSignatureLength], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
