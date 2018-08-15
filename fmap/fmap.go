@@ -105,10 +105,7 @@ func extract(a cmdArgs) error {
 		return err
 	}
 	_, err = io.Copy(os.Stdout, areaReader)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // Write json representation of the fmap to JSONFILE.
@@ -118,10 +115,7 @@ func jsonGet(a cmdArgs) error {
 		return err
 	}
 	data = append(data, byte('\n'))
-	if err := ioutil.WriteFile(a.args[0], data, 0666); err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(a.args[0], data, 0666)
 }
 
 // Replace current fmap with json representation in JSONFILE.
@@ -169,10 +163,7 @@ func summary(a cmdArgs) error {
 		*fmap.FMap
 		Metadata *fmap.Metadata
 	}{a.f, a.m}
-	if err := t.Execute(os.Stdout, combined); err != nil {
-		return err
-	}
-	return nil
+	return t.Execute(os.Stdout, combined)
 }
 
 // Print human readable usage stats.
