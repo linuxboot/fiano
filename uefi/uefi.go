@@ -29,17 +29,46 @@ type Firmware interface {
 	Assemble() ([]byte, error)
 }
 
+// TypedFirmware includes the Firmware interface's type when exporting it to
+// JSON. The type is required when unmarshalling.
+type TypedFirmware struct {
+	Type  string
+	Value Firmware
+}
+
+// UnmarshalJSON unmarshals a TypedFirmware struct and correctly deduces the
+// type of the interface.
+func (f TypedFirmware) UnmarshalJSON(b []byte) error {
+	var getType struct {
+		Type string
+	}
+	if err := json.Unmarshal(b, &getType); err != nil {
+		return err
+	}
+	factory, ok := firmwareTypes[getType.Type]
+	if !ok {
+		return fmt.Errorf("unknown TypedFirmware type '%s', unable to unmarshal", getType.Type)
+	}
+	f.Value = factory()
+	return json.Unmarshal(b, &f.Value)
+}
+
 // This should never be exposed, it is only used for marshalling different types to json.
 type marshalFirmware struct {
 	FType           string
 	FirmwareElement json.RawMessage
 }
 
-var firmwareTypes = map[string]Firmware{}
-
-func init() {
-	firmwareTypes["*uefi.FlashImage"] = new(FlashImage)
-	firmwareTypes["*uefi.BIOSRegion"] = new(BIOSRegion)
+var firmwareTypes = map[string]func() Firmware{
+	"*uefi.BIOSRegion":      func() Firmware { return &BIOSRegion{} },
+	"*uefi.File":            func() Firmware { return &File{} },
+	"*uefi.FirmwareVolume":  func() Firmware { return &FirmwareVolume{} },
+	"*uefi.FlashDescriptor": func() Firmware { return &FlashDescriptor{} },
+	"*uefi.FlashImage":      func() Firmware { return &FlashImage{} },
+	"*uefi.GBERegion":       func() Firmware { return &GBERegion{} },
+	"*uefi.MERegion":        func() Firmware { return &MERegion{} },
+	"*uefi.PDRegion":        func() Firmware { return &PDRegion{} },
+	"*uefi.Section":         func() Firmware { return &Section{} },
 }
 
 // MarshalFirmware marshals the firmware element to JSON, including the type information at the top.
@@ -59,10 +88,11 @@ func UnmarshalFirmware(b []byte) (Firmware, error) {
 	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
-	f, ok := firmwareTypes[m.FType]
+	factory, ok := firmwareTypes[m.FType]
 	if !ok {
-		return nil, fmt.Errorf("unknown Firmware type %s, unable to unmarshal", m.FType)
+		return nil, fmt.Errorf("unknown Firmware type '%s', unable to unmarshal", m.FType)
 	}
+	f := factory()
 	err := json.Unmarshal(m.FirmwareElement, &f)
 	return f, err
 }
