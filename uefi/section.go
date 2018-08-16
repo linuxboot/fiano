@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
@@ -129,13 +130,24 @@ func (s *Section) Assemble() ([]byte, error) {
 	return s.buf, nil
 }
 
-// Extract extracts the Section to the directory passed in.
+// Extract extracts the Section.
 func (s *Section) Extract(parentPath string) error {
 	// Dump the binary
 	var err error
-	// For sections we just extract to the parentpath
-	s.ExtractPath, err = ExtractBinary(s.buf, parentPath, fmt.Sprintf("%v.sec", s.fileOrder))
-	return err
+	// For sections we use the file order as the folder name.
+	dirPath := filepath.Join(parentPath, fmt.Sprint(s.fileOrder))
+	s.ExtractPath, err = ExtractBinary(s.buf, dirPath, fmt.Sprintf("%v.sec", s.fileOrder))
+	if err != nil {
+		return err
+	}
+	// extract the encapsulated sections
+	for _, es := range s.Encapsulated {
+		err = es.Value.Extract(dirPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Validate File Section
