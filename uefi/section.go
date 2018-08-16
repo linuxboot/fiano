@@ -110,7 +110,7 @@ type Section struct {
 	Name string `json:",omitempty"`
 
 	// Encapsulated firmware
-	Encapsulated *TypedFirmware `json:",omitempty"`
+	Encapsulated []*TypedFirmware `json:",omitempty"`
 }
 
 // Assemble assembles the section from the binary
@@ -210,10 +210,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) == 0 {
 			// No processing required
 			var err error
-			s.Encapsulated = &TypedFirmware{
+			s.Encapsulated = []*TypedFirmware{{
 				Type: reflect.TypeOf(&Section{}).String(),
-			}
-			s.Encapsulated.Value, err = NewSection(buf[typeSpec.DataOffset:], 0)
+			}}
+			s.Encapsulated[0].Value, err = NewSection(buf[typeSpec.DataOffset:], 0)
 			if err != nil {
 				return nil, err
 			}
@@ -225,10 +225,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 				if err != nil {
 					return nil, err
 				}
-				s.Encapsulated = &TypedFirmware{
+				s.Encapsulated = []*TypedFirmware{{
 					Type: reflect.TypeOf(&Section{}).String(),
-				}
-				s.Encapsulated.Value, err = NewSection(decoded, 0)
+				}}
+				s.Encapsulated[0].Value, err = NewSection(decoded, 0)
 				if err != nil {
 					return nil, err
 				}
