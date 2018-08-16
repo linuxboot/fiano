@@ -65,12 +65,6 @@ var (
 )
 
 func TestExtractAssembleFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "file-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
 	var tests = []struct {
 		name    string
 		origBuf []byte
@@ -84,11 +78,19 @@ func TestExtractAssembleFile(t *testing.T) {
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpDir, err := ioutil.TempDir("", "section-test")
+
+			if err != nil {
+				t.Fatalf("could not create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
 			f, err := uefi.NewFile(test.origBuf)
 			if err != nil {
 				t.Fatalf("Unable to parse file object %v, got %v", test.origBuf, err.Error())
 			}
-			if err = f.Apply(&Extract{DirPath: tmpDir}); err != nil {
+			var fIndex uint64
+			if err = f.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
 			nb, err := f.Assemble()
@@ -105,12 +107,6 @@ func TestExtractAssembleFile(t *testing.T) {
 }
 
 func TestExtractAssembleFV(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "fv-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
 	var tests = []struct {
 		name    string
 		origBuf []byte
@@ -122,11 +118,19 @@ func TestExtractAssembleFV(t *testing.T) {
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpDir, err := ioutil.TempDir("", "section-test")
+
+			if err != nil {
+				t.Fatalf("could not create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
 			fv, err := uefi.NewFirmwareVolume(test.origBuf, 0)
 			if err != nil {
 				t.Fatalf("Unable to parse file object %v, got %v", test.origBuf, err.Error())
 			}
-			if err = fv.Apply(&Extract{DirPath: tmpDir}); err != nil {
+			var fIndex uint64
+			if err = fv.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
 			nb, err := fv.Assemble()
@@ -143,13 +147,6 @@ func TestExtractAssembleFV(t *testing.T) {
 }
 
 func TestExtractAssembleSection(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "section-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
-
 	var tests = []struct {
 		name      string
 		buf       []byte
@@ -164,14 +161,25 @@ func TestExtractAssembleSection(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpDir, err := ioutil.TempDir("", "section-test")
+
+			if err != nil {
+				t.Fatalf("could not create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
 			s, err := uefi.NewSection(test.buf, test.fileOrder)
 			if err != nil {
 				t.Fatalf("Unable to parse section object %v, got %v", test.buf, err.Error())
 			}
-			if err = s.Apply(&Extract{DirPath: tmpDir}); err != nil {
+			var fIndex uint64
+			if err = s.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract section %v, got %v", test.buf, err.Error())
 			}
 			nb, err := s.Assemble()
+			if err != nil {
+				t.Fatal(err)
+			}
 			if len(test.buf) != len(nb) {
 				t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
 			}

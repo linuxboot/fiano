@@ -12,6 +12,7 @@ import (
 // Extract prints any Firmware node as Extract.
 type Extract struct {
 	DirPath string
+	Index   *uint64
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -27,7 +28,8 @@ func (v *Extract) Run(f uefi.Firmware) error {
 		return err
 	}
 
-	if err := f.Apply(&Extract{"."}); err != nil {
+	var fileIndex uint64
+	if err := f.Apply(&Extract{DirPath: ".", Index: &fileIndex}); err != nil {
 		return err
 	}
 
@@ -48,23 +50,30 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 	var err error
 	switch f := f.(type) {
 
-	case *uefi.FlashImage:
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "flash.rom")
-
 	case *uefi.FirmwareVolume:
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("%#x", f.FVOffset))
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "fv.bin")
+		if len(f.Files) == 0 {
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "fv.bin")
+		} else {
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf[:f.DataOffset], v2.DirPath, "fvh.bin")
+		}
 
 	case *uefi.File:
 		// For files we use the GUID as the folder name.
-		// TODO: This is a mistake because GUIDs are not unique (pad files especially).
 		v2.DirPath = filepath.Join(v.DirPath, f.Header.UUID.String())
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
+		// Crappy hack to make unique ids unique
+		v2.DirPath = filepath.Join(v2.DirPath, fmt.Sprint(*v.Index))
+		*v.Index++
+		if len(f.Sections) == 0 {
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
+		}
 
 	case *uefi.Section:
 		// For sections we use the file order as the folder name.
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprint(f.FileOrder))
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.sec", f.FileOrder))
+		if len(f.Encapsulated) == 0 {
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.sec", f.FileOrder))
+		}
 
 	case *uefi.FlashDescriptor:
 		v2.DirPath = filepath.Join(v.DirPath, "ifd")
@@ -72,7 +81,9 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 
 	case *uefi.BIOSRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "bios")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "biosregion.bin")
+		if len(f.FirmwareVolumes) == 0 {
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "biosregion.bin")
+		}
 
 	case *uefi.GBERegion:
 		v2.DirPath = filepath.Join(v.DirPath, "gbe")
@@ -94,9 +105,11 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 }
 
 func init() {
+	var fileIndex uint64
 	RegisterCLI("extract", 1, func(args []string) (uefi.Visitor, error) {
 		return &Extract{
 			DirPath: args[0],
+			Index:   &fileIndex,
 		}, nil
 	})
 }

@@ -3,6 +3,7 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +16,9 @@ import (
 
 const (
 	// SectionMinLength is the minimum length of a file section header.
-	SectionMinLength = 0x08
+	SectionMinLength = 0x04
+	// SectionExtMinLength is the minimum length of an extended file section header.
+	SectionExtMinLength = 0x08
 )
 
 // SectionType holds a section type value
@@ -96,7 +99,48 @@ type SectionGUIDDefinedHeader struct {
 // EFI_SECTION_GUID_DEFINED section.
 type SectionGUIDDefined struct {
 	SectionGUIDDefinedHeader
+
+	// Metadata
 	Compression string
+}
+
+// GetBinHeaderLen returns the length of the binary typ specific header
+func (s *SectionGUIDDefined) GetBinHeaderLen() uint32 {
+	return uint32(unsafe.Sizeof(s.SectionGUIDDefinedHeader))
+}
+
+// TypeHeader interface forces type specific headers to report their length
+type TypeHeader interface {
+	GetBinHeaderLen() uint32
+}
+
+// TypeSpecificHeader is used for marshalling and unmarshalling from JSON
+type TypeSpecificHeader struct {
+	Type   SectionType
+	Header TypeHeader
+}
+
+var headerTypes = map[SectionType]func() TypeHeader{
+	SectionTypeGUIDDefined: func() TypeHeader { return &SectionGUIDDefined{} },
+}
+
+// UnmarshalJSON unmarshals a TypeSpecificHeader struct and correctly deduces the
+// type of the interface.
+func (t *TypeSpecificHeader) UnmarshalJSON(b []byte) error {
+	var getType struct {
+		Type   SectionType
+		Header json.RawMessage
+	}
+	if err := json.Unmarshal(b, &getType); err != nil {
+		return err
+	}
+	factory, ok := headerTypes[getType.Type]
+	if !ok {
+		return fmt.Errorf("unknown TypeSpecificHeader type '%v', unable to unmarshal", getType.Type)
+	}
+	t.Type = SectionType(getType.Type)
+	t.Header = factory()
+	return json.Unmarshal(getType.Header, &t.Header)
 }
 
 // Section represents a Firmware File Section
@@ -110,7 +154,7 @@ type Section struct {
 	FileOrder   int `json:"-"`
 
 	// Type specific fields
-	TypeSpecific interface{} `json:",omitempty"`
+	TypeSpecific *TypeSpecificHeader `json:",omitempty"`
 
 	// For EFI_SECTION_USER_INTERFACE
 	Name string `json:",omitempty"`
@@ -134,13 +178,104 @@ func (s *Section) ApplyChildren(v Visitor) error {
 	return nil
 }
 
-// Assemble assembles the section from the binary
+// GenSecHeader generates a full binary header for the section data.
+// It assumes that the passed in section struct already contains section data in the buffer,
+// the section type in the Type field, and the type specific header in the TypeSpecific field.
+// It modifies the calling Section.
+func (s *Section) GenSecHeader() error {
+	var err error
+	// Calculate size
+	headerLen := uint32(SectionMinLength)
+	if s.TypeSpecific != nil && s.TypeSpecific.Header != nil {
+		headerLen += s.TypeSpecific.Header.GetBinHeaderLen()
+	}
+	s.Header.ExtendedSize = uint32(len(s.Buf)) + headerLen // TS header lengths are part of headerLen at this point
+	if s.Header.ExtendedSize >= 0xFFFFFF {
+		headerLen += 4 // Add space for the extended header.
+		s.Header.ExtendedSize += 4
+	}
+
+	// Set the correct data offset for GUID Defined headers.
+	// This is terrible
+	if s.Header.Type == SectionTypeGUIDDefined {
+		gd := s.TypeSpecific.Header.(*SectionGUIDDefined)
+		gd.DataOffset = uint16(headerLen)
+		// append type specific header in front of data
+		tsh := new(bytes.Buffer)
+		if err = binary.Write(tsh, binary.LittleEndian, &gd.SectionGUIDDefinedHeader); err != nil {
+			return err
+		}
+		s.Buf = append(tsh.Bytes(), s.Buf...)
+	}
+
+	// Append common header
+	s.Header.Size = Write3Size(uint64(s.Header.ExtendedSize))
+	h := new(bytes.Buffer)
+	if s.Header.ExtendedSize >= 0xFFFFFF {
+		err = binary.Write(h, binary.LittleEndian, &s.Header)
+	} else {
+		err = binary.Write(h, binary.LittleEndian, &s.Header.SectionHeader)
+	}
+	if err != nil {
+		return err
+	}
+	s.Buf = append(h.Bytes(), s.Buf...)
+	return nil
+}
+
+// Assemble assembles the Section.
 func (s *Section) Assemble() ([]byte, error) {
 	var err error
-	s.Buf, err = ioutil.ReadFile(s.ExtractPath)
-	if err != nil {
-		return nil, err
+	if len(s.Encapsulated) == 0 {
+		// Just read the binary
+		s.Buf, err = ioutil.ReadFile(s.ExtractPath)
+		if err != nil {
+			return nil, err
+		}
+		return s.Buf, nil
 	}
+
+	// Assemble the Encapsulated elements
+	secData := []byte{}
+	dLen := uint64(0)
+	for _, es := range s.Encapsulated {
+		// Align to 4 bytes and extend with 00s
+		for count := Align4(dLen) - dLen; count > 0; count-- {
+			secData = append(secData, 0x00)
+		}
+		dLen = Align4(dLen)
+
+		// Assemble the subsection and append
+		esData, err := es.Value.Assemble()
+		if err != nil {
+			return nil, err
+		}
+		dLen += uint64(len(esData))
+		secData = append(secData, esData...)
+	}
+
+	switch s.Header.Type {
+	case SectionTypeGUIDDefined:
+		ts := s.TypeSpecific.Header.(*SectionGUIDDefined)
+		if ts.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
+			switch ts.GUID {
+			case lzmaGUID:
+				var err error
+				if ts.Compression == "LZMA" {
+					s.Buf, err = lzma.Encode(secData)
+					if err != nil {
+						return nil, err
+					}
+				}
+			default:
+				return nil, fmt.Errorf("unknown guid defined from section %v, should not have encapsulated sections", s)
+			}
+		}
+	default:
+		s.Buf = secData
+	}
+
+	s.GenSecHeader()
 	return s.Buf, nil
 }
 
@@ -153,7 +288,7 @@ func (s *Section) Validate() []error {
 	// Size Checks
 	sh := &s.Header
 	if sh.Size == blankSize {
-		if buflen < SectionMinLength {
+		if buflen < SectionExtMinLength {
 			errs = append(errs, fmt.Errorf("section length too small!, buffer is only %#x bytes long for extended header",
 				buflen))
 			return errs
@@ -216,7 +351,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		if err := binary.Read(r, binary.LittleEndian, &typeSpec.SectionGUIDDefinedHeader); err != nil {
 			return nil, err
 		}
-		s.TypeSpecific = typeSpec
+		s.TypeSpecific = &TypeSpecificHeader{Type: SectionTypeGUIDDefined, Header: typeSpec}
 
 		// Determine how to interpret the section based on the GUID.
 		var encapBuf []byte

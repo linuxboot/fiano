@@ -213,12 +213,26 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 		return nil, err
 	}
 
-	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok {
-		// we don't support this fv type, just return the raw buffer.
+	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok || len(fv.Files) == 0 {
+		// We don't support this fv type, just return the raw buffer.
+		// Or we have no Files, so we assume that what was extracted was
+		// the full binary FV
 		return fv.Buf, nil
 	}
+
+	// Construct the full buffer.
+	// The FV header is the only thing we've read in so far.
+	if fv.Length < uint64(len(fv.Buf)) {
+		return nil, fmt.Errorf("buffer read in bigger than FV length!, expected %v got %v bytes",
+			fv.Length, len(fv.Buf))
+	}
+	extLen := fv.Length - uint64(len(fv.Buf))
+	emptyBuf := make([]byte, extLen)
+	Erase(emptyBuf, Attributes.ErasePolarity)
+	fv.Buf = append(fv.Buf, emptyBuf...)
+
 	// Make sure we don't go over the size.
-	fvLen := uint64(len(fv.Buf))
+	fvLen := fv.Length
 	fOffset := fv.DataOffset
 	for _, f := range fv.Files {
 		fBuf, err := f.Assemble()
