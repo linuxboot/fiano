@@ -183,6 +183,21 @@ type File struct {
 	DataOffset  uint64
 }
 
+// Apply calls the visitor on the File.
+func (f *File) Apply(v Visitor) error {
+	return v.VisitFile(f)
+}
+
+// ApplyChildren calls the visitor on each child node of File.
+func (f *File) ApplyChildren(v Visitor) error {
+	for _, s := range f.Sections {
+		if err := v.VisitSection(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (f *File) setSize(size uint64, resizeFile bool) {
 	fh := &f.Header
 	// See if we need the extended size

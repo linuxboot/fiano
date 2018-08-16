@@ -20,13 +20,22 @@ type ROMAttributes struct {
 // Attributes holds the global attributes
 var Attributes ROMAttributes
 
-// Firmware is an interface to describe generic firmware types. The
+// Firmware is an interface to describe generic firmware types. When the
+// firmware is parsed, all the Firmware objects are laid out in a tree (similar
+// to an AST). This interface represents one node in said tree. The
 // implementations (e.g. Flash image, or FirmwareVolume) must implement this
 // interface.
 type Firmware interface {
 	Validate() []error
 	Extract(dirpath string) error
 	Assemble() ([]byte, error)
+
+	// Apply a visitor to the Firmware.
+	Apply(v Visitor) error
+
+	// Apply a visitor to all the direct children of the Firmware
+	// (excluding the Firmware itself).
+	ApplyChildren(v Visitor) error
 }
 
 // TypedFirmware includes the Firmware interface's type when exporting it to

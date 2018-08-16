@@ -50,6 +50,21 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 	return &br, nil
 }
 
+// Apply calls the visitor on the BIOSRegion.
+func (br *BIOSRegion) Apply(v Visitor) error {
+	return v.VisitBIOSRegion(br)
+}
+
+// ApplyChildren calls the visitor on each child node of BIOSRegion.
+func (br *BIOSRegion) ApplyChildren(v Visitor) error {
+	for _, fv := range br.FirmwareVolumes {
+		if err := v.VisitFV(fv); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Validate Region
 func (br *BIOSRegion) Validate() []error {
 	// TODO: Add more verification if needed.

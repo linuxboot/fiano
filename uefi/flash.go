@@ -52,6 +52,16 @@ func FindSignature(buf []byte) (int, error) {
 		hex.Dump(buf[:20]))
 }
 
+// Apply calls the visitor on the FlashDescriptor.
+func (fd *FlashDescriptor) Apply(v Visitor) error {
+	return v.VisitIFD(fd)
+}
+
+// ApplyChildren calls the visitor on each child node of FlashDescriptor.
+func (fd *FlashDescriptor) ApplyChildren(v Visitor) error {
+	return nil
+}
+
 // ParseFlashDescriptor parses the ifd from the buffer
 func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 	if buflen := len(fd.buf); buflen != FlashDescriptorLength {
@@ -139,6 +149,36 @@ type FlashImage struct {
 	// Metadata for extraction and recovery
 	ExtractPath string
 	regions     []Firmware
+}
+
+// Apply calls the visitor on the FlashImage.
+func (f *FlashImage) Apply(v Visitor) error {
+	return v.VisitImage(f)
+}
+
+// ApplyChildren calls the visitor on each child node of FlashImage.
+func (f *FlashImage) ApplyChildren(v Visitor) error {
+	if f.BIOS != nil {
+		if err := v.VisitBIOSRegion(f.BIOS); err != nil {
+			return err
+		}
+	}
+	if f.ME != nil {
+		if err := v.VisitMERegion(f.ME); err != nil {
+			return err
+		}
+	}
+	if f.GBE != nil {
+		if err := v.VisitGBERegion(f.GBE); err != nil {
+			return err
+		}
+	}
+	if f.PD != nil {
+		if err := v.VisitPDRegion(f.PD); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // IsPCH returns whether the flash image has the more recent PCH format, or not.
