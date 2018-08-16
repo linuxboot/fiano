@@ -25,6 +25,16 @@ func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
 	return &me, nil
 }
 
+// Apply calls the visitor on the MERegion.
+func (me *MERegion) Apply(v Visitor) error {
+	return v.VisitMERegion(me)
+}
+
+// ApplyChildren calls the visitor on each child node of MERegion.
+func (me *MERegion) ApplyChildren(v Visitor) error {
+	return nil
+}
+
 // Validate Region
 func (me *MERegion) Validate() []error {
 	// TODO: Add more verification if needed.

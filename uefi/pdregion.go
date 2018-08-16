@@ -25,6 +25,16 @@ func NewPDRegion(buf []byte, r *Region) (*PDRegion, error) {
 	return &pdr, nil
 }
 
+// Apply calls the visitor on the PDRegion.
+func (pd *PDRegion) Apply(v Visitor) error {
+	return v.VisitPDRegion(pd)
+}
+
+// ApplyChildren calls the visitor on each child node of PDRegion.
+func (pd *PDRegion) ApplyChildren(v Visitor) error {
+	return nil
+}
+
 // Validate Region
 func (pd *PDRegion) Validate() []error {
 	// TODO: Add more verification if needed.

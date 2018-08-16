@@ -98,6 +98,21 @@ type FirmwareVolume struct {
 	ExtractPath string
 }
 
+// Apply calls the visitor on the FirmwareVolume.
+func (fv *FirmwareVolume) Apply(v Visitor) error {
+	return v.VisitFV(fv)
+}
+
+// ApplyChildren calls the visitor on each child node of FirmwareVolume.
+func (fv *FirmwareVolume) ApplyChildren(v Visitor) error {
+	for _, f := range fv.Files {
+		if err := v.VisitFile(f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // GetErasePolarity gets the erase polarity
 func (fv *FirmwareVolume) GetErasePolarity() uint8 {
 	if fv.Attributes&0x800 != 0 {

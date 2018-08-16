@@ -120,6 +120,21 @@ type Section struct {
 	Encapsulated []*TypedFirmware `json:",omitempty"`
 }
 
+// Apply calls the visitor on the Section.
+func (s *Section) Apply(v Visitor) error {
+	return v.VisitSection(s)
+}
+
+// ApplyChildren calls the visitor on each child node of Section.
+func (s *Section) ApplyChildren(v Visitor) error {
+	for _, f := range s.Encapsulated {
+		if err := f.Value.Apply(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Assemble assembles the section from the binary
 func (s *Section) Assemble() ([]byte, error) {
 	var err error
