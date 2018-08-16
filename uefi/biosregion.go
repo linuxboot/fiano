@@ -3,7 +3,6 @@ package uefi
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 )
 
 // BIOSRegion represents the Bios Region in the firmware.
@@ -16,6 +15,7 @@ type BIOSRegion struct {
 
 	//Metadata for extraction and recovery
 	ExtractPath string
+	Length      uint64
 	// This is a pointer to the Region struct laid out in the ifd
 	Position *Region `json:",omitempty"`
 }
@@ -24,7 +24,7 @@ type BIOSRegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
-	br := BIOSRegion{Buf: buf, Position: r}
+	br := BIOSRegion{Buf: buf, Position: r, Length: uint64(len(buf))}
 	var absOffset uint64
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
@@ -93,17 +93,13 @@ func (br *BIOSRegion) Validate() []error {
 
 // Assemble assembles the Bios Region from the binary file.
 func (br *BIOSRegion) Assemble() ([]byte, error) {
-	var err error
-	br.Buf, err = ioutil.ReadFile(br.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-
+	br.Buf = make([]byte, br.Length)
 	// Assemble the Firmware Volumes
 	for i, fv := range br.FirmwareVolumes {
 		// We have to trust the JSON's polarity
 		if i == 0 {
 			Attributes.ErasePolarity = fv.GetErasePolarity()
+			Erase(br.Buf, Attributes.ErasePolarity)
 		}
 		buf, err := fv.Assemble()
 		if err != nil {
