@@ -203,3 +203,10 @@ func Align4(val uint64) uint64 {
 func Align8(val uint64) uint64 {
 	return Align(val, 8)
 }
+
+// Erase sets the buffer to be ErasePolarity
+func Erase(buf []byte, polarity byte) {
+	for j, blen := 0, len(buf); j < blen; j++ {
+		buf[j] = Attributes.ErasePolarity
+	}
+}
