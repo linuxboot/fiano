@@ -25,6 +25,16 @@ func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
 	return &gbe, nil
 }
 
+// Apply calls the visitor on the GBERegion.
+func (gbe *GBERegion) Apply(v Visitor) error {
+	return v.VisitGBERegion(gbe)
+}
+
+// ApplyChildren calls the visitor on each child node of GBERegion.
+func (gbe *GBERegion) ApplyChildren(v Visitor) error {
+	return nil
+}
+
 // Validate Region
 func (gbe *GBERegion) Validate() []error {
 	// TODO: Add more verification if needed.
