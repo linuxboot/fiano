@@ -17,52 +17,37 @@ const (
 	FirmwareVolumeExtHeaderMinSize = 20
 )
 
-// FVGUIDs holds common FV type names
-var FVGUIDs map[uuid.UUID]string
-
-var supportedFVs map[uuid.UUID]bool
-
 // Valid FV GUIDs
 var (
-	FFS1      *uuid.UUID
-	FFS2      *uuid.UUID
-	FFS3      *uuid.UUID
-	EVSA      *uuid.UUID
-	NVAR      *uuid.UUID
-	EVSA2     *uuid.UUID
-	AppleBoot *uuid.UUID
-	PFH1      *uuid.UUID
-	PFH2      *uuid.UUID
+	FFS1      = uuid.MustParse("7a9354d9-0468-444a-81ce-0bf617d890df")
+	FFS2      = uuid.MustParse("8c8ce578-8a3d-4f1c-9935-896185c32dd3")
+	FFS3      = uuid.MustParse("5473c07a-3dcb-4dca-bd6f-1e9689e7349a")
+	EVSA      = uuid.MustParse("fff12b8d-7696-4c8b-a985-2747075b4f50")
+	NVAR      = uuid.MustParse("cef5b9a3-476d-497f-9fdc-e98143e0422c")
+	EVSA2     = uuid.MustParse("00504624-8a59-4eeb-bd0f-6b36e96128e0")
+	AppleBoot = uuid.MustParse("04adeead-61ff-4d31-b6ba-64f8bf901f5a")
+	PFH1      = uuid.MustParse("16b45da2-7d70-4aea-a58d-760e9ecb841d")
+	PFH2      = uuid.MustParse("e360bdba-c3ce-46be-8f37-b231e5cb9f35")
 )
 
-func init() {
-	FFS1, _ = uuid.Parse("7a9354d9-0468-444a-81ce-0bf617d890df")
-	FFS2, _ = uuid.Parse("8c8ce578-8a3d-4f1c-9935-896185c32dd3")
-	FFS3, _ = uuid.Parse("5473c07a-3dcb-4dca-bd6f-1e9689e7349a")
-	EVSA, _ = uuid.Parse("fff12b8d-7696-4c8b-a985-2747075b4f50")
-	NVAR, _ = uuid.Parse("cef5b9a3-476d-497f-9fdc-e98143e0422c")
-	EVSA2, _ = uuid.Parse("00504624-8a59-4eeb-bd0f-6b36e96128e0")
-	AppleBoot, _ = uuid.Parse("04adeead-61ff-4d31-b6ba-64f8bf901f5a")
-	PFH1, _ = uuid.Parse("16b45da2-7d70-4aea-a58d-760e9ecb841d")
-	PFH2, _ = uuid.Parse("e360bdba-c3ce-46be-8f37-b231e5cb9f35")
+// FVGUIDs holds common FV type names
+var FVGUIDs = map[uuid.UUID]string{
+	*FFS1:      "FFS1",
+	*FFS2:      "FFS2",
+	*FFS3:      "FFS3",
+	*EVSA:      "NVRAM_EVSA",
+	*NVAR:      "NVRAM_NVAR",
+	*EVSA2:     "NVRAM_EVSA2",
+	*AppleBoot: "APPLE_BOOT",
+	*PFH1:      "PFH1",
+	*PFH2:      "PFH2",
+}
 
-	// Add names to map
-	FVGUIDs = make(map[uuid.UUID]string)
-	FVGUIDs[*FFS1] = "FFS1"
-	FVGUIDs[*FFS2] = "FFS2"
-	FVGUIDs[*FFS3] = "FFS3"
-	FVGUIDs[*EVSA] = "NVRAM_EVSA"
-	FVGUIDs[*NVAR] = "NVRAM_NVAR"
-	FVGUIDs[*EVSA2] = "NVRAM_EVSA2"
-	FVGUIDs[*AppleBoot] = "APPLE_BOOT"
-	FVGUIDs[*PFH1] = "PFH1"
-	FVGUIDs[*PFH2] = "PFH2"
-
-	// These are the FVs we actually try to parse beyond the header
-	// We don't parse anything except FFS2 and FFS3
-	supportedFVs = make(map[uuid.UUID]bool)
-	supportedFVs[*FFS2] = true
-	supportedFVs[*FFS3] = true
+// These are the FVs we actually try to parse beyond the header
+// We don't parse anything except FFS2 and FFS3
+var supportedFVs = map[uuid.UUID]bool{
+	*FFS2: true,
+	*FFS3: true,
 }
 
 // Block describes number and size of the firmware volume blocks
