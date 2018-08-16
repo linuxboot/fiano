@@ -36,6 +36,14 @@ type TypedFirmware struct {
 	Value Firmware
 }
 
+// MakeTyped takes a Firmware interface and makes a (type, value) pair.
+func MakeTyped(f Firmware) *TypedFirmware {
+	return &TypedFirmware{
+		Type:  reflect.TypeOf(f).String(),
+		Value: f,
+	}
+}
+
 // UnmarshalJSON unmarshals a TypedFirmware struct and correctly deduces the
 // type of the interface.
 func (f TypedFirmware) UnmarshalJSON(b []byte) error {
