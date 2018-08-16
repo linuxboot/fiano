@@ -36,7 +36,7 @@ func init() {
 	badFreeFormFile[16] = 0 // Zero out checksum
 }
 
-func TestValidate(t *testing.T) {
+func TestValidateFile(t *testing.T) {
 	var tests = []struct {
 		name string
 		buf  []byte
