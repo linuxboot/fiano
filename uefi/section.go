@@ -85,12 +85,19 @@ type SectionExtHeader struct {
 	ExtendedSize uint32 `json:"-"`
 }
 
-// SectionGUIDDefined contains the fields for a EFI_SECTION_GUID_DEFINED
-// section.
-type SectionGUIDDefined struct {
+// SectionGUIDDefinedHeader contains the fields for a EFI_SECTION_GUID_DEFINED
+// encapsulated section header.
+type SectionGUIDDefinedHeader struct {
 	GUID       uuid.UUID
 	DataOffset uint16
 	Attributes uint16
+}
+
+// SectionGUIDDefined contains the type specific fields for a
+// EFI_SECTION_GUID_DEFINED section.
+type SectionGUIDDefined struct {
+	SectionGUIDDefinedHeader
+	Compression string
 }
 
 // Section represents a Firmware File Section
@@ -201,38 +208,42 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	switch s.Header.Type {
 	case SectionTypeGUIDDefined:
 		typeSpec := &SectionGUIDDefined{}
-		if err := binary.Read(r, binary.LittleEndian, typeSpec); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, &typeSpec.SectionGUIDDefinedHeader); err != nil {
 			return nil, err
 		}
-		s.TypeSpecific = &typeSpec
+		s.TypeSpecific = typeSpec
 
-		// Determine whether the encapsulated section needs processing.
-		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) == 0 {
-			// No processing required
-			var err error
-			s.Encapsulated = []*TypedFirmware{{
-				Type: reflect.TypeOf(&Section{}).String(),
-			}}
-			s.Encapsulated[0].Value, err = NewSection(buf[typeSpec.DataOffset:], 0)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			// Determine how to decode the section based on the GUID.
+		// Determine how to interpret the section based on the GUID.
+		var encapBuf []byte
+		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
 			switch typeSpec.GUID {
 			case lzmaGUID:
-				decoded, err := lzma.Decode(buf[typeSpec.DataOffset:])
+				var err error
+				encapBuf, err = lzma.Decode(buf[typeSpec.DataOffset:])
 				if err != nil {
-					return nil, err
+					encapBuf = []byte{}
+					typeSpec.Compression = "UNKNOWN"
+				} else {
+					typeSpec.Compression = "LZMA"
 				}
-				s.Encapsulated = []*TypedFirmware{{
-					Type: reflect.TypeOf(&Section{}).String(),
-				}}
-				s.Encapsulated[0].Value, err = NewSection(decoded, 0)
-				if err != nil {
-					return nil, err
-				}
+			default:
+				typeSpec.Compression = "UNKNOWN"
 			}
+		}
+
+		for i, offset := 0, uint64(0); offset < uint64(len(encapBuf)); i++ {
+			encapS, err := NewSection(encapBuf[offset:], i)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing encapsulated section #%d at offset %d",
+					i, offset)
+			}
+			// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
+			// but UEFITool aligns to 4 bytes, and this seems to work on everything I have.
+			offset = Align4(offset + uint64(encapS.Header.ExtendedSize))
+			s.Encapsulated = append(s.Encapsulated, &TypedFirmware{
+				Type:  reflect.TypeOf(encapS).String(),
+				Value: encapS,
+			})
 		}
 
 	case SectionTypeUserInterface:
