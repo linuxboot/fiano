@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"reflect"
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
@@ -240,14 +239,18 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
 			// but UEFITool aligns to 4 bytes, and this seems to work on everything I have.
 			offset = Align4(offset + uint64(encapS.Header.ExtendedSize))
-			s.Encapsulated = append(s.Encapsulated, &TypedFirmware{
-				Type:  reflect.TypeOf(encapS).String(),
-				Value: encapS,
-			})
+			s.Encapsulated = append(s.Encapsulated, MakeTyped(encapS))
 		}
 
 	case SectionTypeUserInterface:
 		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
+
+	case SectionTypeFirmwareVolumeImage:
+		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0)
+		if err != nil {
+			return nil, err
+		}
+		s.Encapsulated = []*TypedFirmware{MakeTyped(fv)}
 	}
 
 	return &s, nil
