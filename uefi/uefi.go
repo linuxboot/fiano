@@ -55,9 +55,10 @@ func MakeTyped(f Firmware) *TypedFirmware {
 
 // UnmarshalJSON unmarshals a TypedFirmware struct and correctly deduces the
 // type of the interface.
-func (f TypedFirmware) UnmarshalJSON(b []byte) error {
+func (f *TypedFirmware) UnmarshalJSON(b []byte) error {
 	var getType struct {
 		Type string
+		Value json.RawMessage
 	}
 	if err := json.Unmarshal(b, &getType); err != nil {
 		return err
@@ -66,8 +67,9 @@ func (f TypedFirmware) UnmarshalJSON(b []byte) error {
 	if !ok {
 		return fmt.Errorf("unknown TypedFirmware type '%s', unable to unmarshal", getType.Type)
 	}
+	f.Type = getType.Type
 	f.Value = factory()
-	return json.Unmarshal(b, &f.Value)
+	return json.Unmarshal(getType.Value, &f.Value)
 }
 
 // This should never be exposed, it is only used for marshalling different types to json.
