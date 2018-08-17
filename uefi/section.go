@@ -102,9 +102,10 @@ type SectionGUIDDefined struct {
 
 // Section represents a Firmware File Section
 type Section struct {
-	Header SectionExtHeader
-	Type   string
-	buf    []byte
+	Header     SectionExtHeader
+	Type       string // Textual representation of Header.Type
+	HeaderSize uint32 `json:"-"`
+	Buf        []byte `json:"-"` // Includes header
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -138,11 +139,11 @@ func (s *Section) ApplyChildren(v Visitor) error {
 // Assemble assembles the section from the binary
 func (s *Section) Assemble() ([]byte, error) {
 	var err error
-	s.buf, err = ioutil.ReadFile(s.ExtractPath)
+	s.Buf, err = ioutil.ReadFile(s.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return s.buf, nil
+	return s.Buf, nil
 }
 
 // Extract extracts the Section.
@@ -151,7 +152,7 @@ func (s *Section) Extract(parentPath string) error {
 	var err error
 	// For sections we use the file order as the folder name.
 	dirPath := filepath.Join(parentPath, fmt.Sprint(s.fileOrder))
-	s.ExtractPath, err = ExtractBinary(s.buf, dirPath, fmt.Sprintf("%v.sec", s.fileOrder))
+	s.ExtractPath, err = ExtractBinary(s.Buf, dirPath, fmt.Sprintf("%v.sec", s.fileOrder))
 	if err != nil {
 		return err
 	}
@@ -168,7 +169,7 @@ func (s *Section) Extract(parentPath string) error {
 // Validate File Section
 func (s *Section) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint32(len(s.buf))
+	buflen := uint32(len(s.Buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 
 	// Size Checks
@@ -184,7 +185,7 @@ func (s *Section) Validate() []error {
 		return errs
 	}
 	if buflen != sh.ExtendedSize {
-		errs = append(errs, fmt.Errorf("section size mismatch! Size is %#x, buf length is %#x",
+		errs = append(errs, fmt.Errorf("section size mismatch! Size is %#x, Buf length is %#x",
 			sh.ExtendedSize, buflen))
 		return errs
 	}
@@ -207,7 +208,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		s.Type = t
 	}
 
-	headerSize := unsafe.Sizeof(SectionHeader{})
+	s.HeaderSize = uint32(unsafe.Sizeof(SectionHeader{}))
 	if s.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
 		// Extended Header
 		if err := binary.Read(r, binary.LittleEndian, &s.Header.ExtendedSize); err != nil {
@@ -216,7 +217,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		if s.Header.ExtendedSize == 0xFFFFFFFF {
 			return nil, errors.New("section size and extended size are all FFs! there should not be free space inside a file")
 		}
-		headerSize = unsafe.Sizeof(SectionExtHeader{})
+		s.HeaderSize = uint32(unsafe.Sizeof(SectionExtHeader{}))
 	} else {
 		// Copy small size into big for easier handling.
 		// Section's extended size is 32 bits unlike file's
@@ -228,7 +229,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			s.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	s.buf = buf[:s.Header.ExtendedSize]
+	s.Buf = buf[:s.Header.ExtendedSize]
 
 	// Section type specific data
 	switch s.Header.Type {
@@ -270,10 +271,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		}
 
 	case SectionTypeUserInterface:
-		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
+		s.Name = unicode.UCS2ToUTF8(s.Buf[s.HeaderSize:])
 
 	case SectionTypeFirmwareVolumeImage:
-		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0)
+		fv, err := NewFirmwareVolume(s.Buf[s.HeaderSize:], 0)
 		if err != nil {
 			return nil, err
 		}
