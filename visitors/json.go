@@ -40,27 +40,27 @@ func (v *JSON) VisitSection(s *uefi.Section) error {
 	return printJSON(s)
 }
 
-// VisitIFD applies the Find visitor on a FlashDescriptor.
+// VisitIFD applies the JSON visitor on a FlashDescriptor.
 func (v *JSON) VisitIFD(fd *uefi.FlashDescriptor) error {
 	return printJSON(fd)
 }
 
-// VisitBIOSRegion applies the Find visitor on a BIOSRegion.
+// VisitBIOSRegion applies the JSON visitor on a BIOSRegion.
 func (v *JSON) VisitBIOSRegion(br *uefi.BIOSRegion) error {
 	return printJSON(br)
 }
 
-// VisitMERegion applies the Find visitor on a MERegion.
+// VisitMERegion applies the JSON visitor on a MERegion.
 func (v *JSON) VisitMERegion(me *uefi.MERegion) error {
 	return printJSON(me)
 }
 
-// VisitGBERegion applies the Find visitor on a GBERegion.
+// VisitGBERegion applies the JSON visitor on a GBERegion.
 func (v *JSON) VisitGBERegion(gbe *uefi.GBERegion) error {
 	return printJSON(gbe)
 }
 
-// VisitPDRegion applies the Find visitor on a PDRegion.
+// VisitPDRegion applies the JSON visitor on a PDRegion.
 func (v *JSON) VisitPDRegion(pd *uefi.PDRegion) error {
 	return printJSON(pd)
 }
