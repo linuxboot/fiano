@@ -185,13 +185,13 @@ type File struct {
 
 // Apply calls the visitor on the File.
 func (f *File) Apply(v Visitor) error {
-	return v.VisitFile(f)
+	return v.Visit(f)
 }
 
 // ApplyChildren calls the visitor on each child node of File.
 func (f *File) ApplyChildren(v Visitor) error {
 	for _, s := range f.Sections {
-		if err := v.VisitSection(s); err != nil {
+		if err := s.Apply(v); err != nil {
 			return err
 		}
 	}

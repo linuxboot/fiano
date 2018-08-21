@@ -100,13 +100,13 @@ type FirmwareVolume struct {
 
 // Apply calls the visitor on the FirmwareVolume.
 func (fv *FirmwareVolume) Apply(v Visitor) error {
-	return v.VisitFV(fv)
+	return v.Visit(fv)
 }
 
 // ApplyChildren calls the visitor on each child node of FirmwareVolume.
 func (fv *FirmwareVolume) ApplyChildren(v Visitor) error {
 	for _, f := range fv.Files {
-		if err := v.VisitFile(f); err != nil {
+		if err := f.Apply(v); err != nil {
 			return err
 		}
 	}

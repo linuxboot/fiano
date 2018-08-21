@@ -54,7 +54,7 @@ func FindSignature(buf []byte) (int, error) {
 
 // Apply calls the visitor on the FlashDescriptor.
 func (fd *FlashDescriptor) Apply(v Visitor) error {
-	return v.VisitIFD(fd)
+	return v.Visit(fd)
 }
 
 // ApplyChildren calls the visitor on each child node of FlashDescriptor.
@@ -153,28 +153,28 @@ type FlashImage struct {
 
 // Apply calls the visitor on the FlashImage.
 func (f *FlashImage) Apply(v Visitor) error {
-	return v.VisitImage(f)
+	return v.Visit(f)
 }
 
 // ApplyChildren calls the visitor on each child node of FlashImage.
 func (f *FlashImage) ApplyChildren(v Visitor) error {
 	if f.BIOS != nil {
-		if err := v.VisitBIOSRegion(f.BIOS); err != nil {
+		if err := f.BIOS.Apply(v); err != nil {
 			return err
 		}
 	}
 	if f.ME != nil {
-		if err := v.VisitMERegion(f.ME); err != nil {
+		if err := f.ME.Apply(v); err != nil {
 			return err
 		}
 	}
 	if f.GBE != nil {
-		if err := v.VisitGBERegion(f.GBE); err != nil {
+		if err := f.GBE.Apply(v); err != nil {
 			return err
 		}
 	}
 	if f.PD != nil {
-		if err := v.VisitPDRegion(f.PD); err != nil {
+		if err := f.PD.Apply(v); err != nil {
 			return err
 		}
 	}
