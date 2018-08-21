@@ -27,7 +27,7 @@ func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
 
 // Apply calls the visitor on the MERegion.
 func (me *MERegion) Apply(v Visitor) error {
-	return v.VisitMERegion(me)
+	return v.Visit(me)
 }
 
 // ApplyChildren calls the visitor on each child node of MERegion.

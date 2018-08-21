@@ -19,6 +19,33 @@ func indent(n int) string {
 	return strings.Repeat(" ", n)
 }
 
+// Visit applies the Table visitor to any Firmware type.
+func (v *Table) Visit(f uefi.Firmware) error {
+	switch f := f.(type) {
+	case *uefi.FlashImage:
+		return v.printRow(f, "Image", "", "", "")
+	case *uefi.FirmwareVolume:
+		return v.printRow(f, "FV", f.FileSystemGUID.String(), "", f.Length)
+	case *uefi.File:
+		// TODO: make name part of the file node
+		return v.printRow(f, "File", f.Header.UUID.String(), f.Header.Type, f.Header.ExtendedSize)
+	case *uefi.Section:
+		return v.printRow(f, "Sec", f.Name, f.Type, fmt.Sprintf("%d", f.Header.ExtendedSize))
+	case *uefi.FlashDescriptor:
+		return v.printRow(f, "IFD", "", "", "")
+	case *uefi.BIOSRegion:
+		return v.printRow(f, "BIOS", "", "", "")
+	case *uefi.MERegion:
+		return v.printRow(f, "ME", "", "", "")
+	case *uefi.GBERegion:
+		return v.printRow(f, "GBE", "", "", "")
+	case *uefi.PDRegion:
+		return v.printRow(f, "PD", "", "", "")
+	default:
+		return v.printRow(f, fmt.Sprintf("%T", f), "", "", "")
+	}
+}
+
 func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) error {
 	if v.W == nil {
 		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -29,52 +56,6 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) e
 	v2 := *v
 	v2.indent++
 	return f.ApplyChildren(&v2)
-}
-
-// VisitImage applies a Table visitor to FlashImage.
-func (v *Table) VisitImage(i *uefi.FlashImage) error {
-	return v.printRow(i, "Image", "", "", "")
-}
-
-// VisitFV applies a Table visitor to FirmwareVolume.
-func (v *Table) VisitFV(fv *uefi.FirmwareVolume) error {
-	return v.printRow(fv, "FV", fv.FileSystemGUID.String(), "", fv.Length)
-}
-
-// VisitFile applies a Table visitor to File.
-func (v *Table) VisitFile(f *uefi.File) error {
-	// TODO: make name part of the file node
-	return v.printRow(f, "File", f.Header.UUID.String(), f.Header.Type, f.Header.ExtendedSize)
-}
-
-// VisitSection applies a Table visitor to Section.
-func (v *Table) VisitSection(s *uefi.Section) error {
-	return v.printRow(s, "Sec", s.Name, s.Type, fmt.Sprintf("%d", s.Header.ExtendedSize))
-}
-
-// VisitIFD applies the Table visitor on a FlashDescriptor.
-func (v *Table) VisitIFD(fd *uefi.FlashDescriptor) error {
-	return v.printRow(fd, "IFD", "", "", "")
-}
-
-// VisitBIOSRegion applies the Table visitor on a BIOSRegion.
-func (v *Table) VisitBIOSRegion(br *uefi.BIOSRegion) error {
-	return v.printRow(br, "BIOS", "", "", "")
-}
-
-// VisitMERegion applies the Table visitor on a MERegion.
-func (v *Table) VisitMERegion(me *uefi.MERegion) error {
-	return v.printRow(me, "ME", "", "", "")
-}
-
-// VisitGBERegion applies the Table visitor on a GBERegion.
-func (v *Table) VisitGBERegion(gbe *uefi.GBERegion) error {
-	return v.printRow(gbe, "GBE", "", "", "")
-}
-
-// VisitPDRegion applies the Table visitor on a PDRegion.
-func (v *Table) VisitPDRegion(pd *uefi.PDRegion) error {
-	return v.printRow(pd, "PD", "", "", "")
 }
 
 func init() {
