@@ -122,7 +122,7 @@ type Section struct {
 
 // Apply calls the visitor on the Section.
 func (s *Section) Apply(v Visitor) error {
-	return v.VisitSection(s)
+	return v.Visit(s)
 }
 
 // ApplyChildren calls the visitor on each child node of Section.

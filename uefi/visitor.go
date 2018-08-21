@@ -1,28 +1,25 @@
 package uefi
 
-// Visitor represents an operation which can be applied to the Firmware. To
-// implement a visitor, implement a method for each concrete Firmware type you
-// want to visit. The remaining nodes can be recursed over automatically with:
+// Visitor represents an operation which can be applied to the Firmware.
+// Typically, the Visit function contains a type switch for the different
+// firmware types and a default case. For example:
 //
-//     func (v *Find) VisitFV(fv *uefi.FirmwareVolume) error {
-//             return fv.ApplyChildren(v)
+// func (v *Example) Visit(f uefi.Firmware) error {
+//     switch f := f.(type) {
+//
+//     case *uefi.File:
+//         fmt.Println("f is a file")
+//         return f.ApplyChildren(v) // Children are recursed over
+//
+//     case *uefi.Section:
+//         fmt.Println("f is a section")
+//         return nil // Children are not visited
+//
+//     default:
+//         // The default action is to recurse over children.
+//         return f.ApplyChildren(v)
 //     }
-//
-// Or pruned with:
-//
-//     func (v *Find) VisitFV(fv *uefi.FirmwareVolume) error {
-//             return nil
-//     }
+// }
 type Visitor interface {
-	VisitImage(*FlashImage) error
-	VisitFV(*FirmwareVolume) error
-	VisitFile(*File) error
-	VisitSection(*Section) error
-
-	// Intel specific
-	VisitIFD(*FlashDescriptor) error
-	VisitBIOSRegion(*BIOSRegion) error
-	VisitMERegion(*MERegion) error
-	VisitGBERegion(*GBERegion) error
-	VisitPDRegion(*PDRegion) error
+	Visit(Firmware) error
 }

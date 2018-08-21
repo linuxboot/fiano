@@ -52,13 +52,13 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 
 // Apply calls the visitor on the BIOSRegion.
 func (br *BIOSRegion) Apply(v Visitor) error {
-	return v.VisitBIOSRegion(br)
+	return v.Visit(br)
 }
 
 // ApplyChildren calls the visitor on each child node of BIOSRegion.
 func (br *BIOSRegion) ApplyChildren(v Visitor) error {
 	for _, fv := range br.FirmwareVolumes {
-		if err := v.VisitFV(fv); err != nil {
+		if err := fv.Apply(v); err != nil {
 			return err
 		}
 	}

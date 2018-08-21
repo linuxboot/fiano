@@ -27,7 +27,7 @@ func NewPDRegion(buf []byte, r *Region) (*PDRegion, error) {
 
 // Apply calls the visitor on the PDRegion.
 func (pd *PDRegion) Apply(v Visitor) error {
-	return v.VisitPDRegion(pd)
+	return v.Visit(pd)
 }
 
 // ApplyChildren calls the visitor on each child node of PDRegion.

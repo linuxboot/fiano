@@ -27,7 +27,7 @@ func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
 
 // Apply calls the visitor on the GBERegion.
 func (gbe *GBERegion) Apply(v Visitor) error {
-	return v.VisitGBERegion(gbe)
+	return v.Visit(gbe)
 }
 
 // ApplyChildren calls the visitor on each child node of GBERegion.
