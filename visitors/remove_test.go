@@ -23,6 +23,11 @@ func TestRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We expect one match.
+	if len(remove.Matches) != 1 {
+		t.Fatalf("got %d matches; expected 1", len(remove.Matches))
+	}
+
 	// We expect no match.
 	results := find(t, f, testGUID)
 	if len(results) != 0 {
