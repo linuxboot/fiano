@@ -17,6 +17,16 @@
   revision = "0c647f6bc6b55616717fcd2edb8d469f32b0459c"
 
 [[projects]]
+  name = "github.com/ulikunitz/xz"
+  packages = [
+    "internal/hash",
+    "internal/xlog",
+    "lzma"
+  ]
+  revision = "0c6b41e72360850ca4f98dc341fd999726ea007f"
+  version = "v0.5.4"
+
+[[projects]]
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -35,6 +45,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f6ae389a70e219ddecf45e1fd65fab5d34a53d205e333932da322051b63cb858"
+  inputs-digest = "d02b945009c59ac80bb5e5ba309ec6cd36a8bac9f6f5be9715b41fc81c346363"
   solver-name = "gps-cdcl"
   solver-version = 1
