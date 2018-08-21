@@ -245,7 +245,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			switch typeSpec.GUID {
 			case lzmaGUID:
 				var err error
-				encapBuf, err = lzma.Decode(buf[typeSpec.DataOffset:])
+				encapBuf, err = lzma.Default.Decode(buf[typeSpec.DataOffset:])
 				if err != nil {
 					encapBuf = []byte{}
 					typeSpec.Compression = "UNKNOWN"
