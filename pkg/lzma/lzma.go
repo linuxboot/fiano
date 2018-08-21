@@ -7,42 +7,43 @@ package lzma
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
+	"io"
+	"io/ioutil"
 
-	_ "github.com/ulikunitz/xz/lzma"
-)
-
-const (
-	lzmaEncode = "lzma"
-	lzmaDecode = "unlzma"
+	lzma "github.com/ulikunitz/xz/lzma"
 )
 
 // Decode decodes a byte slice of LZMA data.
 func Decode(encodedData []byte) ([]byte, error) {
-	cmd := exec.Command(lzmaDecode)
-	cmd.Stdin = bytes.NewBuffer(encodedData)
-	cmd.Stderr = os.Stderr
-	return cmd.Output()
+	r, err := lzma.NewReader(bytes.NewBuffer(encodedData))
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(r)
 }
 
 // Encode encodes a byte slice with LZMA.
 func Encode(decodedData []byte) ([]byte, error) {
-	return EncodeLevel(decodedData, 6)
-}
-
-// EncodeLevel encodes a byte slice with LZMA. `level` is a value in the range
-// 0..9 where 9 gives the best compression.
-func EncodeLevel(decodedData []byte, level int) ([]byte, error) {
-	if level < 0 || 9 < level {
-		return nil, errors.New("lzma level must be in range 0..9")
+	// These options are supported by the xz's LZMA command and EDK2's LZMA.
+	// TODO: This does not support the f86 feature used in EDK2.
+	wc := lzma.WriterConfig{
+		SizeInHeader: true,
+		Size:         int64(len(decodedData)),
+		EOSMarker:    false,
 	}
-	args := append([]string{"--single-stream"}, fmt.Sprintf("-%d", level))
-
-	cmd := exec.Command(lzmaEncode, args...)
-	cmd.Stdin = bytes.NewBuffer(decodedData)
-	cmd.Stderr = os.Stderr
-	return cmd.Output()
+	if err := wc.Verify(); err != nil {
+		return nil, err
+	}
+	buf := &bytes.Buffer{}
+	w, err := wc.NewWriter(buf)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := io.Copy(w, bytes.NewBuffer(decodedData)); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
