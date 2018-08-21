@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	_ "github.com/ulikunitz/xz/lzma"
 )
 
 const (
