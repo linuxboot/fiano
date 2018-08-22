@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
@@ -104,11 +103,11 @@ type SectionGUIDDefined struct {
 type Section struct {
 	Header SectionExtHeader
 	Type   string
-	buf    []byte
+	Buf    []byte `json:"-"`
 
 	// Metadata for extraction and recovery
 	ExtractPath string
-	fileOrder   int
+	FileOrder   int `json:"-"`
 
 	// Type specific fields
 	TypeSpecific interface{} `json:",omitempty"`
@@ -138,37 +137,17 @@ func (s *Section) ApplyChildren(v Visitor) error {
 // Assemble assembles the section from the binary
 func (s *Section) Assemble() ([]byte, error) {
 	var err error
-	s.buf, err = ioutil.ReadFile(s.ExtractPath)
+	s.Buf, err = ioutil.ReadFile(s.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return s.buf, nil
-}
-
-// Extract extracts the Section.
-func (s *Section) Extract(parentPath string) error {
-	// Dump the binary
-	var err error
-	// For sections we use the file order as the folder name.
-	dirPath := filepath.Join(parentPath, fmt.Sprint(s.fileOrder))
-	s.ExtractPath, err = ExtractBinary(s.buf, dirPath, fmt.Sprintf("%v.sec", s.fileOrder))
-	if err != nil {
-		return err
-	}
-	// extract the encapsulated sections
-	for _, es := range s.Encapsulated {
-		err = es.Value.Extract(dirPath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return s.Buf, nil
 }
 
 // Validate File Section
 func (s *Section) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint32(len(s.buf))
+	buflen := uint32(len(s.Buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 
 	// Size Checks
@@ -195,7 +174,7 @@ func (s *Section) Validate() []error {
 // NewSection parses a sequence of bytes and returns a Section
 // object, if a valid one is passed, or an error.
 func NewSection(buf []byte, fileOrder int) (*Section, error) {
-	s := Section{fileOrder: fileOrder}
+	s := Section{FileOrder: fileOrder}
 	// Read in standard header.
 	r := bytes.NewReader(buf)
 	if err := binary.Read(r, binary.LittleEndian, &s.Header.SectionHeader); err != nil {
@@ -228,7 +207,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			s.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	s.buf = buf[:s.Header.ExtendedSize]
+	s.Buf = buf[:s.Header.ExtendedSize]
 
 	// Section type specific data
 	switch s.Header.Type {
@@ -270,10 +249,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		}
 
 	case SectionTypeUserInterface:
-		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
+		s.Name = unicode.UCS2ToUTF8(s.Buf[headerSize:])
 
 	case SectionTypeFirmwareVolumeImage:
-		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0)
+		fv, err := NewFirmwareVolume(s.Buf[headerSize:], 0)
 		if err != nil {
 			return nil, err
 		}

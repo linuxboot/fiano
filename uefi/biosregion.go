@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 )
 
 // BIOSRegion represents the Bios Region in the firmware.
@@ -12,7 +11,7 @@ import (
 // TODO(ganshun): handle padding
 type BIOSRegion struct {
 	// holds the raw data
-	buf             []byte
+	Buf             []byte `json:"-"`
 	FirmwareVolumes []*FirmwareVolume
 
 	//Metadata for extraction and recovery
@@ -25,7 +24,7 @@ type BIOSRegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
-	br := BIOSRegion{buf: buf, Position: r}
+	br := BIOSRegion{Buf: buf, Position: r}
 	var absOffset uint64
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
@@ -92,30 +91,10 @@ func (br *BIOSRegion) Validate() []error {
 	return errs
 }
 
-// Extract extracts the Bios Region to the directory passed in.
-func (br *BIOSRegion) Extract(parentPath string) error {
-	// Dump the binary
-	var err error
-	dirPath := filepath.Join(parentPath, "bios")
-	br.ExtractPath, err = ExtractBinary(br.buf, dirPath, "biosregion.bin")
-	if err != nil {
-		return err
-	}
-
-	// Extract all FVs.
-	for _, fv := range br.FirmwareVolumes {
-		if err = fv.Extract(dirPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Assemble assembles the Bios Region from the binary file.
 func (br *BIOSRegion) Assemble() ([]byte, error) {
 	var err error
-	br.buf, err = ioutil.ReadFile(br.ExtractPath)
+	br.Buf, err = ioutil.ReadFile(br.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +112,8 @@ func (br *BIOSRegion) Assemble() ([]byte, error) {
 		// copy the fv over the original
 		// TODO: handle different sizes.
 		// We'll have to FF out the new regions/ check for clashes
-		copy(br.buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
+		copy(br.Buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
 	}
 
-	return br.buf, nil
+	return br.Buf, nil
 }

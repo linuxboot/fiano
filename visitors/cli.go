@@ -53,9 +53,9 @@ func ParseCLI(args []string) ([]uefi.Visitor, error) {
 }
 
 // ExecuteCLI applies each Visitor over the firmware in sequence.
-func ExecuteCLI(n uefi.Firmware, v []uefi.Visitor) error {
+func ExecuteCLI(f uefi.Firmware, v []uefi.Visitor) error {
 	for i := range v {
-		if err := n.Apply(v[i]); err != nil {
+		if err := v[i].Run(f); err != nil {
 			return err
 		}
 	}

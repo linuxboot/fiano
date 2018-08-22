@@ -21,5 +21,12 @@ package uefi
 //     }
 // }
 type Visitor interface {
+	// Run wraps Visit. Additionally, it performs some setup and teardown
+	// tasks. As a consumer of the visitor, Run is typically the function
+	// you should call.
+	Run(Firmware) error
+
+	// Visit applies the visitor to the Firmware and (usually) recurses
+	// over the children.
 	Visit(Firmware) error
 }

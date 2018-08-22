@@ -29,7 +29,7 @@ func TestFindSignature(t *testing.T) {
 			fmt.Sprintf("Flash signature not found: first 20 bytes are:\n%s", hex.Dump(misalignedSig[:20]))},
 	}
 	for _, test := range tests {
-		f := FlashImage{buf: test.buf}
+		f := FlashImage{Buf: test.buf}
 		offset, err := f.FindSignature()
 		if offset != test.offset {
 			t.Errorf("Offset was not correct, expected %v, got %v", test.offset, offset)
@@ -53,7 +53,7 @@ func TestIsPCH(t *testing.T) {
 		{misalignedSig, false},
 	}
 	for _, test := range tests {
-		f := FlashImage{buf: test.buf}
+		f := FlashImage{Buf: test.buf}
 		out := f.IsPCH()
 		if out != test.out {
 			t.Errorf("IsPCH was not correct, expected %v, got %v for \n%s", test.out, out, hex.Dump(test.buf))

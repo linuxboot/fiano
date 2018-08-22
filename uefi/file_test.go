@@ -1,8 +1,6 @@
 package uefi
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
@@ -11,9 +9,9 @@ var (
 	// Hardcoded checksums for testing :(
 	// I don't know how to do it better without rewriting or calling code under test.
 	emptyPadHeader = append(FFGUID[:],
-		[]byte{8, EmptyBodyChecksum, byte(fvFileTypePad), 0, FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty pad file header with no data
+		[]byte{8, EmptyBodyChecksum, byte(FVFileTypePad), 0, FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty pad file header with no data
 	goodFreeFormHeader = append(FFGUID[:],
-		[]byte{202, EmptyBodyChecksum, byte(fvFileTypeFreeForm), 0, FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty freeform file header with no data
+		[]byte{202, EmptyBodyChecksum, byte(FVFileTypeFreeForm), 0, FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty freeform file header with no data
 )
 
 var (
@@ -60,46 +58,6 @@ func TestValidateFile(t *testing.T) {
 					if errs[i].Error() != test.msgs[i] {
 						t.Errorf("Error mismatched, wanted \n%v\n, got \n%v\n", test.msgs[i], errs[i].Error())
 					}
-				}
-			}
-		})
-	}
-}
-
-func TestExtractAssembleFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "file-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
-	var tests = []struct {
-		name    string
-		origBuf []byte
-		newBuf  []byte
-	}{
-		{"emptyPadFile", emptyPadFile, emptyPadFile},
-		{"badFreeFormFile", badFreeFormFile, goodFreeFormFile},
-		{"goodFreeFormFile", goodFreeFormFile, goodFreeFormFile},
-	}
-	// Set erasepolarity to FF
-	Attributes.ErasePolarity = 0xFF
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			f, err := NewFile(test.origBuf)
-			if err != nil {
-				t.Fatalf("Unable to parse file object %v, got %v", test.origBuf, err.Error())
-			}
-			if err = f.Extract(tmpDir); err != nil {
-				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
-			}
-			nb, err := f.Assemble()
-			if len(test.newBuf) != len(nb) {
-				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
-			}
-			for i := range test.newBuf {
-				if test.newBuf[i] != nb[i] {
-					t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
 				}
 			}
 		})

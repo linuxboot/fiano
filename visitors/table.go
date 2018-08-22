@@ -15,8 +15,9 @@ type Table struct {
 	indent int
 }
 
-func indent(n int) string {
-	return strings.Repeat(" ", n)
+// Run wraps Visit and performs some setup and teardown tasks.
+func (v *Table) Run(f uefi.Firmware) error {
+	return f.Apply(v)
 }
 
 // Visit applies the Table visitor to any Firmware type.
@@ -44,6 +45,10 @@ func (v *Table) Visit(f uefi.Firmware) error {
 	default:
 		return v.printRow(f, fmt.Sprintf("%T", f), "", "", "")
 	}
+}
+
+func indent(n int) string {
+	return strings.Repeat(" ", n)
 }
 
 func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) error {
