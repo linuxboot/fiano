@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 )
 
 // MERegion represents the ME Region in the firmware.
 type MERegion struct {
 	// holds the raw data
-	buf []byte
+	Buf []byte `json:"-"`
 	//Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
@@ -21,7 +20,7 @@ type MERegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
-	me := MERegion{buf: buf, Position: r}
+	me := MERegion{Buf: buf, Position: r}
 	return &me, nil
 }
 
@@ -48,21 +47,12 @@ func (me *MERegion) Validate() []error {
 	return errs
 }
 
-// Extract extracts the ME region to the directory passed in.
-func (me *MERegion) Extract(parentPath string) error {
-	var err error
-	dirPath := filepath.Join(parentPath, "me")
-	// We just dump the binary for now
-	me.ExtractPath, err = ExtractBinary(me.buf, dirPath, "meregion.bin")
-	return err
-}
-
 // Assemble assembles the ME Region from the binary file.
 func (me *MERegion) Assemble() ([]byte, error) {
 	var err error
-	me.buf, err = ioutil.ReadFile(me.ExtractPath)
+	me.Buf, err = ioutil.ReadFile(me.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return me.buf, nil
+	return me.Buf, nil
 }

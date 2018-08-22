@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"testing"
 )
 
@@ -44,44 +43,6 @@ func TestValidateFV(t *testing.T) {
 					if errs[i].Error() != test.msgs[i] {
 						t.Errorf("Error mismatched, wanted \n%v\n, got \n%v\n", test.msgs[i], errs[i].Error())
 					}
-				}
-			}
-		})
-	}
-}
-
-func TestExtractAssembleFV(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "fv-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
-	var tests = []struct {
-		name    string
-		origBuf []byte
-		newBuf  []byte
-	}{
-		{"sampleFV", sampleFV, sampleFV},
-	}
-	// Set erasepolarity to FF
-	Attributes.ErasePolarity = 0xFF
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			fv, err := NewFirmwareVolume(test.origBuf, 0)
-			if err != nil {
-				t.Fatalf("Unable to parse file object %v, got %v", test.origBuf, err.Error())
-			}
-			if err = fv.Extract(tmpDir); err != nil {
-				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
-			}
-			nb, err := fv.Assemble()
-			if len(test.newBuf) != len(nb) {
-				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
-			}
-			for i := range test.newBuf {
-				if test.newBuf[i] != nb[i] {
-					t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
 				}
 			}
 		})

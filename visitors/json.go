@@ -10,6 +10,11 @@ import (
 // JSON prints any Firmware node as JSON.
 type JSON struct{}
 
+// Run wraps Visit and performs some setup and teardown tasks.
+func (v *JSON) Run(f uefi.Firmware) error {
+	return f.Apply(v)
+}
+
 // Visit applies the JSON visitor to any Firmware type.
 func (v *JSON) Visit(f uefi.Firmware) error {
 	b, err := json.MarshalIndent(f, "", "\t")

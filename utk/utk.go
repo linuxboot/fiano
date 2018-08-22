@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/subcommands"
 	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/visitors"
 )
 
 // Parse subcommand
@@ -148,33 +149,11 @@ func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 	}
 
 	// Extract all elements.
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(args[1], 0755); err != nil {
+	if err := (&visitors.Extract{DirPath: args[1]}).Run(firmware); err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
-	// Change working directory so we can use relative paths
-	if err := os.Chdir(args[1]); err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	err = firmware.Extract(".")
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	// Output summary json. This must be done after all other extract calls so that
-	// any metadata fields in sub structures are generated properly.
-	json, err := uefi.MarshalFirmware(firmware)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	err = ioutil.WriteFile("summary.json", json, 0666)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
+
 	if errlen > 0 {
 		// Return failure even if warn is set.
 		return subcommands.ExitFailure
