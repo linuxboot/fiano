@@ -8,8 +8,10 @@ import (
 	"github.com/linuxboot/fiano/uuid"
 )
 
-func TestFind(t *testing.T) {
-	// Parse image.
+// This GUID exists somewhere in the OVMF image.
+var testGUID = uuid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
+
+func parseImage(t *testing.T) uefi.Firmware {
 	image, err := ioutil.ReadFile("../integration/roms/OVMF.rom")
 	if err != nil {
 		t.Fatal(err)
@@ -18,20 +20,27 @@ func TestFind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return parsedRoot
+}
 
-	// Apply the visitor
-	searchUUID := uuid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
-	v := &Find{
+func find(t *testing.T, f uefi.Firmware, guid *uuid.UUID) []*uefi.File {
+	find := &Find{
 		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.UUID == *searchUUID
+			return f.Header.UUID == *guid
 		},
 	}
-	if err := parsedRoot.Apply(v); err != nil {
+	if err := find.Run(f); err != nil {
 		t.Fatal(err)
 	}
+	return find.Matches
+}
+
+func TestFind(t *testing.T) {
+	f := parseImage(t)
+	results := find(t, f, testGUID)
 
 	// We expect one match
-	if len(v.Matches) != 1 {
-		t.Fatalf("got %d matches; expected 1", len(v.Matches))
+	if len(results) != 1 {
+		t.Fatalf("got %d matches; expected 1", len(results))
 	}
 }
