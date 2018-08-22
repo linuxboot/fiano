@@ -10,7 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	lzma "github.com/ulikunitz/xz/lzma"
+	"github.com/ulikunitz/xz/lzma"
 )
 
 // Decode decodes a byte slice of LZMA data.
