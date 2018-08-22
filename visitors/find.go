@@ -23,6 +23,11 @@ type Find struct {
 	currentFile *uefi.File
 }
 
+// Run wraps Visit and performs some setup and teardown tasks.
+func (v *Find) Run(f uefi.Firmware) error {
+	return f.Apply(v)
+}
+
 // Visit applies the Find visitor to any Firmware type.
 func (v *Find) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {

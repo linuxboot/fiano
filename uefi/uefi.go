@@ -27,7 +27,6 @@ var Attributes ROMAttributes
 // interface.
 type Firmware interface {
 	Validate() []error
-	Extract(dirpath string) error
 	Assemble() ([]byte, error)
 
 	// Apply a visitor to the Firmware.
@@ -57,7 +56,7 @@ func MakeTyped(f Firmware) *TypedFirmware {
 // type of the interface.
 func (f *TypedFirmware) UnmarshalJSON(b []byte) error {
 	var getType struct {
-		Type string
+		Type  string
 		Value json.RawMessage
 	}
 	if err := json.Unmarshal(b, &getType); err != nil {

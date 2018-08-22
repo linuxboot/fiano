@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -15,47 +14,47 @@ type FVFileType uint8
 
 // UEFI FV File types.
 const (
-	fvFileTypeAll FVFileType = iota
-	fvFileTypeRaw
-	fvFileTypeFreeForm
-	fvFileTypeSECCore
-	fvFileTypePEICore
-	fvFileTypeDXECore
-	fvFileTypePEIM
-	fvFileTypeDriver
-	fvFileTypeCombinedPEIMDriver
-	fvFileTypeApplication
-	fvFileTypeSMM
-	fvFileTypeVolumeImage
-	fvFileTypeCombinedSMMDXE
-	fvFileTypeSMMCore
-	fvFileTypeSMMStandalone
-	fvFileTypeSMMCoreStandalone
-	fvFileTypeOEMMin   FVFileType = 0xC0
-	fvFileTypeOEMMax   FVFileType = 0xDF
-	fvFileTypeDebugMin FVFileType = 0xE0
-	fvFileTypeDebugMax FVFileType = 0xEF
-	fvFileTypePad      FVFileType = 0xF0
-	fvFileTypeFFSMin   FVFileType = 0xF0
-	fvFileTypeFFSMax   FVFileType = 0xFF
+	FVFileTypeAll FVFileType = iota
+	FVFileTypeRaw
+	FVFileTypeFreeForm
+	FVFileTypeSECCore
+	FVFileTypePEICore
+	FVFileTypeDXECore
+	FVFileTypePEIM
+	FVFileTypeDriver
+	FVFileTypeCombinedPEIMDriver
+	FVFileTypeApplication
+	FVFileTypeSMM
+	FVFileTypeVolumeImage
+	FVFileTypeCombinedSMMDXE
+	FVFileTypeSMMCore
+	FVFileTypeSMMStandalone
+	FVFileTypeSMMCoreStandalone
+	FVFileTypeOEMMin   FVFileType = 0xC0
+	FVFileTypeOEMMax   FVFileType = 0xDF
+	FVFileTypeDebugMin FVFileType = 0xE0
+	FVFileTypeDebugMax FVFileType = 0xEF
+	FVFileTypePad      FVFileType = 0xF0
+	FVFileTypeFFSMin   FVFileType = 0xF0
+	FVFileTypeFFSMax   FVFileType = 0xFF
 )
 
 var supportedFiles = map[FVFileType]bool{
 	// These are the file types that we'll actually try to parse sections for.
-	fvFileTypeFreeForm:           true,
-	fvFileTypeSECCore:            true,
-	fvFileTypePEICore:            true,
-	fvFileTypeDXECore:            true,
-	fvFileTypePEIM:               true,
-	fvFileTypeDriver:             true,
-	fvFileTypeCombinedPEIMDriver: true,
-	fvFileTypeApplication:        true,
-	fvFileTypeSMM:                true,
-	fvFileTypeVolumeImage:        true,
-	fvFileTypeCombinedSMMDXE:     true,
-	fvFileTypeSMMCore:            true,
-	fvFileTypeSMMStandalone:      true,
-	fvFileTypeSMMCoreStandalone:  true,
+	FVFileTypeFreeForm:           true,
+	FVFileTypeSECCore:            true,
+	FVFileTypePEICore:            true,
+	FVFileTypeDXECore:            true,
+	FVFileTypePEIM:               true,
+	FVFileTypeDriver:             true,
+	FVFileTypeCombinedPEIMDriver: true,
+	FVFileTypeApplication:        true,
+	FVFileTypeSMM:                true,
+	FVFileTypeVolumeImage:        true,
+	FVFileTypeCombinedSMMDXE:     true,
+	FVFileTypeSMMCore:            true,
+	FVFileTypeSMMStandalone:      true,
+	FVFileTypeSMMCoreStandalone:  true,
 }
 
 // Stock GUIDS
@@ -156,7 +155,7 @@ func (f *File) checksumHeader() uint8 {
 	// Sum over header without State and IntegrityCheck.File.
 	// To do that we just sum over the whole header and subtract.
 	// UEFI PI Spec 3.2.3 EFI_FFS_FILE_HEADER
-	sum := Checksum8(f.buf[:headerSize])
+	sum := Checksum8(f.Buf[:headerSize])
 	sum -= fh.Checksum.File
 	sum -= fh.State
 	return sum
@@ -178,7 +177,7 @@ type File struct {
 	Sections []*Section `json:",omitempty"`
 
 	//Metadata for extraction and recovery
-	buf         []byte
+	Buf         []byte `json:"-"`
 	ExtractPath string
 	DataOffset  uint64
 }
@@ -228,7 +227,7 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 		return fmt.Errorf("unable to construct binary header of file %v, got %v",
 			fh.UUID, err)
 	}
-	f.buf = header.Bytes()
+	f.Buf = header.Bytes()
 	// We need to get rid of whatever it sums to so that the overall sum is zero
 	// Sorry about the name :(
 	fh.Checksum.Header -= f.checksumHeader()
@@ -252,9 +251,9 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 	if err != nil {
 		return err
 	}
-	f.buf = header.Bytes()
+	f.Buf = header.Bytes()
 
-	f.buf = append(f.buf, fileData...)
+	f.Buf = append(f.Buf, fileData...)
 	return nil
 }
 
@@ -273,12 +272,12 @@ func (f *File) Assemble() ([]byte, error) {
 		// We really should redo the whole header
 		// TODO: Reconstruct header from JSON
 		fh.State = 0x07 ^ Attributes.ErasePolarity
-		f.buf, err = ioutil.ReadFile(f.ExtractPath)
+		f.Buf, err = ioutil.ReadFile(f.ExtractPath)
 		if err != nil {
 			return nil, err
 		}
-		f.buf[0x17] = fh.State
-		return f.buf, nil
+		f.Buf[0x17] = fh.State
+		return f.Buf, nil
 	}
 
 	// Otherwise, we reconstruct the entire file from the sections and the
@@ -316,33 +315,13 @@ func (f *File) Assemble() ([]byte, error) {
 	if err = f.checksumAndAssemble(fileData); err != nil {
 		return nil, err
 	}
-	return f.buf, nil
-}
-
-// Extract extracts the FFS to the directory passed in.
-func (f *File) Extract(parentPath string) error {
-	// Dump the binary
-	var err error
-	// For files we use the GUID as the folder name.
-	dirPath := filepath.Join(parentPath, f.Header.UUID.String())
-	f.ExtractPath, err = ExtractBinary(f.buf, dirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
-	if err != nil {
-		return err
-	}
-	// extract the sections
-	for _, s := range f.Sections {
-		err = s.Extract(dirPath)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return f.Buf, nil
 }
 
 // Validate Firmware File
 func (f *File) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint64(len(f.buf))
+	buflen := uint64(len(f.Buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 	if buflen < FileHeaderMinLength {
 		errs = append(errs, fmt.Errorf("file length too small!, buffer is only %#x bytes long", buflen))
@@ -388,7 +367,7 @@ func (f *File) Validate() []error {
 		if fh.Attributes.isLarge() {
 			headerSize = FileHeaderExtMinLength
 		}
-		if sum := Checksum8(f.buf[headerSize:]); sum != 0 {
+		if sum := Checksum8(f.Buf[headerSize:]); sum != 0 {
 			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
 				fh.UUID, sum))
 		}
@@ -426,7 +405,7 @@ func CreatePadFile(size uint64) (*File, error) {
 	// Set the size. If the file is too big, we take up more of the padding for the header.
 	// This also sets the large file attribute if file is big.
 	f.setSize(size, false)
-	fh.Type = fvFileTypePad
+	fh.Type = FVFileTypePad
 
 	// Create empty pad filedata based on size
 	var fileData []byte
@@ -484,14 +463,14 @@ func NewFile(buf []byte) (*File, error) {
 			f.Header.UUID, f.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	f.buf = buf[:f.Header.ExtendedSize]
+	f.Buf = buf[:f.Header.ExtendedSize]
 
 	// Parse sections
 	if _, ok := supportedFiles[f.Header.Type]; !ok {
 		return &f, nil
 	}
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
-		s, err := NewSection(f.buf[offset:], i)
+		s, err := NewSection(f.Buf[offset:], i)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.UUID, err)
 		}

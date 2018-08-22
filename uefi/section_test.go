@@ -2,8 +2,6 @@ package uefi
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
@@ -36,48 +34,6 @@ func TestUISection(t *testing.T) {
 			}
 			if s.Name != test.val {
 				t.Errorf("Section Name field mismatch, expected \"%v\", got \"%v\"", test.val, s.Name)
-			}
-		})
-	}
-}
-
-func TestExtractAssembleSection(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "section-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-
-	defer os.RemoveAll(tmpDir)
-
-	var tests = []struct {
-		name      string
-		buf       []byte
-		fileOrder int
-	}{
-		{"tinySec", tinySec, 0},
-		{"tinySec", tinySec, 1},
-		{"smallSec", smallSec, 0},
-		{"smallSec", smallSec, 1},
-		{"linuxSec", linuxSec, 0},
-		{"linuxSec", linuxSec, 1},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			s, err := NewSection(test.buf, test.fileOrder)
-			if err != nil {
-				t.Fatalf("Unable to parse section object %v, got %v", test.buf, err.Error())
-			}
-			if err = s.Extract(tmpDir); err != nil {
-				t.Fatalf("Unable to extract section %v, got %v", test.buf, err.Error())
-			}
-			nb, err := s.Assemble()
-			if len(test.buf) != len(nb) {
-				t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
-			}
-			for i := range test.buf {
-				if test.buf[i] != nb[i] {
-					t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
-				}
 			}
 		})
 	}
