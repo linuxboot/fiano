@@ -14,7 +14,7 @@ fi
 
 gofmt -w -s $FILES
 golint -set_exit_status $FILES
-go tool vet utk uefi uuid unicode fmap pkg/fmap integration
+go tool vet utk uefi uuid unicode fmap pkg/fmap integration visitors
 
 # Check it builds
 
