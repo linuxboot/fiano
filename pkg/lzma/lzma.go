@@ -1,3 +1,7 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package lzma implements reading and writing of LZMA compressed files.
 //
 // This package is specifically designed for the LZMA format used popular UEFI

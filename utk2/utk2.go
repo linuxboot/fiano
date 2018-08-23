@@ -1,3 +1,7 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // The utk2 command is a replacement for utk. utk will be replaced by utk2 at
 // some point.
 //
