@@ -1,3 +1,6 @@
+// Package visitors uses the Visitor interface to recursively apply an
+// operation over the firmware image. Also, functions are exported for using
+// the visitors through the command line.
 package visitors
 
 import (
