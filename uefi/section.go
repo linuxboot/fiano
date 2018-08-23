@@ -374,8 +374,8 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		for i, offset := 0, uint64(0); offset < uint64(len(encapBuf)); i++ {
 			encapS, err := NewSection(encapBuf[offset:], i)
 			if err != nil {
-				return nil, fmt.Errorf("error parsing encapsulated section #%d at offset %d",
-					i, offset)
+				return nil, fmt.Errorf("error parsing encapsulated section #%d at offset %d: %v",
+					i, offset, err)
 			}
 			// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
 			// but UEFITool aligns to 4 bytes, and this seems to work on everything I have.
