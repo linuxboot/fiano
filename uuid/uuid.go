@@ -1,6 +1,5 @@
+// Package uuid implements the mixed-endian UUID as implemented by Microsoft.
 package uuid
-
-// This package implements the mixed-endian UUID as implemented by Microsoft.
 
 import (
 	"encoding/hex"
