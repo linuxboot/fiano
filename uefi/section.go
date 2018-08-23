@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
@@ -75,7 +76,10 @@ const (
 	GUIDEDSectionAuthStatusValid    GUIDEDSectionAttribute = 0x02
 )
 
-var lzmaGUID = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
+var (
+	lzmaGUID    = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
+	lzmaX86GUID = *uuid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
+)
 
 // SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
 // UEFI PI Spec 3.2.4 Firmware File Section
@@ -264,12 +268,14 @@ func (s *Section) Assemble() ([]byte, error) {
 		if ts.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
 			switch ts.GUID {
 			case lzmaGUID:
-				var err error
-				if ts.Compression == "LZMA" {
-					s.Buf, err = lzma.Encode(secData)
-					if err != nil {
-						return nil, err
-					}
+				s.Buf, err = lzma.Encode(secData)
+				if err != nil {
+					return nil, err
+				}
+			case lzmaX86GUID:
+				s.Buf, err = lzma.EncodeX86(secData)
+				if err != nil {
+					return nil, err
 				}
 			default:
 				return nil, fmt.Errorf("unknown guid defined from section %v, should not have encapsulated sections", s)
@@ -360,18 +366,21 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		// Determine how to interpret the section based on the GUID.
 		var encapBuf []byte
 		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
+			var err error
 			switch typeSpec.GUID {
 			case lzmaGUID:
-				var err error
+				typeSpec.Compression = "LZMA"
 				encapBuf, err = lzma.Decode(buf[typeSpec.DataOffset:])
-				if err != nil {
-					encapBuf = []byte{}
-					typeSpec.Compression = "UNKNOWN"
-				} else {
-					typeSpec.Compression = "LZMA"
-				}
+			case lzmaX86GUID:
+				typeSpec.Compression = "LZMAX86"
+				encapBuf, err = lzma.DecodeX86(buf[typeSpec.DataOffset:])
 			default:
 				typeSpec.Compression = "UNKNOWN"
+			}
+			if err != nil {
+				log.Print(err)
+				typeSpec.Compression = "UNKNOWN"
+				encapBuf = []byte{}
 			}
 		}
 
