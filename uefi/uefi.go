@@ -1,3 +1,5 @@
+// Package uefi contents data types for the components found in UEFI and an
+// Parse function for reading an image.
 package uefi
 
 import (
