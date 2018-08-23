@@ -1,3 +1,7 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package visitors uses the Visitor interface to recursively apply an
 // operation over the firmware image. Also, functions are exported for using
 // the visitors through the command line.

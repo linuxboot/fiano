@@ -1,3 +1,7 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package uefi contents data types for the components found in UEFI and an
 // Parse function for reading an image.
 package uefi
