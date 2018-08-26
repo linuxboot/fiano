@@ -13,7 +13,7 @@ import (
 	"github.com/linuxboot/fiano/uefi"
 )
 
-// Extract prints any Firmware node as Extract.
+// Extract extracts any Firmware node to DirPath
 type Extract struct {
 	DirPath string
 	Index   *uint64
@@ -47,7 +47,7 @@ func (v *Extract) Run(f uefi.Firmware) error {
 
 // Visit applies the Extract visitor to any Firmware type.
 func (v *Extract) Visit(f uefi.Firmware) error {
-	// The visior must be cloned before modification; otherwise, the
+	// The visitor must be cloned before modification; otherwise, the
 	// sibling's values are modified.
 	v2 := *v
 
