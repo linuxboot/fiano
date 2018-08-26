@@ -72,13 +72,28 @@ func main() {
 
 	// Load and parse the image.
 	// TODO: if os.Args[1] is a directory, re-assemble it
-	image, err := ioutil.ReadFile(os.Args[1])
+	path := os.Args[1]
+	f, err := os.Stat(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	parsedRoot, err := uefi.Parse(image)
-	if err != nil {
-		log.Fatal(err)
+	var parsedRoot uefi.Firmware
+	if m := f.Mode(); m.IsDir() {
+		// Call ParseDir
+		pd := visitors.ParseDir{DirPath: path}
+		if parsedRoot, err = pd.Parse(); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		// Regular file
+		image, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		parsedRoot, err = uefi.Parse(image)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Execute the instructions from the command line.
