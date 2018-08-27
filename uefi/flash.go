@@ -29,7 +29,7 @@ const (
 // FlashDescriptor is the main structure that represents an Intel Flash Descriptor.
 type FlashDescriptor struct {
 	// Holds the raw buffer
-	Buf                []byte `json:"-"`
+	buf                []byte
 	DescriptorMapStart uint
 	RegionStart        uint
 	MasterStart        uint
@@ -55,6 +55,18 @@ func FindSignature(buf []byte) (int, error) {
 		hex.Dump(buf[:20]))
 }
 
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (fd *FlashDescriptor) Buf() []byte {
+	return fd.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (fd *FlashDescriptor) SetBuf(buf []byte) {
+	fd.buf = buf
+}
+
 // Apply calls the visitor on the FlashDescriptor.
 func (fd *FlashDescriptor) Apply(v Visitor) error {
 	return v.Visit(fd)
@@ -67,18 +79,18 @@ func (fd *FlashDescriptor) ApplyChildren(v Visitor) error {
 
 // ParseFlashDescriptor parses the ifd from the buffer
 func (fd *FlashDescriptor) ParseFlashDescriptor() error {
-	if buflen := len(fd.Buf); buflen != FlashDescriptorLength {
+	if buflen := len(fd.buf); buflen != FlashDescriptorLength {
 		return fmt.Errorf("flash descriptor length not %#x, was %#x", FlashDescriptorLength, buflen)
 	}
 
-	descriptorMapStart, err := FindSignature(fd.Buf)
+	descriptorMapStart, err := FindSignature(fd.buf)
 	if err != nil {
 		return err
 	}
 	fd.DescriptorMapStart = uint(descriptorMapStart)
 
 	// Descriptor Map
-	desc, err := NewFlashDescriptorMap(fd.Buf[fd.DescriptorMapStart : fd.DescriptorMapStart+FlashDescriptorMapSize])
+	desc, err := NewFlashDescriptorMap(fd.buf[fd.DescriptorMapStart : fd.DescriptorMapStart+FlashDescriptorMapSize])
 	if err != nil {
 		return err
 	}
@@ -86,7 +98,7 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 
 	// Region
 	fd.RegionStart = uint(fd.DescriptorMap.RegionBase) * 0x10
-	region, err := NewFlashRegionSection(fd.Buf[fd.RegionStart : fd.RegionStart+uint(FlashRegionSectionSize)])
+	region, err := NewFlashRegionSection(fd.buf[fd.RegionStart : fd.RegionStart+uint(FlashRegionSectionSize)])
 	if err != nil {
 		return err
 	}
@@ -94,7 +106,7 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 
 	// Master
 	fd.MasterStart = uint(fd.DescriptorMap.MasterBase) * 0x10
-	master, err := NewFlashMasterSection(fd.Buf[fd.MasterStart : fd.MasterStart+uint(FlashMasterSectionSize)])
+	master, err := NewFlashMasterSection(fd.buf[fd.MasterStart : fd.MasterStart+uint(FlashMasterSectionSize)])
 	if err != nil {
 		return err
 	}
@@ -113,7 +125,7 @@ func (fd *FlashDescriptor) Validate() []error {
 func (fd *FlashDescriptor) Assemble() ([]byte, error) {
 	// We have to trust that the ExtractPath we read from the JSON is correct.
 	var err error
-	fd.Buf, err = ioutil.ReadFile(fd.ExtractPath)
+	fd.buf, err = ioutil.ReadFile(fd.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
@@ -124,14 +136,14 @@ func (fd *FlashDescriptor) Assemble() ([]byte, error) {
 		return nil, err
 	}
 	// We just return the buffer.
-	return fd.Buf, nil
+	return fd.buf, nil
 }
 
 // FlashImage is the main structure that represents an Intel Flash image. It
 // implements the Firmware interface.
 type FlashImage struct {
 	// Holds the raw buffer
-	Buf []byte `json:"-"`
+	buf []byte
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
@@ -143,6 +155,18 @@ type FlashImage struct {
 	// Metadata for extraction and recovery
 	ExtractPath string
 	regions     []Firmware
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (f *FlashImage) Buf() []byte {
+	return f.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (f *FlashImage) SetBuf(buf []byte) {
+	f.buf = buf
 }
 
 // Apply calls the visitor on the FlashImage.
@@ -184,14 +208,14 @@ func (f *FlashImage) ApplyChildren(v Visitor) error {
 // since in that case 16:20 should be data. If that's the case, FindSignature needs to
 // be fixed as well
 func (f *FlashImage) IsPCH() bool {
-	return bytes.Equal(f.Buf[16:16+len(FlashSignature)], FlashSignature)
+	return bytes.Equal(f.buf[16:16+len(FlashSignature)], FlashSignature)
 }
 
 // FindSignature looks for the Intel flash signature, and returns its offset
 // from the start of the image. The PCH images are located at offset 16, while
 // in ICH8/9/10 they start at 0. If no signature is found, it returns -1.
 func (f *FlashImage) FindSignature() (int, error) {
-	return FindSignature(f.Buf)
+	return FindSignature(f.buf)
 }
 
 // Validate runs a set of checks on the flash image and returns a list of
@@ -283,17 +307,17 @@ func (f *FlashImage) Assemble() ([]byte, error) {
 	// Sort regions so we can output the flash file correctly.
 	sort.Slice(regions, func(i, j int) bool { return regions[i].P.Base < regions[j].P.Base })
 	// append all slices together and return.
-	f.Buf = make([]byte, 0, 0)
-	f.Buf = append(f.Buf, ifdbuf...)
+	f.buf = make([]byte, 0, 0)
+	f.buf = append(f.buf, ifdbuf...)
 	for _, r := range regions {
-		f.Buf = append(f.Buf, r.buf...)
+		f.buf = append(f.buf, r.buf...)
 	}
-	return f.Buf, nil
+	return f.buf, nil
 }
 
 func (f *FlashImage) String() string {
 	return fmt.Sprintf("FlashImage{Size=%v, Descriptor=%v, Region=%v, Master=%v}",
-		len(f.Buf),
+		len(f.buf),
 		f.IFD.DescriptorMap.String(),
 		f.IFD.Region.String(),
 		f.IFD.Master.String(),
@@ -310,8 +334,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			len(buf),
 		)
 	}
-	f := FlashImage{Buf: buf}
-	f.IFD.Buf = buf[:FlashDescriptorLength]
+	f := FlashImage{buf: buf}
+	f.IFD.buf = buf[:FlashDescriptorLength]
 	if err := f.IFD.ParseFlashDescriptor(); err != nil {
 		return nil, err
 	}

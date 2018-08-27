@@ -13,7 +13,7 @@ import (
 // MERegion represents the ME Region in the firmware.
 type MERegion struct {
 	// holds the raw data
-	Buf []byte `json:"-"`
+	buf []byte
 	//Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
@@ -24,8 +24,20 @@ type MERegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewMERegion(buf []byte, r *Region) (*MERegion, error) {
-	me := MERegion{Buf: buf, Position: r}
+	me := MERegion{buf: buf, Position: r}
 	return &me, nil
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (me *MERegion) Buf() []byte {
+	return me.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (me *MERegion) SetBuf(buf []byte) {
+	me.buf = buf
 }
 
 // Apply calls the visitor on the MERegion.
@@ -54,9 +66,9 @@ func (me *MERegion) Validate() []error {
 // Assemble assembles the ME Region from the binary file.
 func (me *MERegion) Assemble() ([]byte, error) {
 	var err error
-	me.Buf, err = ioutil.ReadFile(me.ExtractPath)
+	me.buf, err = ioutil.ReadFile(me.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return me.Buf, nil
+	return me.buf, nil
 }

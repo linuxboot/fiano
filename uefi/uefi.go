@@ -35,6 +35,9 @@ type Firmware interface {
 	Validate() []error
 	Assemble() ([]byte, error)
 
+	Buf() []byte
+	SetBuf(buf []byte)
+
 	// Apply a visitor to the Firmware.
 	Apply(v Visitor) error
 
