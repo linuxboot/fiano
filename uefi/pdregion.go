@@ -13,7 +13,7 @@ import (
 // PDRegion represents the PD Region in the firmware.
 type PDRegion struct {
 	// holds the raw data
-	Buf []byte `json:"-"`
+	buf []byte
 	//Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
@@ -24,8 +24,20 @@ type PDRegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewPDRegion(buf []byte, r *Region) (*PDRegion, error) {
-	pdr := PDRegion{Buf: buf, Position: r}
+	pdr := PDRegion{buf: buf, Position: r}
 	return &pdr, nil
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (pd *PDRegion) Buf() []byte {
+	return pd.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (pd *PDRegion) SetBuf(buf []byte) {
+	pd.buf = buf
 }
 
 // Apply calls the visitor on the PDRegion.
@@ -54,9 +66,9 @@ func (pd *PDRegion) Validate() []error {
 // Assemble assembles the Bios Region from the binary file.
 func (pd *PDRegion) Assemble() ([]byte, error) {
 	var err error
-	pd.Buf, err = ioutil.ReadFile(pd.ExtractPath)
+	pd.buf, err = ioutil.ReadFile(pd.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return pd.Buf, nil
+	return pd.buf, nil
 }

@@ -55,36 +55,38 @@ func readBuf(ExtractPath string) ([]byte, error) {
 // Visit applies the ParseDir visitor to any Firmware type.
 func (v *ParseDir) Visit(f uefi.Firmware) error {
 	var err error
+	var fBuf []byte
 	switch f := f.(type) {
 
 	case *uefi.FirmwareVolume:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.File:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.Section:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.FlashDescriptor:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.BIOSRegion:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.GBERegion:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.MERegion:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 
 	case *uefi.PDRegion:
-		f.Buf, err = readBuf(f.ExtractPath)
+		fBuf, err = readBuf(f.ExtractPath)
 	}
 
 	if err != nil {
 		return err
 	}
+	f.SetBuf(fBuf)
 
 	return f.ApplyChildren(v)
 }

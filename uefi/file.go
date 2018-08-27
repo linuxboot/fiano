@@ -159,7 +159,7 @@ func (f *File) checksumHeader() uint8 {
 	// Sum over header without State and IntegrityCheck.File.
 	// To do that we just sum over the whole header and subtract.
 	// UEFI PI Spec 3.2.3 EFI_FFS_FILE_HEADER
-	sum := Checksum8(f.Buf[:headerSize])
+	sum := Checksum8(f.buf[:headerSize])
 	sum -= fh.Checksum.File
 	sum -= fh.State
 	return sum
@@ -181,9 +181,21 @@ type File struct {
 	Sections []*Section `json:",omitempty"`
 
 	//Metadata for extraction and recovery
-	Buf         []byte `json:"-"`
+	buf         []byte
 	ExtractPath string
 	DataOffset  uint64
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (f *File) Buf() []byte {
+	return f.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (f *File) SetBuf(buf []byte) {
+	f.buf = buf
 }
 
 // Apply calls the visitor on the File.
@@ -231,7 +243,7 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 		return fmt.Errorf("unable to construct binary header of file %v, got %v",
 			fh.UUID, err)
 	}
-	f.Buf = header.Bytes()
+	f.buf = header.Bytes()
 	// We need to get rid of whatever it sums to so that the overall sum is zero
 	// Sorry about the name :(
 	fh.Checksum.Header -= f.checksumHeader()
@@ -255,9 +267,9 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 	if err != nil {
 		return err
 	}
-	f.Buf = header.Bytes()
+	f.buf = header.Bytes()
 
-	f.Buf = append(f.Buf, fileData...)
+	f.buf = append(f.buf, fileData...)
 	return nil
 }
 
@@ -276,12 +288,12 @@ func (f *File) Assemble() ([]byte, error) {
 		// We really should redo the whole header
 		// TODO: Reconstruct header from JSON
 		fh.State = 0x07 ^ Attributes.ErasePolarity
-		f.Buf, err = ioutil.ReadFile(f.ExtractPath)
+		f.buf, err = ioutil.ReadFile(f.ExtractPath)
 		if err != nil {
 			return nil, err
 		}
-		f.Buf[0x17] = fh.State
-		return f.Buf, nil
+		f.buf[0x17] = fh.State
+		return f.buf, nil
 	}
 
 	// Otherwise, we reconstruct the entire file from the sections and the
@@ -319,13 +331,13 @@ func (f *File) Assemble() ([]byte, error) {
 	if err = f.checksumAndAssemble(fileData); err != nil {
 		return nil, err
 	}
-	return f.Buf, nil
+	return f.buf, nil
 }
 
 // Validate Firmware File
 func (f *File) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint64(len(f.Buf))
+	buflen := uint64(len(f.buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 	if buflen < FileHeaderMinLength {
 		errs = append(errs, fmt.Errorf("file length too small!, buffer is only %#x bytes long", buflen))
@@ -371,7 +383,7 @@ func (f *File) Validate() []error {
 		if fh.Attributes.isLarge() {
 			headerSize = FileHeaderExtMinLength
 		}
-		if sum := Checksum8(f.Buf[headerSize:]); sum != 0 {
+		if sum := Checksum8(f.buf[headerSize:]); sum != 0 {
 			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
 				fh.UUID, sum))
 		}
@@ -467,14 +479,14 @@ func NewFile(buf []byte) (*File, error) {
 			f.Header.UUID, f.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	f.Buf = buf[:f.Header.ExtendedSize]
+	f.buf = buf[:f.Header.ExtendedSize]
 
 	// Parse sections
 	if _, ok := supportedFiles[f.Header.Type]; !ok {
 		return &f, nil
 	}
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
-		s, err := NewSection(f.Buf[offset:], i)
+		s, err := NewSection(f.buf[offset:], i)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.UUID, err)
 		}

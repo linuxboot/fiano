@@ -57,9 +57,9 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 	case *uefi.FirmwareVolume:
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("%#x", f.FVOffset))
 		if len(f.Files) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "fv.bin")
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "fv.bin")
 		} else {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf[:f.DataOffset], v2.DirPath, "fvh.bin")
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf()[:f.DataOffset], v2.DirPath, "fvh.bin")
 		}
 
 	case *uefi.File:
@@ -69,37 +69,37 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 		v2.DirPath = filepath.Join(v2.DirPath, fmt.Sprint(*v.Index))
 		*v.Index++
 		if len(f.Sections) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
 		}
 
 	case *uefi.Section:
 		// For sections we use the file order as the folder name.
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprint(f.FileOrder))
 		if len(f.Encapsulated) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, fmt.Sprintf("%v.sec", f.FileOrder))
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.sec", f.FileOrder))
 		}
 
 	case *uefi.FlashDescriptor:
 		v2.DirPath = filepath.Join(v.DirPath, "ifd")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "flashdescriptor.bin")
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "flashdescriptor.bin")
 
 	case *uefi.BIOSRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "bios")
 		if len(f.FirmwareVolumes) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "biosregion.bin")
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "biosregion.bin")
 		}
 
 	case *uefi.GBERegion:
 		v2.DirPath = filepath.Join(v.DirPath, "gbe")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "gberegion.bin")
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "gberegion.bin")
 
 	case *uefi.MERegion:
 		v2.DirPath = filepath.Join(v.DirPath, "me")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "meregion.bin")
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "meregion.bin")
 
 	case *uefi.PDRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "pd")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf, v2.DirPath, "pdregion.bin")
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "pdregion.bin")
 	}
 	if err != nil {
 		return err

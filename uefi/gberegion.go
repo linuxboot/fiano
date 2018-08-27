@@ -13,7 +13,7 @@ import (
 // GBERegion represents the GBE Region in the firmware.
 type GBERegion struct {
 	// holds the raw data
-	Buf []byte `json:"-"`
+	buf []byte
 	//Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the Region struct laid out in the ifd
@@ -24,8 +24,20 @@ type GBERegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewGBERegion(buf []byte, r *Region) (*GBERegion, error) {
-	gbe := GBERegion{Buf: buf, Position: r}
+	gbe := GBERegion{buf: buf, Position: r}
 	return &gbe, nil
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (gbe *GBERegion) Buf() []byte {
+	return gbe.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (gbe *GBERegion) SetBuf(buf []byte) {
+	gbe.buf = buf
 }
 
 // Apply calls the visitor on the GBERegion.
@@ -54,9 +66,9 @@ func (gbe *GBERegion) Validate() []error {
 // Assemble assembles the GBE Region from the binary file.
 func (gbe *GBERegion) Assemble() ([]byte, error) {
 	var err error
-	gbe.Buf, err = ioutil.ReadFile(gbe.ExtractPath)
+	gbe.buf, err = ioutil.ReadFile(gbe.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
-	return gbe.Buf, nil
+	return gbe.buf, nil
 }
