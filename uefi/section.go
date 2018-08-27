@@ -155,7 +155,7 @@ func (t *TypeSpecificHeader) UnmarshalJSON(b []byte) error {
 type Section struct {
 	Header SectionExtHeader
 	Type   string
-	Buf    []byte `json:"-"`
+	buf    []byte
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -169,6 +169,18 @@ type Section struct {
 
 	// Encapsulated firmware
 	Encapsulated []*TypedFirmware `json:",omitempty"`
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (s *Section) Buf() []byte {
+	return s.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (s *Section) SetBuf(buf []byte) {
+	s.buf = buf
 }
 
 // Apply calls the visitor on the Section.
@@ -197,7 +209,7 @@ func (s *Section) GenSecHeader() error {
 	if s.TypeSpecific != nil && s.TypeSpecific.Header != nil {
 		headerLen += s.TypeSpecific.Header.GetBinHeaderLen()
 	}
-	s.Header.ExtendedSize = uint32(len(s.Buf)) + headerLen // TS header lengths are part of headerLen at this point
+	s.Header.ExtendedSize = uint32(len(s.buf)) + headerLen // TS header lengths are part of headerLen at this point
 	if s.Header.ExtendedSize >= 0xFFFFFF {
 		headerLen += 4 // Add space for the extended header.
 		s.Header.ExtendedSize += 4
@@ -213,7 +225,7 @@ func (s *Section) GenSecHeader() error {
 		if err = binary.Write(tsh, binary.LittleEndian, &gd.SectionGUIDDefinedHeader); err != nil {
 			return err
 		}
-		s.Buf = append(tsh.Bytes(), s.Buf...)
+		s.buf = append(tsh.Bytes(), s.buf...)
 	}
 
 	// Append common header
@@ -227,7 +239,7 @@ func (s *Section) GenSecHeader() error {
 	if err != nil {
 		return err
 	}
-	s.Buf = append(h.Bytes(), s.Buf...)
+	s.buf = append(h.Bytes(), s.buf...)
 	return nil
 }
 
@@ -236,11 +248,11 @@ func (s *Section) Assemble() ([]byte, error) {
 	var err error
 	if len(s.Encapsulated) == 0 {
 		// Just read the binary
-		s.Buf, err = ioutil.ReadFile(s.ExtractPath)
+		s.buf, err = ioutil.ReadFile(s.ExtractPath)
 		if err != nil {
 			return nil, err
 		}
-		return s.Buf, nil
+		return s.buf, nil
 	}
 
 	// Assemble the Encapsulated elements
@@ -268,12 +280,12 @@ func (s *Section) Assemble() ([]byte, error) {
 		if ts.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
 			switch ts.GUID {
 			case lzmaGUID:
-				s.Buf, err = lzma.Encode(secData)
+				s.buf, err = lzma.Encode(secData)
 				if err != nil {
 					return nil, err
 				}
 			case lzmaX86GUID:
-				s.Buf, err = lzma.EncodeX86(secData)
+				s.buf, err = lzma.EncodeX86(secData)
 				if err != nil {
 					return nil, err
 				}
@@ -282,17 +294,17 @@ func (s *Section) Assemble() ([]byte, error) {
 			}
 		}
 	default:
-		s.Buf = secData
+		s.buf = secData
 	}
 
 	s.GenSecHeader()
-	return s.Buf, nil
+	return s.buf, nil
 }
 
 // Validate File Section
 func (s *Section) Validate() []error {
 	errs := make([]error, 0)
-	buflen := uint32(len(s.Buf))
+	buflen := uint32(len(s.buf))
 	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
 
 	// Size Checks
@@ -352,7 +364,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			s.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
-	s.Buf = buf[:s.Header.ExtendedSize]
+	s.buf = buf[:s.Header.ExtendedSize]
 
 	// Section type specific data
 	switch s.Header.Type {
@@ -397,10 +409,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		}
 
 	case SectionTypeUserInterface:
-		s.Name = unicode.UCS2ToUTF8(s.Buf[headerSize:])
+		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
 
 	case SectionTypeFirmwareVolumeImage:
-		fv, err := NewFirmwareVolume(s.Buf[headerSize:], 0)
+		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0)
 		if err != nil {
 			return nil, err
 		}

@@ -36,7 +36,7 @@ func TestReplacePE32(t *testing.T) {
 		t.Fatalf("got %d matches; expected 1", len(results))
 	}
 	want := []byte{0x0a, 0x00, 0x00, byte(uefi.SectionTypePE32), 'b', 'a', 'n', 'a', 'n', 'a'}
-	got := results[0].Sections[0].Buf
+	got := results[0].Sections[0].Buf()
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("want %v; got %v", want, got)
 	}

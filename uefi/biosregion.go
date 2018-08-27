@@ -14,7 +14,7 @@ import (
 // TODO(ganshun): handle padding
 type BIOSRegion struct {
 	// holds the raw data
-	Buf             []byte `json:"-"`
+	buf             []byte
 	FirmwareVolumes []*FirmwareVolume
 
 	//Metadata for extraction and recovery
@@ -28,7 +28,7 @@ type BIOSRegion struct {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
-	br := BIOSRegion{Buf: buf, Position: r, Length: uint64(len(buf))}
+	br := BIOSRegion{buf: buf, Position: r, Length: uint64(len(buf))}
 	var absOffset uint64
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
@@ -51,6 +51,18 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 		Attributes.ErasePolarity = br.FirmwareVolumes[0].GetErasePolarity()
 	}
 	return &br, nil
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (br *BIOSRegion) Buf() []byte {
+	return br.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (br *BIOSRegion) SetBuf(buf []byte) {
+	br.buf = buf
 }
 
 // Apply calls the visitor on the BIOSRegion.
@@ -97,13 +109,13 @@ func (br *BIOSRegion) Validate() []error {
 
 // Assemble assembles the Bios Region from the binary file.
 func (br *BIOSRegion) Assemble() ([]byte, error) {
-	br.Buf = make([]byte, br.Length)
+	br.buf = make([]byte, br.Length)
 	// Assemble the Firmware Volumes
 	for i, fv := range br.FirmwareVolumes {
 		// We have to trust the JSON's polarity
 		if i == 0 {
 			Attributes.ErasePolarity = fv.GetErasePolarity()
-			Erase(br.Buf, Attributes.ErasePolarity)
+			Erase(br.buf, Attributes.ErasePolarity)
 		}
 		buf, err := fv.Assemble()
 		if err != nil {
@@ -112,8 +124,8 @@ func (br *BIOSRegion) Assemble() ([]byte, error) {
 		// copy the fv over the original
 		// TODO: handle different sizes.
 		// We'll have to FF out the new regions/ check for clashes
-		copy(br.Buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
+		copy(br.buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
 	}
 
-	return br.Buf, nil
+	return br.buf, nil
 }

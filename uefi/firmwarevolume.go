@@ -96,9 +96,21 @@ type FirmwareVolume struct {
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset  uint64
 	fvType      string
-	Buf         []byte `json:"-"`
+	buf         []byte
 	FVOffset    uint64 // Byte offset from start of BIOS region.
 	ExtractPath string
+}
+
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (fv *FirmwareVolume) Buf() []byte {
+	return fv.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (fv *FirmwareVolume) SetBuf(buf []byte) {
+	fv.buf = buf
 }
 
 // Apply calls the visitor on the FirmwareVolume.
@@ -129,7 +141,7 @@ func (fv *FirmwareVolume) Validate() []error {
 	// TODO: Add more verification if needed.
 	errs := make([]error, 0)
 	// Check for min length
-	fvlen := uint64(len(fv.Buf))
+	fvlen := uint64(len(fv.buf))
 	// We need this check in case HeaderLen doesn't exist, and bail out early
 	if fvlen < FirmwareVolumeMinSize {
 		errs = append(errs, fmt.Errorf("length too small!, buffer is only %#x bytes long", fvlen))
@@ -164,7 +176,7 @@ func (fv *FirmwareVolume) Validate() []error {
 		errs = append(errs, fmt.Errorf("length mismatch!, header has %#x, buffer is %#x bytes long", fv.Length, fvlen))
 	}
 	// Check checksum
-	sum, err := Checksum16(fv.Buf[:fv.HeaderLen])
+	sum, err := Checksum16(fv.buf[:fv.HeaderLen])
 	if err != nil {
 		errs = append(errs, fmt.Errorf("unable to checksum FV header: %v", err))
 	} else if sum != 0 {
@@ -184,13 +196,13 @@ func fillFFs(b []byte) {
 }
 
 func (fv *FirmwareVolume) insertFile(fOffset uint64, alignedOffset uint64, fBuf []byte) error {
-	fvLen := uint64(len(fv.Buf))
+	fvLen := uint64(len(fv.buf))
 	if alignedOffset > fvLen {
 		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x",
 			fvLen, alignedOffset)
 	}
 	// TODO: Change to ErasePolarity
-	fillFFs(fv.Buf[fOffset:alignedOffset])
+	fillFFs(fv.buf[fOffset:alignedOffset])
 
 	// Check size
 	fLen := uint64(len(fBuf))
@@ -201,7 +213,7 @@ func (fv *FirmwareVolume) insertFile(fOffset uint64, alignedOffset uint64, fBuf 
 			fvLen, alignedOffset, len(fBuf))
 	}
 	// Overwrite old data in the firmware volume.
-	copy(fv.Buf[alignedOffset:], fBuf)
+	copy(fv.buf[alignedOffset:], fBuf)
 	return nil
 }
 
@@ -212,7 +224,7 @@ func (fv *FirmwareVolume) insertFile(fOffset uint64, alignedOffset uint64, fBuf 
 // This is not something that's expected to change easily.
 func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 	var err error
-	fv.Buf, err = ioutil.ReadFile(fv.ExtractPath)
+	fv.buf, err = ioutil.ReadFile(fv.ExtractPath)
 	if err != nil {
 		return nil, err
 	}
@@ -221,19 +233,19 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 		// We don't support this fv type, just return the raw buffer.
 		// Or we have no Files, so we assume that what was extracted was
 		// the full binary FV
-		return fv.Buf, nil
+		return fv.buf, nil
 	}
 
 	// Construct the full buffer.
 	// The FV header is the only thing we've read in so far.
-	if fv.Length < uint64(len(fv.Buf)) {
+	if fv.Length < uint64(len(fv.buf)) {
 		return nil, fmt.Errorf("buffer read in bigger than FV length!, expected %v got %v bytes",
-			fv.Length, len(fv.Buf))
+			fv.Length, len(fv.buf))
 	}
-	extLen := fv.Length - uint64(len(fv.Buf))
+	extLen := fv.Length - uint64(len(fv.buf))
 	emptyBuf := make([]byte, extLen)
 	Erase(emptyBuf, Attributes.ErasePolarity)
-	fv.Buf = append(fv.Buf, emptyBuf...)
+	fv.buf = append(fv.buf, emptyBuf...)
 
 	// Make sure we don't go over the size.
 	fvLen := fv.Length
@@ -266,7 +278,7 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 				if err != nil {
 					return nil, err
 				}
-				if err = fv.insertFile(fOffset, alignedOffset, pf.Buf); err != nil {
+				if err = fv.insertFile(fOffset, alignedOffset, pf.buf); err != nil {
 					return nil, err
 				}
 				// Set up offsets for the actual file
@@ -283,9 +295,9 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 	// Fill to the end with FFs
 	// TODO: handle ErasePolarity
 	if fOffset < fvLen {
-		fillFFs(fv.Buf[fOffset:fvLen])
+		fillFFs(fv.buf[fOffset:fvLen])
 	}
-	return fv.Buf, nil
+	return fv.buf, nil
 }
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
@@ -356,7 +368,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
 	fv.FVOffset = fvOffset
 
 	// slice the buffer
-	fv.Buf = data[:fv.Length]
+	fv.buf = data[:fv.Length]
 
 	// Parse the files.
 	// TODO: handle fv data alignment.
