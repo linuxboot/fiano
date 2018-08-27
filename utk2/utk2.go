@@ -32,23 +32,26 @@
 //       save winterfell2.rom
 //
 // Operations:
-// - `json`: Dump the entire parsed image (excluding binary data) as JSON to
-//   stdout.
-// - `table`: Dump GUIDs and sizes to a compact table. This is only for human
-//   consumption and the format may change without notice.
-// - `find (GUID|NAME)`: Dump the JSON of one or more files. The file is found
-//   by a regex match to its GUID or name in the UI section.
-// - `remove (GUID|NAME)`: Remove the first file which matches the given GUID or
-//   NAME. The same matching rules and exit status are used as `find`.
-// - `replace (GUID|NAME) FILE`: Replace the first file which matches the given
-//   GUID or NAME with the contents of FILE. The same matching rules and exit
-//   status are used as `find`.
-// - `save FILE`: Save the current state of the image to the give file. Remember
-//   that operations are applied left-to-right, so only the operations to the left
-//   are included in the new image.
-// - `extract DIR`: Extract the BIOS to the given directory. Remember that
-//   operations are applied left-to-right, so only the operations to the left are
-//   included in the new image.
+//     `json`: Dump the entire parsed image (excluding binary data) as JSON to
+//             stdout.
+//     `table`: Dump GUIDs and sizes to a compact table. This is only for human
+//              consumption and the format may change without notice.
+//     `find (GUID|NAME)`: Dump the JSON of one or more files. The file is
+//                         found by a regex match to its GUID or name in the UI
+//                         section.
+//     `remove (GUID|NAME)`: Remove the first file which matches the given GUID
+//                           or NAME. The same matching rules and exit status
+//                           are used as `find`.
+//     `replace (GUID|NAME) FILE`: Replace the first file which matches the
+//                                 given GUID or NAME with the contents of
+//                                 FILE. The same matching rules and exit
+//                                 status are used as `find`.
+//     `save FILE`: Save the current state of the image to the give file.
+//                  Remember that operations are applied left-to-right, so only
+//                  the operations to the left are included in the new image.
+//     `extract DIR`: Extract the BIOS to the given directory. Remember that
+//                    operations are applied left-to-right, so only the
+//                    operations to the left are included in the new image.
 package main
 
 import (
