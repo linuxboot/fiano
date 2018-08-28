@@ -176,6 +176,9 @@ func (f *FlashImage) Apply(v Visitor) error {
 
 // ApplyChildren calls the visitor on each child node of FlashImage.
 func (f *FlashImage) ApplyChildren(v Visitor) error {
+	if err := f.IFD.Apply(v); err != nil {
+		return err
+	}
 	if f.BIOS != nil {
 		if err := f.BIOS.Apply(v); err != nil {
 			return err
