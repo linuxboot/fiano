@@ -45,11 +45,13 @@ const (
 
 var supportedFiles = map[FVFileType]bool{
 	// These are the file types that we'll actually try to parse sections for.
-	FVFileTypeFreeForm:           true,
-	FVFileTypeSECCore:            true,
-	FVFileTypePEICore:            true,
-	FVFileTypeDXECore:            true,
-	FVFileTypePEIM:               true,
+	FVFileTypeFreeForm: true,
+	FVFileTypeSECCore:  true,
+	FVFileTypePEICore:  true,
+	FVFileTypeDXECore:  true,
+	// TODO: Commenting out this line prevents PEI modules from being
+	// decompressed. This solves the problem of PEI being too big when recompressed.
+	//FVFileTypePEIM:               true,
 	FVFileTypeDriver:             true,
 	FVFileTypeCombinedPEIMDriver: true,
 	FVFileTypeApplication:        true,
