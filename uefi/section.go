@@ -49,7 +49,7 @@ const (
 	SectionMMDepEx                 SectionType = 0x1c
 )
 
-var sectionNames = map[SectionType]string{
+var sectionTypeNames = map[SectionType]string{
 	SectionTypeCompression:         "EFI_SECTION_COMPRESSION",
 	SectionTypeGUIDDefined:         "EFI_SECTION_GUID_DEFINED",
 	SectionTypeDisposable:          "EFI_SECTION_DISPOSABLE",
@@ -65,6 +65,14 @@ var sectionNames = map[SectionType]string{
 	SectionTypeRaw:                 "EFI_SECTION_RAW",
 	SectionTypePEIDepEx:            "EFI_SECTION_PEI_DEPEX",
 	SectionMMDepEx:                 "EFI_SECTION_MM_DEPEX",
+}
+
+// String creates a string representation for the file type.
+func (s SectionType) String() string {
+	if t, ok := sectionTypeNames[s]; ok {
+		return t
+	}
+	return "UNKNOWN"
 }
 
 // GUIDEDSectionAttribute holds a GUIDED section attribute bitfield
@@ -338,10 +346,8 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		return nil, err
 	}
 
-	// Map type to string
-	if t, ok := sectionNames[s.Header.Type]; ok {
-		s.Type = t
-	}
+	// Map type to string.
+	s.Type = s.Header.Type.String()
 
 	headerSize := unsafe.Sizeof(SectionHeader{})
 	if s.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
