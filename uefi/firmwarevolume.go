@@ -279,7 +279,7 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 					return nil, err
 				}
 				if err = fv.insertFile(fOffset, alignedOffset, pf.buf); err != nil {
-					return nil, err
+					return nil, fmt.Errorf("File %s: %v", pf.Header.UUID, err)
 				}
 				// Set up offsets for the actual file
 				fOffset = newOffset
@@ -287,7 +287,7 @@ func (fv *FirmwareVolume) Assemble() ([]byte, error) {
 			alignedOffset = newOffset
 		}
 		if err = fv.insertFile(fOffset, alignedOffset, fBuf); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("File %s: %v", f.Header.UUID, err)
 		}
 		fOffset = alignedOffset + fLen
 	}
