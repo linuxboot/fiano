@@ -63,6 +63,44 @@ var supportedFiles = map[FVFileType]bool{
 	FVFileTypeSMMCoreStandalone:  true,
 }
 
+var fileTypeNames = map[FVFileType]string{
+	FVFileTypeRaw:                "EFI_FV_FILETYPE_RAW",
+	FVFileTypeFreeForm:           "EFI_FV_FILETYPE_FREEFORM",
+	FVFileTypeSECCore:            "EFI_FV_FILETYPE_SECURITY_CORE",
+	FVFileTypePEICore:            "EFI_FV_FILETYPE_PEI_CORE",
+	FVFileTypeDXECore:            "EFI_FV_FILETYPE_DXE_CORE",
+	FVFileTypePEIM:               "EFI_FV_FILETYPE_PEIM",
+	FVFileTypeDriver:             "EFI_FV_FILETYPE_DRIVER",
+	FVFileTypeCombinedPEIMDriver: "EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER",
+	FVFileTypeApplication:        "EFI_FV_FILETYPE_APPLICATION",
+	FVFileTypeSMM:                "EFI_FV_FILETYPE_MM",
+	FVFileTypeVolumeImage:        "EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE",
+	FVFileTypeCombinedSMMDXE:     "EFI_FV_FILETYPE_COMBINED_MM_DXE",
+	FVFileTypeSMMCore:            "EFI_FV_FILETYPE_MM_CORE",
+	FVFileTypeSMMStandalone:      "EFI_FV_FILETYPE_MM_STANDALONE",
+	FVFileTypeSMMCoreStandalone:  "EFI_FV_FILETYPE_MM_CORE_STANDALONE",
+}
+
+// String creates a string representation for the file type.
+func (f FVFileType) String() string {
+	switch {
+	case FVFileTypeOEMMin <= f && f <= FVFileTypeOEMMax:
+		return fmt.Sprintf("EFI_FV_FILETYPE_OEM (%#x)", uint8(f))
+	case FVFileTypeDebugMin <= f && f <= FVFileTypeDebugMax:
+		return fmt.Sprintf("EFI_FV_FILETYPE_DEBUG (%#x)", uint8(f))
+	// We use the non-inclusive '<' operator here because pad files belong
+	// to the FFS filetype, but are also their own type.
+	case FVFileTypeFFSMin < f && f <= FVFileTypeFFSMax:
+		return fmt.Sprintf("EFI_FV_FILETYPE_FFS (%#x)", uint8(f))
+	case f == FVFileTypePad:
+		return "EFI_FV_FILETYPE_FFS_PAD"
+	}
+	if t, ok := fileTypeNames[f]; ok {
+		return t
+	}
+	return "UNKNOWN"
+}
+
 // Stock GUIDS
 var (
 	ZeroGUID = uuid.MustParse("00000000-0000-0000-0000-000000000000")
@@ -180,6 +218,7 @@ type FileHeaderExtended struct {
 // File represents an EFI File.
 type File struct {
 	Header   FileHeaderExtended
+	Type     string
 	Sections []*Section `json:",omitempty"`
 
 	//Metadata for extraction and recovery
@@ -456,6 +495,9 @@ func NewFile(buf []byte) (*File, error) {
 	if err := binary.Read(r, binary.LittleEndian, &f.Header.FileHeader); err != nil {
 		return nil, err
 	}
+
+	// Map type to string.
+	f.Type = f.Header.Type.String()
 
 	// TODO: Check Attribute flag as well. How important is the attribute flag? we already
 	// have FFFFFF in the size
