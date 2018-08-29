@@ -17,6 +17,10 @@ import (
 	"github.com/ulikunitz/xz/lzma"
 )
 
+// Mapping from compression level to dictionary size.
+var lzmaDictCapExps = []uint{18, 20, 21, 22, 22, 23, 23, 24, 25, 26}
+var compressionLevel = 7
+
 // Decode decodes a byte slice of LZMA data.
 func Decode(encodedData []byte) ([]byte, error) {
 	r, err := lzma.NewReader(bytes.NewBuffer(encodedData))
@@ -34,6 +38,8 @@ func Encode(decodedData []byte) ([]byte, error) {
 		SizeInHeader: true,
 		Size:         int64(len(decodedData)),
 		EOSMarker:    false,
+		Properties:   &lzma.Properties{LC: 3, LP: 0, PB: 2},
+		DictCap:      1 << lzmaDictCapExps[compressionLevel],
 	}
 	if err := wc.Verify(); err != nil {
 		return nil, err
