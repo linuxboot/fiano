@@ -3,30 +3,37 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9c955ae7ae334dcab9b674d1ab83b3dbca9fdbbb406ecbd4e221ab80cf881619"
   name = "github.com/google/subcommands"
   packages = ["."]
+  pruneopts = "UT"
   revision = "a3682377147edf596d303faabd89f81977b3f678"
 
 [[projects]]
   branch = "master"
+  digest = "1:09352d860d9ac877586151d1d715c31f1df86717defe6c4e1d1fbe9ceb2778d9"
   name = "github.com/u-root/u-root"
   packages = [
     "pkg/golang",
-    "pkg/testutil"
+    "pkg/testutil",
   ]
+  pruneopts = "UT"
   revision = "0c647f6bc6b55616717fcd2edb8d469f32b0459c"
 
 [[projects]]
+  digest = "1:ba8028944baec941af3e7e7d9a51b3161a7168a042188b058da662bfc33fd1aa"
   name = "github.com/ulikunitz/xz"
   packages = [
     "internal/hash",
     "internal/xlog",
-    "lzma"
+    "lzma",
   ]
+  pruneopts = "UT"
   revision = "0c6b41e72360850ca4f98dc341fd999726ea007f"
   version = "v0.5.4"
 
 [[projects]]
+  digest = "1:fb8be2f4db4c5f3fa4b93ec808502d5933c7cf8d8fa285b32ba8c0102c309850"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -37,14 +44,21 @@
     "internal/utf8internal",
     "runes",
     "transform",
-    "unicode/cldr"
+    "unicode/cldr",
   ]
+  pruneopts = "UT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d02b945009c59ac80bb5e5ba309ec6cd36a8bac9f6f5be9715b41fc81c346363"
+  input-imports = [
+    "github.com/google/subcommands",
+    "github.com/u-root/u-root/pkg/testutil",
+    "github.com/ulikunitz/xz/lzma",
+    "golang.org/x/text/encoding/unicode",
+    "golang.org/x/text/transform",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
