@@ -35,6 +35,7 @@ jobs:
             ./dep-linux-amd64 hash-inputs
             ./dep-linux-amd64 status
             ./dep-linux-amd64 ensure -vendor-only
+            git status vendor
             if [[ -n "$(git status --porcelain vendor)" ]]; then
               echo 'vendor/ is out-of-date: run `dep ensure -vendor-only` and then check in the changes'
               git status --porcelain vendor
