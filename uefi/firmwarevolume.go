@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
+	"log"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -99,6 +99,7 @@ type FirmwareVolume struct {
 	buf         []byte
 	FVOffset    uint64 // Byte offset from start of BIOS region.
 	ExtractPath string
+	Resizable   bool // Determines if this FV is resizable.
 }
 
 // Buf returns the buffer.
@@ -195,109 +196,40 @@ func fillFFs(b []byte) {
 	}
 }
 
-func (fv *FirmwareVolume) insertFile(fOffset uint64, alignedOffset uint64, fBuf []byte) error {
-	fvLen := uint64(len(fv.buf))
-	if alignedOffset > fvLen {
+// InsertFile appends the file to the end of the buffer according to alignment requirements.
+func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
+	// fv.Length should contain the minimum fv size.
+	// If Resizable is not set, this is the exact FV size.
+	fvLen := fv.Length
+	if !fv.Resizable && alignedOffset > fv.Length {
 		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x",
 			fvLen, alignedOffset)
 	}
-	// TODO: Change to ErasePolarity
-	fillFFs(fv.buf[fOffset:alignedOffset])
+	bufLen := uint64(len(fv.buf))
+	if bufLen > alignedOffset {
+		return fmt.Errorf("aligned offset is in the middle of the FV, offset was %#x, fv buffer was %#x",
+			alignedOffset, bufLen)
+	}
+
+	// add padding for alignment
+	for i, num := uint64(0), alignedOffset-bufLen; i < num; i++ {
+		fv.buf = append(fv.buf, Attributes.ErasePolarity)
+	}
 
 	// Check size
 	fLen := uint64(len(fBuf))
-	if fLen+alignedOffset > fvLen {
+	if fLen == 0 {
+		log.Fatal("FUCK")
+	}
+	if fLen+alignedOffset > fvLen && !fv.Resizable {
 		// TODO: Actually loop through and calculate the full size so we know how much to reduce by.
 		// For now we just return early
 		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x, length was %#x",
 			fvLen, alignedOffset, len(fBuf))
 	}
 	// Overwrite old data in the firmware volume.
-	copy(fv.buf[alignedOffset:], fBuf)
+	fv.buf = append(fv.buf, fBuf...)
 	return nil
-}
-
-// Assemble assembles the Firmware Volume from the binary file.
-// TODO: HANDLE HEADER CHANGES.
-// We assume the FV length hasn't changed, and we assume the FV offset is the same as specified in
-// the JSON. We also don't check that the extended header or data offset is the same.
-// This is not something that's expected to change easily.
-func (fv *FirmwareVolume) Assemble() ([]byte, error) {
-	var err error
-	fv.buf, err = ioutil.ReadFile(fv.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok || len(fv.Files) == 0 {
-		// We don't support this fv type, just return the raw buffer.
-		// Or we have no Files, so we assume that what was extracted was
-		// the full binary FV
-		return fv.buf, nil
-	}
-
-	// Construct the full buffer.
-	// The FV header is the only thing we've read in so far.
-	if fv.Length < uint64(len(fv.buf)) {
-		return nil, fmt.Errorf("buffer read in bigger than FV length!, expected %v got %v bytes",
-			fv.Length, len(fv.buf))
-	}
-	extLen := fv.Length - uint64(len(fv.buf))
-	emptyBuf := make([]byte, extLen)
-	Erase(emptyBuf, Attributes.ErasePolarity)
-	fv.buf = append(fv.buf, emptyBuf...)
-
-	// Make sure we don't go over the size.
-	fvLen := fv.Length
-	fOffset := fv.DataOffset
-	for _, f := range fv.Files {
-		fBuf, err := f.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		fLen := uint64(len(fBuf))
-
-		// Pad to the 8 byte alignments.
-		alignedOffset := Align8(fOffset)
-		// Read out the file alignment requirements
-		if alignBase := f.Header.Attributes.GetAlignment(); alignBase != 1 {
-			hl := f.HeaderLen()
-			// We need to align the data, not the header. This is so terrible.
-			dataOffset := Align(alignedOffset+hl, alignBase)
-			// Calculate the starting offset of the file
-			newOffset := dataOffset - hl
-			if gap := (newOffset - alignedOffset); gap >= 8 && gap < FileHeaderMinLength {
-				// We need to re align to the next boundary cause we can't put a pad file in here.
-				// Who thought this was a good idea?
-				dataOffset = Align(dataOffset+1, alignBase)
-				newOffset = dataOffset - hl
-			}
-			if newOffset != alignedOffset {
-				// Add a pad file starting from alignedOffset to newOffset
-				pf, err := CreatePadFile(newOffset - alignedOffset)
-				if err != nil {
-					return nil, err
-				}
-				if err = fv.insertFile(fOffset, alignedOffset, pf.buf); err != nil {
-					return nil, fmt.Errorf("File %s: %v", pf.Header.UUID, err)
-				}
-				// Set up offsets for the actual file
-				fOffset = newOffset
-			}
-			alignedOffset = newOffset
-		}
-		if err = fv.insertFile(fOffset, alignedOffset, fBuf); err != nil {
-			return nil, fmt.Errorf("File %s: %v", f.Header.UUID, err)
-		}
-		fOffset = alignedOffset + fLen
-	}
-
-	// Fill to the end with FFs
-	// TODO: handle ErasePolarity
-	if fOffset < fvLen {
-		fillFFs(fv.buf[fOffset:fvLen])
-	}
-	return fv.buf, nil
 }
 
 // FindFirmwareVolumeOffset searches for a firmware volume signature, "_FVH"
@@ -321,8 +253,8 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 
 // NewFirmwareVolume parses a sequence of bytes and returns a FirmwareVolume
 // object, if a valid one is passed, or an error
-func NewFirmwareVolume(data []byte, fvOffset uint64) (*FirmwareVolume, error) {
-	var fv FirmwareVolume
+func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareVolume, error) {
+	fv := FirmwareVolume{Resizable: resizable}
 
 	if len(data) < FirmwareVolumeMinSize {
 		return nil, fmt.Errorf("Firmware Volume size too small: expected %v bytes, got %v",

@@ -36,16 +36,14 @@ func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
 			// no firmware volume found, stop searching
 			break
 		}
-		absOffset += uint64(offset) // Find start of volume relative to bios region.
-		fv, err := NewFirmwareVolume(buf[offset:], absOffset)
+		absOffset += uint64(offset)                                  // Find start of volume relative to bios region.
+		fv, err := NewFirmwareVolume(buf[offset:], absOffset, false) // False as top level FVs are not resizable
 		if err != nil {
 			return nil, err
 		}
 		absOffset += fv.Length
 		buf = buf[uint64(offset)+fv.Length:]
 		br.FirmwareVolumes = append(br.FirmwareVolumes, fv)
-		// FIXME remove the `break` and move the offset to the next location to
-		// search for FVs (i.e. offset + fv.size)
 	}
 	if len(br.FirmwareVolumes) > 0 {
 		Attributes.ErasePolarity = br.FirmwareVolumes[0].GetErasePolarity()
@@ -105,27 +103,4 @@ func (br *BIOSRegion) Validate() []error {
 		}
 	}
 	return errs
-}
-
-// Assemble assembles the Bios Region from the binary file.
-func (br *BIOSRegion) Assemble() ([]byte, error) {
-	br.buf = make([]byte, br.Length)
-	// Assemble the Firmware Volumes
-	for i, fv := range br.FirmwareVolumes {
-		// We have to trust the JSON's polarity
-		if i == 0 {
-			Attributes.ErasePolarity = fv.GetErasePolarity()
-			Erase(br.buf, Attributes.ErasePolarity)
-		}
-		buf, err := fv.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		// copy the fv over the original
-		// TODO: handle different sizes.
-		// We'll have to FF out the new regions/ check for clashes
-		copy(br.buf[fv.FVOffset:fv.FVOffset+fv.Length], buf)
-	}
-
-	return br.buf, nil
 }

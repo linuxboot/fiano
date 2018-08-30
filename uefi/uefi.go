@@ -33,7 +33,6 @@ var Attributes ROMAttributes
 // interface.
 type Firmware interface {
 	Validate() []error
-	Assemble() ([]byte, error)
 
 	Buf() []byte
 	SetBuf(buf []byte)

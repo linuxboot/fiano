@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 
 	uuid "github.com/linuxboot/fiano/uuid"
 )
@@ -43,7 +42,7 @@ const (
 	FVFileTypeFFSMax   FVFileType = 0xFF
 )
 
-var supportedFiles = map[FVFileType]bool{
+var SupportedFiles = map[FVFileType]bool{
 	// These are the file types that we'll actually try to parse sections for.
 	FVFileTypeFreeForm: true,
 	FVFileTypeSECCore:  true,
@@ -254,7 +253,10 @@ func (f *File) ApplyChildren(v Visitor) error {
 	return nil
 }
 
-func (f *File) setSize(size uint64, resizeFile bool) {
+// SetSize sets the size into the File struct.
+// If resizeFile is true, if the file is too large the file will be enlarged to make space
+// for the ExtendedHeader
+func (f *File) SetSize(size uint64, resizeFile bool) {
 	fh := &f.Header
 	// See if we need the extended size
 	// Check if size > 3 bytes size field
@@ -273,7 +275,8 @@ func (f *File) setSize(size uint64, resizeFile bool) {
 	fh.Size = Write3Size(fh.ExtendedSize)
 }
 
-func (f *File) checksumAndAssemble(fileData []byte) error {
+// ChecksumAndAssemble takes in the fileData and assembles the file binary
+func (f *File) ChecksumAndAssemble(fileData []byte) error {
 	// Checksum the header and body, then write out the header.
 	// To checksum the header we write the temporary header to the file buffer first.
 	fh := &f.Header
@@ -312,67 +315,6 @@ func (f *File) checksumAndAssemble(fileData []byte) error {
 
 	f.buf = append(f.buf, fileData...)
 	return nil
-}
-
-// Assemble assembles the Firmware File
-func (f *File) Assemble() ([]byte, error) {
-	var err error
-
-	fh := &f.Header
-	if _, ok := supportedFiles[fh.Type]; !ok || len(f.Sections) == 0 {
-		// we don't support this file type, just return the raw buffer.
-		// Or we've removed the sections and just want to replace the file directly
-		// We have to make sure the state is correct, so we still need to write out
-		// the file header.
-
-		// Set state to valid based on erase polarity
-		// We really should redo the whole header
-		// TODO: Reconstruct header from JSON
-		fh.State = 0x07 ^ Attributes.ErasePolarity
-		f.buf, err = ioutil.ReadFile(f.ExtractPath)
-		if err != nil {
-			return nil, err
-		}
-		f.buf[0x17] = fh.State
-		return f.buf, nil
-	}
-
-	// Otherwise, we reconstruct the entire file from the sections and the
-	// file header using data from the JSON. This means that some JSON values
-	// are now respected, including GUID changes. However file lengths and
-	// checksums will be recalculated.
-
-	// Assemble all sections so we know the final file size. We need to do this
-	// to know if we need to use the extended header.
-	fileData := []byte{}
-	dLen := uint64(0)
-	for _, s := range f.Sections {
-		// Align to 4 bytes and extend with 00s
-		// Why is it 00s? I don't know. Everything else has been extended with FFs
-		// but somehow in between sections alignment is done with 0s. What the heck.
-		for count := Align4(dLen) - dLen; count > 0; count-- {
-			fileData = append(fileData, 0x00)
-		}
-		dLen = Align4(dLen)
-
-		// Assemble the section and append
-		sData, err := s.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		dLen += uint64(len(sData))
-		fileData = append(fileData, sData...)
-	}
-
-	f.setSize(FileHeaderMinLength+dLen, true)
-
-	// Set state to valid based on erase polarity
-	fh.State = 0x07 ^ Attributes.ErasePolarity
-
-	if err = f.checksumAndAssemble(fileData); err != nil {
-		return nil, err
-	}
-	return f.buf, nil
 }
 
 // Validate Firmware File
@@ -461,7 +403,7 @@ func CreatePadFile(size uint64) (*File, error) {
 
 	// Set the size. If the file is too big, we take up more of the padding for the header.
 	// This also sets the large file attribute if file is big.
-	f.setSize(size, false)
+	f.SetSize(size, false)
 	fh.Type = FVFileTypePad
 
 	// Create empty pad filedata based on size
@@ -478,7 +420,7 @@ func CreatePadFile(size uint64) (*File, error) {
 	fh.State = 0x07 ^ Attributes.ErasePolarity
 
 	// Everything has been setup. Checksum and create.
-	if err := f.checksumAndAssemble(fileData); err != nil {
+	if err := f.ChecksumAndAssemble(fileData); err != nil {
 		return nil, err
 	}
 	return &f, nil
@@ -526,7 +468,7 @@ func NewFile(buf []byte) (*File, error) {
 	f.buf = buf[:f.Header.ExtendedSize]
 
 	// Parse sections
-	if _, ok := supportedFiles[f.Header.Type]; !ok {
+	if _, ok := SupportedFiles[f.Header.Type]; !ok {
 		return &f, nil
 	}
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
