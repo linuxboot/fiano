@@ -97,7 +97,13 @@ func TestExtractAssembleFile(t *testing.T) {
 			if err = f.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
-			nb, err := f.Assemble()
+			if err = f.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+				t.Fatalf("Unable to parse files %v, got %v", test.origBuf, err.Error())
+			}
+			if err = f.Apply(&Assemble{}); err != nil {
+				t.Fatalf("Unable to reassemble file %v, got %v", test.origBuf, err.Error())
+			}
+			nb := f.Buf()
 			if len(test.newBuf) != len(nb) {
 				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
 			}
@@ -129,7 +135,7 @@ func TestExtractAssembleFV(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpDir)
 
-			fv, err := uefi.NewFirmwareVolume(test.origBuf, 0)
+			fv, err := uefi.NewFirmwareVolume(test.origBuf, 0, false)
 			if err != nil {
 				t.Fatalf("Unable to parse file object %v, got %v", test.origBuf, err.Error())
 			}
@@ -137,7 +143,13 @@ func TestExtractAssembleFV(t *testing.T) {
 			if err = fv.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
-			nb, err := fv.Assemble()
+			if err = fv.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+				t.Fatalf("Unable to parse files %v, got %v", test.origBuf, err.Error())
+			}
+			if err = fv.Apply(&Assemble{}); err != nil {
+				t.Fatalf("Unable to reassemble file %v, got %v", test.origBuf, err.Error())
+			}
+			nb := fv.Buf()
 			if len(test.newBuf) != len(nb) {
 				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
 			}
@@ -180,10 +192,13 @@ func TestExtractAssembleSection(t *testing.T) {
 			if err = s.Apply(&Extract{DirPath: tmpDir, Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract section %v, got %v", test.buf, err.Error())
 			}
-			nb, err := s.Assemble()
-			if err != nil {
-				t.Fatal(err)
+			if err = s.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+				t.Fatalf("Unable to parse files %v, got %v", test.buf, err.Error())
 			}
+			if err = s.Apply(&Assemble{}); err != nil {
+				t.Fatalf("Unable to reassemble file %v, got %v", test.buf, err.Error())
+			}
+			nb := s.Buf()
 			if len(test.buf) != len(nb) {
 				t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
 			}

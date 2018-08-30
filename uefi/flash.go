@@ -7,10 +7,7 @@ package uefi
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"sort"
 )
 
 // FlashSignature is the sequence of bytes that a Flash image is expected to
@@ -121,24 +118,6 @@ func (fd *FlashDescriptor) Validate() []error {
 	return fd.DescriptorMap.Validate()
 }
 
-// Assemble assembles the flash descriptor using the binary pointed to in ExtractPath.
-func (fd *FlashDescriptor) Assemble() ([]byte, error) {
-	// We have to trust that the ExtractPath we read from the JSON is correct.
-	var err error
-	fd.buf, err = ioutil.ReadFile(fd.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-	// We assume that the ifd binary information supersedes the json information.
-	// This is simpler for now, but not ideal since it would be nice to just change the
-	// JSON to change the ifd.
-	if err = fd.ParseFlashDescriptor(); err != nil {
-		return nil, err
-	}
-	// We just return the buffer.
-	return fd.buf, nil
-}
-
 // FlashImage is the main structure that represents an Intel Flash image. It
 // implements the Firmware interface.
 type FlashImage struct {
@@ -233,89 +212,6 @@ func (f *FlashImage) Validate() []error {
 	// TODO also validate regions, masters, etc
 	errors = append(errors, f.BIOS.Validate()...)
 	return errors
-}
-
-// Assemble assembles the FlashImage starting from the bottom up.
-func (f *FlashImage) Assemble() ([]byte, error) {
-	// Assemble the ifd
-	ifdbuf, err := f.IFD.Assemble()
-	if err != nil {
-		return nil, err
-	}
-	// Assemble regions.
-	// We need to sort them since a) we don't really know the order until we parse the block numbers
-	// and b) the order may have changed anyway.
-	if !f.IFD.Region.BIOS.Valid() {
-		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
-	}
-	type region struct {
-		P   *Region
-		buf []byte
-	}
-	regions := make([]region, 0, 4)
-
-	if f.BIOS == nil {
-		return nil, errors.New("bios struct is nil, json is probably malformed")
-	}
-	// Point position to struct read from IFD rather than json.
-	f.BIOS.Position = &f.IFD.Region.BIOS
-	biosbuf, err := f.BIOS.Assemble()
-	if err != nil {
-		return nil, err
-	}
-	regions = append(regions, region{f.BIOS.Position, biosbuf})
-
-	// ME region
-	if f.IFD.Region.ME.Valid() {
-		if f.ME == nil {
-			// Not in JSON, error out since we don't have an ExtractPath.
-			return nil, errors.New("no ME region unmarshalled from JSON, but ME region is present in IFD")
-		}
-		f.ME.Position = &f.IFD.Region.ME
-		mebuf, err := f.ME.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		regions = append(regions, region{f.ME.Position, mebuf})
-	}
-
-	// GBE region
-	if f.IFD.Region.GBE.Valid() {
-		if f.GBE == nil {
-			// Not in JSON, error out since we don't have an ExtractPath.
-			return nil, errors.New("no GBE region unmarshalled from JSON, but GBE region is present in IFD")
-		}
-		f.GBE.Position = &f.IFD.Region.GBE
-		gbebuf, err := f.GBE.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		regions = append(regions, region{f.GBE.Position, gbebuf})
-	}
-
-	// PD region
-	if f.IFD.Region.PD.Valid() {
-		if f.PD == nil {
-			// Not in JSON, error out since we don't have an ExtractPath.
-			return nil, errors.New("no PD region unmarshalled from JSON, but PD region is present in IFD")
-		}
-		f.PD.Position = &f.IFD.Region.PD
-		pdbuf, err := f.PD.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		regions = append(regions, region{f.PD.Position, pdbuf})
-	}
-
-	// Sort regions so we can output the flash file correctly.
-	sort.Slice(regions, func(i, j int) bool { return regions[i].P.Base < regions[j].P.Base })
-	// append all slices together and return.
-	f.buf = make([]byte, 0, 0)
-	f.buf = append(f.buf, ifdbuf...)
-	for _, r := range regions {
-		f.buf = append(f.buf, r.buf...)
-	}
-	return f.buf, nil
 }
 
 func (f *FlashImage) String() string {

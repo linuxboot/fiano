@@ -7,7 +7,6 @@ package uefi
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 )
 
 // PDRegion represents the PD Region in the firmware.
@@ -61,14 +60,4 @@ func (pd *PDRegion) Validate() []error {
 		errs = append(errs, fmt.Errorf("PDRegion is not valid, region was %v", *pd.Position))
 	}
 	return errs
-}
-
-// Assemble assembles the Bios Region from the binary file.
-func (pd *PDRegion) Assemble() ([]byte, error) {
-	var err error
-	pd.buf, err = ioutil.ReadFile(pd.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-	return pd.buf, nil
 }

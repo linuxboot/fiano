@@ -7,7 +7,6 @@ package uefi
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 )
 
 // GBERegion represents the GBE Region in the firmware.
@@ -61,14 +60,4 @@ func (gbe *GBERegion) Validate() []error {
 		errs = append(errs, fmt.Errorf("GBERegion is not valid, region was %v", *gbe.Position))
 	}
 	return errs
-}
-
-// Assemble assembles the GBE Region from the binary file.
-func (gbe *GBERegion) Assemble() ([]byte, error) {
-	var err error
-	gbe.buf, err = ioutil.ReadFile(gbe.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-	return gbe.buf, nil
 }

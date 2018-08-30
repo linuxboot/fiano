@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/google/subcommands"
 	"github.com/linuxboot/fiano/uefi"
@@ -190,34 +189,15 @@ func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 		return subcommands.ExitUsageError
 	}
 
-	romfile, err := filepath.Abs(args[1])
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	// Change working directory so we can use relative paths
-	if err := os.Chdir(args[0]); err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	jsonbuf, err := ioutil.ReadFile("summary.json")
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	firmware, err := uefi.UnmarshalFirmware(jsonbuf)
+	// Parse.
+	firmware, err := (&visitors.ParseDir{DirPath: args[0]}).Parse()
 	if err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
 
-	buf, err := firmware.Assemble()
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	err = ioutil.WriteFile(romfile, buf, 0644)
-	if err != nil {
+	// Save.
+	if err := (&visitors.Save{DirPath: args[1]}).Run(firmware); err != nil {
 		log.Print(err)
 		return subcommands.ExitFailure
 	}
