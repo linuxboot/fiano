@@ -310,7 +310,8 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 		return &fv, nil
 	}
 	lh := fv.Length - FileHeaderMinLength
-	for offset, prevLen := fv.DataOffset, uint64(0); offset < lh; offset += prevLen {
+	var prevLen uint64
+	for offset := fv.DataOffset; offset < lh; offset += prevLen {
 		offset = Align8(offset)
 		file, err := NewFile(data[offset:])
 		if err != nil {
