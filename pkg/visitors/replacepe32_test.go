@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 func TestReplacePE32(t *testing.T) {

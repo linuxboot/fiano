@@ -17,16 +17,16 @@ then
 fi
 
 gofmt -w -s $FILES
-golint -set_exit_status $FILES
-go tool vet utk uefi uuid unicode fmap pkg/fmap integration visitors
+echo $FILES | xargs -n 1 golint -set_exit_status
+go tool vet pkg/* cmds/*
 
 # Check it builds
 
-(cd utk && go build .)
-(cd utk2 && go build .)
+for x in $(ls cmds); do
+    (cd cmds/$x && go build .)
+done
 
 # Check tests
 
-(cd visitors && go test)
-(cd uefi && go test)
+go test ./...
 echo "Pre-Commit Passed"

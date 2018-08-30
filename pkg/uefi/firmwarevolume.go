@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 
-	uuid "github.com/linuxboot/fiano/uuid"
+	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 // FirmwareVolume constants

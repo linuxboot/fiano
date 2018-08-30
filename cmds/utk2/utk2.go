@@ -59,8 +59,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/linuxboot/fiano/uefi"
-	"github.com/linuxboot/fiano/visitors"
+	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
 func main() {

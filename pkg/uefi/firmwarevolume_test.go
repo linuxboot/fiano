@@ -19,7 +19,7 @@ var (
 
 func init() {
 	var err error
-	sampleFV, err = ioutil.ReadFile("../integration/roms/ovmfSECFV.fv")
+	sampleFV, err = ioutil.ReadFile("../../integration/roms/ovmfSECFV.fv")
 	if err != nil {
 		log.Fatal(err)
 	}

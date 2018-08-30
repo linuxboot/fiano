@@ -30,7 +30,7 @@ Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://gorepo
     go version
 
     # For UTK:
-    go get github.com/linuxboot/fiano/utk
+    go get github.com/linuxboot/fiano/cmds/utk
 
     # For fmap:
-    go get github.com/linuxboot/fiano/fmap
+    go get github.com/linuxboot/fiano/cmds/fmap

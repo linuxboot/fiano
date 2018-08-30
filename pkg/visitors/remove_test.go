@@ -7,7 +7,7 @@ package visitors
 import (
 	"testing"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 func TestRemove(t *testing.T) {

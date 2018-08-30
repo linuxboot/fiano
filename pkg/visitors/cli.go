@@ -10,7 +10,7 @@ package visitors
 import (
 	"fmt"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 var visitorRegistry = map[string]visitorEntry{}
