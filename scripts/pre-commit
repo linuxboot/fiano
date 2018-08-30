@@ -23,5 +23,10 @@ go tool vet utk uefi uuid unicode fmap pkg/fmap integration visitors
 # Check it builds
 
 (cd utk && go build .)
+(cd utk2 && go build .)
 
+# Check tests
+
+(cd visitors && go test)
+(cd uefi && go test)
 echo "Pre-Commit Passed"
