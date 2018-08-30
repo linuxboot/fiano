@@ -159,6 +159,29 @@ func (t *TypeSpecificHeader) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(getType.Header, &t.Header)
 }
 
+// DepExOpCode is one opcode for the dependency expression section.
+type DepExOpCode string
+
+// DepExOpCodes maps the numeric code to the string.
+var DepExOpCodes = map[byte]DepExOpCode{
+	0x0: "BEFORE",
+	0x1: "AFTER",
+	0x2: "PUSH",
+	0x3: "AND",
+	0x4: "OR",
+	0x5: "NOT",
+	0x6: "TRUE",
+	0x7: "FALSE",
+	0x8: "END",
+	0x9: "SOR",
+}
+
+// DepExOp contains one operation for the dependency expression.
+type DepExOp struct {
+	OpCode DepExOpCode
+	GUID   *uuid.UUID `json:",omitempty"`
+}
+
 // Section represents a Firmware File Section
 type Section struct {
 	Header SectionExtHeader
@@ -170,10 +193,14 @@ type Section struct {
 	FileOrder   int `json:"-"`
 
 	// Type specific fields
+	// TODO: It will be simpler if this was not an interface
 	TypeSpecific *TypeSpecificHeader `json:",omitempty"`
 
 	// For EFI_SECTION_USER_INTERFACE
 	Name string `json:",omitempty"`
+
+	// For EFI_SECTION_DXE_DEPEX, EFI_SECTION_PEI_DEPEX, and EFI_SECTION_MM_DEPEX
+	DepEx []DepExOp `json:",omitempty"`
 
 	// Encapsulated firmware
 	Encapsulated []*TypedFirmware `json:",omitempty"`
@@ -423,7 +450,40 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 			return nil, err
 		}
 		s.Encapsulated = []*TypedFirmware{MakeTyped(fv)}
+
+	case SectionTypeDXEDepEx, SectionTypePEIDepEx, SectionMMDepEx:
+		var err error
+		if s.DepEx, err = parseDepEx(s.buf[headerSize:]); err != nil {
+			log.Println("warning:", err)
+		}
 	}
 
 	return &s, nil
+}
+
+func parseDepEx(b []byte) ([]DepExOp, error) {
+	depEx := []DepExOp{}
+	r := bytes.NewBuffer(b)
+	for {
+		opCodeByte, err := r.ReadByte()
+		if err != nil {
+			return nil, errors.New("invalid DEPEX, no END")
+		}
+		if opCodeStr, ok := DepExOpCodes[opCodeByte]; ok {
+			op := DepExOp{OpCode: opCodeStr}
+			if opCodeStr == "BEFORE" || opCodeStr == "AFTER" || opCodeStr == "PUSH" {
+				op.GUID = &uuid.UUID{}
+				if err := binary.Read(r, binary.LittleEndian, op.GUID); err != nil {
+					return nil, fmt.Errorf("invalid DEPEX, could not read GUID: %v", err)
+				}
+			}
+			depEx = append(depEx, op)
+			if opCodeStr == "END" {
+				break
+			}
+		} else {
+			return nil, fmt.Errorf("invalid DEPEX opcode, %#v", opCodeByte)
+		}
+	}
+	return depEx, nil
 }
