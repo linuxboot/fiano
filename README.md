@@ -2,6 +2,7 @@
 
 Go-based tools for modifying UEFI firmware.
 
+[![CircleCI](https://circleci.com/gh/linuxboot/fiano.svg?style=shield)](https://circleci.com/gh/linuxboot/fiano)
 [![Build Status](https://travis-ci.com/linuxboot/fiano.png)](https://travis-ci.com/linuxboot/fiano/)
 [![Go Report
 Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://goreportcard.com/report/github.com/linuxboot/fiano)
