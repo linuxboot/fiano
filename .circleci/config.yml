@@ -6,14 +6,14 @@ workflows:
     jobs:
       - clean-code
       - test:
-        requires:
-          - clean-code
+          requires:
+            - clean-code
       - race:
-        requires:
-          - clean-code
+          requires:
+            - clean-code
       - check_licenses:
-        requires:
-          - clean-code
+          requires:
+            - clean-code
 jobs:
   clean-code:
     docker:
