@@ -12,7 +12,7 @@ import (
 	"sort"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Assemble reconstitutes the firmware tree assuming that the leaf node buffers are accurate

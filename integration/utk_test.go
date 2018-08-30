@@ -35,7 +35,7 @@ func buildUTK(t *testing.T) (tmpDir string, utk string) {
 	}
 
 	// Build UTK in the tmpDir.
-	cmd := exec.Command("go", "build", "github.com/linuxboot/fiano/utk")
+	cmd := exec.Command("go", "build", "github.com/linuxboot/fiano/cmds/utk")
 	cmd.Dir = tmpDir
 	if err := cmd.Run(); err != nil {
 		os.RemoveAll(tmpDir)

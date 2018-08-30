@@ -7,7 +7,7 @@ package visitors
 import (
 	"regexp"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Remove all firmware files with the given GUID.

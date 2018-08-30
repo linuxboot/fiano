@@ -13,8 +13,8 @@ import (
 	"os"
 
 	"github.com/google/subcommands"
-	"github.com/linuxboot/fiano/uefi"
-	"github.com/linuxboot/fiano/visitors"
+	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
 // Parse subcommand

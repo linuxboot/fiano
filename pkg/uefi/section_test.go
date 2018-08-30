@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/linuxboot/fiano/uuid"
+	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 var (

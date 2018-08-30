@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	uuid "github.com/linuxboot/fiano/uuid"
+	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 // FVFileType represents the different types possible in an EFI file.
@@ -42,6 +42,8 @@ const (
 	FVFileTypeFFSMax   FVFileType = 0xFF
 )
 
+// SupportedFiles is a list of files types which will be parsed. File types not
+// on this list are treated as opaque binary blobs.
 var SupportedFiles = map[FVFileType]bool{
 	// These are the file types that we'll actually try to parse sections for.
 	FVFileTypeFreeForm: true,

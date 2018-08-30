@@ -14,8 +14,8 @@ import (
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/lzma"
-	"github.com/linuxboot/fiano/unicode"
-	"github.com/linuxboot/fiano/uuid"
+	"github.com/linuxboot/fiano/pkg/unicode"
+	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 const (
@@ -83,6 +83,7 @@ const (
 	GUIDEDSectionAuthStatusValid    GUIDEDSectionAttribute = 0x02
 )
 
+// Well-known GUIDs.
 var (
 	LZMAGUID    = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
 	LZMAX86GUID = *uuid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")

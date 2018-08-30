@@ -7,7 +7,7 @@ package visitors
 import (
 	"io/ioutil"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Save calls Assemble, then outputs the top image to a file.
