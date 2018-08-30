@@ -7,7 +7,6 @@ package uefi
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 )
 
 // MERegion represents the ME Region in the firmware.
@@ -61,14 +60,4 @@ func (me *MERegion) Validate() []error {
 		errs = append(errs, fmt.Errorf("MERegion is not valid, region was %v", *me.Position))
 	}
 	return errs
-}
-
-// Assemble assembles the ME Region from the binary file.
-func (me *MERegion) Assemble() ([]byte, error) {
-	var err error
-	me.buf, err = ioutil.ReadFile(me.ExtractPath)
-	if err != nil {
-		return nil, err
-	}
-	return me.buf, nil
 }

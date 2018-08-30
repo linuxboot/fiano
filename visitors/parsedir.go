@@ -26,6 +26,10 @@ func (v *ParseDir) Run(f uefi.Firmware) error {
 func (v *ParseDir) Parse() (uefi.Firmware, error) {
 	// Change working directory so we can use relative paths.
 	// TODO: commands after this in the pipeline are in unexpected directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
 	if err := os.Chdir(v.DirPath); err != nil {
 		return nil, err
 	}
@@ -40,6 +44,11 @@ func (v *ParseDir) Parse() (uefi.Firmware, error) {
 	}
 
 	if err = f.Apply(&ParseDir{DirPath: "."}); err != nil {
+		return nil, err
+	}
+
+	// Only bother changing back the directory if no errors
+	if err := os.Chdir(wd); err != nil {
 		return nil, err
 	}
 	return f, nil

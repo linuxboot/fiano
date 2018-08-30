@@ -87,6 +87,11 @@ func main() {
 		if parsedRoot, err = pd.Parse(); err != nil {
 			log.Fatal(err)
 		}
+		// Assemble the tree from the bottom up
+		a := visitors.Assemble{}
+		if err = a.Run(parsedRoot); err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		// Regular file
 		image, err := ioutil.ReadFile(path)

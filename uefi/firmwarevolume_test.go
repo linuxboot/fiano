@@ -35,7 +35,7 @@ func TestValidateFV(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fv, err := NewFirmwareVolume(test.buf, 0)
+			fv, err := NewFirmwareVolume(test.buf, 0, false)
 			if err != nil {
 				t.Fatalf("Error was not expected, got %v", err.Error())
 			}
@@ -65,7 +65,7 @@ func TestNewFirmwareVolume(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := NewFirmwareVolume(test.buf, 0)
+			_, err := NewFirmwareVolume(test.buf, 0, false)
 			if err == nil && test.msg != "" {
 				t.Errorf("Error was not returned, expected %v", test.msg)
 			} else if err != nil && err.Error() != test.msg {

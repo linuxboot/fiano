@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"unsafe"
 
@@ -85,8 +84,8 @@ const (
 )
 
 var (
-	lzmaGUID    = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
-	lzmaX86GUID = *uuid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
+	LZMAGUID    = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
+	LZMAX86GUID = *uuid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
 )
 
 // SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
@@ -278,64 +277,6 @@ func (s *Section) GenSecHeader() error {
 	return nil
 }
 
-// Assemble assembles the Section.
-func (s *Section) Assemble() ([]byte, error) {
-	var err error
-	if len(s.Encapsulated) == 0 {
-		// Just read the binary
-		s.buf, err = ioutil.ReadFile(s.ExtractPath)
-		if err != nil {
-			return nil, err
-		}
-		return s.buf, nil
-	}
-
-	// Assemble the Encapsulated elements
-	secData := []byte{}
-	dLen := uint64(0)
-	for _, es := range s.Encapsulated {
-		// Align to 4 bytes and extend with 00s
-		for count := Align4(dLen) - dLen; count > 0; count-- {
-			secData = append(secData, 0x00)
-		}
-		dLen = Align4(dLen)
-
-		// Assemble the subsection and append
-		esData, err := es.Value.Assemble()
-		if err != nil {
-			return nil, err
-		}
-		dLen += uint64(len(esData))
-		secData = append(secData, esData...)
-	}
-
-	switch s.Header.Type {
-	case SectionTypeGUIDDefined:
-		ts := s.TypeSpecific.Header.(*SectionGUIDDefined)
-		if ts.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
-			switch ts.GUID {
-			case lzmaGUID:
-				s.buf, err = lzma.Encode(secData)
-				if err != nil {
-					return nil, err
-				}
-			case lzmaX86GUID:
-				s.buf, err = lzma.EncodeX86(secData)
-				if err != nil {
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("unknown guid defined from section %v, should not have encapsulated sections", s)
-			}
-		}
-	default:
-		s.buf = secData
-	}
-
-	s.GenSecHeader()
-	return s.buf, nil
-}
-
 // Validate File Section
 func (s *Section) Validate() []error {
 	errs := make([]error, 0)
@@ -413,10 +354,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
 			var err error
 			switch typeSpec.GUID {
-			case lzmaGUID:
+			case LZMAGUID:
 				typeSpec.Compression = "LZMA"
 				encapBuf, err = lzma.Decode(buf[typeSpec.DataOffset:])
-			case lzmaX86GUID:
+			case LZMAX86GUID:
 				typeSpec.Compression = "LZMAX86"
 				encapBuf, err = lzma.DecodeX86(buf[typeSpec.DataOffset:])
 			default:
@@ -445,7 +386,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
 
 	case SectionTypeFirmwareVolumeImage:
-		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0)
+		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0, true)
 		if err != nil {
 			return nil, err
 		}
