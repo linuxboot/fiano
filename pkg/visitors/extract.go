@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Extract extracts any Firmware node to DirPath

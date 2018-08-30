@@ -10,7 +10,7 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/linuxboot/fiano/uefi"
+	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Find a firmware file given its name or GUID.

@@ -8,15 +8,15 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/linuxboot/fiano/uefi"
-	"github.com/linuxboot/fiano/uuid"
+	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 // This GUID exists somewhere in the OVMF image.
 var testGUID = uuid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
 
 func parseImage(t *testing.T) uefi.Firmware {
-	image, err := ioutil.ReadFile("../integration/roms/OVMF.rom")
+	image, err := ioutil.ReadFile("../../integration/roms/OVMF.rom")
 	if err != nil {
 		t.Fatal(err)
 	}
