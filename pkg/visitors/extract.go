@@ -5,12 +5,19 @@
 package visitors
 
 import (
+	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
+)
+
+var (
+	force  = flag.Bool("force", false, "force extract to non empty directory")
+	remove = flag.Bool("remove", false, "remove existing directory before extracting")
 )
 
 // Extract extracts any Firmware node to DirPath
@@ -21,6 +28,26 @@ type Extract struct {
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *Extract) Run(f uefi.Firmware) error {
+	// Optionally remove directory if it already exists.
+	if *remove {
+		if err := os.RemoveAll(v.DirPath); err != nil {
+			return err
+		}
+	}
+
+	if !*force {
+		// Check that directory does not exist or is empty.
+		files, err := ioutil.ReadDir(v.DirPath)
+		if err == nil {
+			if len(files) != 0 {
+				return errors.New("Existing directory not empty, use --force to override")
+			}
+		} else if !os.IsNotExist(err) {
+			// Error was not EEXIST, we do not know what went wrong.
+			return err
+		}
+	}
+
 	// Create the directory if it does not exist.
 	if err := os.MkdirAll(v.DirPath, 0755); err != nil {
 		return err
