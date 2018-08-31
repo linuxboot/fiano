@@ -9,16 +9,38 @@ Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://gorepo
 [![GoDoc](https://godoc.org/github.com/linuxboot/fiano?status.svg)](https://godoc.org/github.com/linuxboot/fiano)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/linuxboot/fiano/blob/master/LICENSE)
 
-## Available tools
+## UTK: Generic UEFI tool kit meant to handle rom images
 
-* [utk](utk/): generic UEFI tool kit meant to handle rom images. Usage:
-  + View table: `utk <rom-file> table`
-  + View JSON: `utk <rom-file> json`
-  + Remove file: `utk <rom-file> remove <GUID or Name> save <output-file>`
-  + Replace section: `utk <rom-file> replace_pe32 <GUID or Name> save <output-file>`
-  + Extract: `utk <rom-file> extract <directory>`
-  + Assemble: `utk <directory> save <rom-file>`
-+ [fmap](fmap/): parses flash maps. Usage:
+Example usage:
+
+```
+# Dump everything to JSON:
+utk winterfell.rom json
+
+# Dump a single file to JSON (using regex):
+utk winterfell.rom find Shell
+
+# Dump GUIDs and sizes to a compact table:
+utk winterfell.rom table
+
+# Extract everything into a directory:
+utk winterfell.rom extract winterfell/
+
+# Re-assemble the directory into an image:
+utk winterfell/ save winterfell2.rom
+
+# Remove two files by their GUID and replace shell with Linux:
+utk winterfell.rom \
+  remove 12345678-9abc-def0-1234-567890abcdef \
+  remove 23830293-3029-3823-0922-328328330939 \
+  replace_pe32 Shell linux.efi \
+  save winterfell2.rom
+```
+
+## FMAP: Parses flash maps.
+
+Example usage:
+
   + `fmap checksum [md5|sha1|sha256] FILE`
   + `fmap extract i FILE`
   + `fmap jget JSONFILE FILE`
