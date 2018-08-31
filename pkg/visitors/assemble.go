@@ -258,17 +258,21 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 
 	case *uefi.BIOSRegion:
 		fBuf := make([]byte, f.Length)
-		// Assemble the Firmware Volumes
-		for i, fv := range f.FirmwareVolumes {
-			// We have to trust the JSON's polarity
-			if i == 0 {
-				uefi.Attributes.ErasePolarity = fv.GetErasePolarity()
-				uefi.Erase(fBuf, uefi.Attributes.ErasePolarity)
-			}
+		firstFV, err := f.FirstFV()
+		if err != nil {
+			return err
+		}
+		uefi.Attributes.ErasePolarity = firstFV.GetErasePolarity()
+		uefi.Erase(fBuf, uefi.Attributes.ErasePolarity)
+		// Put the elements together
+		offset := uint64(0)
+		for _, e := range f.Elements {
 			// copy the fv over the original
 			// TODO: handle different sizes.
 			// We'll have to FF out the new regions/ check for clashes
-			copy(fBuf[fv.FVOffset:fv.FVOffset+fv.Length], fv.Buf())
+			ebuf := e.Value.Buf()
+			copy(fBuf[offset:offset+uint64(len(ebuf))], ebuf)
+			offset += uint64(len(ebuf))
 		}
 		// Set the buffer
 		f.SetBuf(fBuf)

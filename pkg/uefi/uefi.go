@@ -87,6 +87,7 @@ type marshalFirmware struct {
 
 var firmwareTypes = map[string]func() Firmware{
 	"*uefi.BIOSRegion":      func() Firmware { return &BIOSRegion{} },
+	"*uefi.BIOSPadding":     func() Firmware { return &BIOSPadding{} },
 	"*uefi.File":            func() Firmware { return &File{} },
 	"*uefi.FirmwareVolume":  func() Firmware { return &FirmwareVolume{} },
 	"*uefi.FlashDescriptor": func() Firmware { return &FlashDescriptor{} },

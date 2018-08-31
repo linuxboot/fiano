@@ -112,7 +112,7 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 
 	case *uefi.BIOSRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "bios")
-		if len(f.FirmwareVolumes) == 0 {
+		if len(f.Elements) == 0 {
 			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "biosregion.bin")
 		}
 
@@ -127,6 +127,10 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 	case *uefi.PDRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "pd")
 		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "pdregion.bin")
+
+	case *uefi.BIOSPadding:
+		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("biospad_%#x", f.Offset))
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "pad.bin")
 	}
 	if err != nil {
 		return err
