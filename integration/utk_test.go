@@ -56,8 +56,7 @@ func TestParse(t *testing.T) {
 
 	for _, tt := range romList(t) {
 		t.Run(tt, func(t *testing.T) {
-			// Run `utk parse --warn tt.rom`.
-			cmd := exec.Command(utk, "parse", "--warn", tt)
+			cmd := exec.Command(utk, tt, "json")
 			cmd.Stderr = os.Stderr
 			out, err := cmd.Output()
 
@@ -106,14 +105,16 @@ func TestExtractAssembleExtract(t *testing.T) {
 				dir2   = filepath.Join(tmpDirT, "dir2")
 			)
 
-			// Warnings are acceptable.
-			cmd := exec.Command(utk, "extract", "--warn", "--remove", tt, dir1)
+			// Extract
+			cmd := exec.Command(utk, tt, "extract", dir1)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
-			cmd = exec.Command(utk, "assemble", dir1, tmpRom)
+			// Assemble
+			cmd = exec.Command(utk, dir1, "save", tmpRom)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
-			cmd = exec.Command(utk, "extract", "--warn", "--remove", tmpRom, dir2)
+			// Extract
+			cmd = exec.Command(utk, tmpRom, "extract", dir2)
 			cmd.Stderr = os.Stderr
 			cmd.Run()
 

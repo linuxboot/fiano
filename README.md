@@ -12,9 +12,12 @@ Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://gorepo
 ## Available tools
 
 * [utk](utk/): generic UEFI tool kit meant to handle rom images. Usage:
-  + `utk parse <rom-file>`
-  + `utk extract [--force] <rom-file> <directory-to-extract-to>`
-  + `utk assemble <directory-to-extract-to> <out-rom-file>`
+  + View table: `utk <rom-file> table`
+  + View JSON: `utk <rom-file> json`
+  + Remove file: `utk <rom-file> remove <GUID or Name> save <output-file>`
+  + Replace section: `utk <rom-file> replace_pe32 <GUID or Name> save <output-file>`
+  + Extract: `utk <rom-file> extract <directory>`
+  + Assemble: `utk <directory> save <rom-file>`
 + [fmap](fmap/): parses flash maps. Usage:
   + `fmap checksum [md5|sha1|sha256] FILE`
   + `fmap extract i FILE`

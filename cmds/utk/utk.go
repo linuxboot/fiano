@@ -2,218 +2,111 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// The utk command performs operations on a UEFI firmware image.
+//
+// Synopsis:
+//     utk BIOS OPERATIONS...
+//
+// Examples:
+//     # Dump everything to JSON:
+//     utk winterfell.rom json
+//
+//     # Dump a single file to JSON (using regex):
+//     utk winterfell.rom find Shell
+//
+//     # Dump GUIDs and sizes to a compact table:
+//     utk winterfell.rom table
+//
+//     # Extract everything into a directory:
+//     utk winterfell.rom extract winterfell/
+//
+//     # Re-assemble the directory into an image:
+//     utk winterfell/ save winterfell2.rom
+//
+//     # Remove two files by their GUID and replace shell with Linux:
+//     utk winterfell.rom \
+//       remove 12345678-9abc-def0-1234-567890abcdef \
+//       remove 23830293-3029-3823-0922-328328330939 \
+//       replace_pe32 Shell linux.efi \
+//       save winterfell2.rom
+//
+// Operations:
+//     `json`: Dump the entire parsed image (excluding binary data) as JSON to
+//             stdout.
+//     `table`: Dump GUIDs and sizes to a compact table. This is only for human
+//              consumption and the format may change without notice.
+//     `find (GUID|NAME)`: Dump the JSON of one or more files. The file is
+//                         found by a regex match to its GUID or name in the UI
+//                         section.
+//     `remove (GUID|NAME)`: Remove the first file which matches the given GUID
+//                           or NAME. The same matching rules and exit status
+//                           are used as `find`.
+//     `replace (GUID|NAME) FILE`: Replace the first file which matches the
+//                                 given GUID or NAME with the contents of
+//                                 FILE. The same matching rules and exit
+//                                 status are used as `find`.
+//     `save FILE`: Save the current state of the image to the give file.
+//                  Remember that operations are applied left-to-right, so only
+//                  the operations to the left are included in the new image.
+//     `extract DIR`: Extract the BIOS to the given directory. Remember that
+//                    operations are applied left-to-right, so only the
+//                    operations to the left are included in the new image.
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/google/subcommands"
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
-// Parse subcommand
-type parseCmd struct {
-	warn bool
-}
-
-func (*parseCmd) Name() string {
-	return "parse"
-}
-
-func (*parseCmd) Synopsis() string {
-	return "Parse rom file and print JSON summary to stdout"
-}
-
-func (*parseCmd) Usage() string {
-	return "parse <path-to-rom-file>\n"
-}
-
-func (p *parseCmd) SetFlags(f *flag.FlagSet) {
-	f.BoolVar(&p.warn, "warn", false, "warn instead of fail on validation errors")
-}
-
-func (p *parseCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	args := f.Args()
-	if len(args) == 0 {
-		log.Print("A file name is required")
-		return subcommands.ExitUsageError
-	}
-
-	romfile := args[0]
-	buf, err := ioutil.ReadFile(romfile)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-
-	firmware, err := uefi.Parse(buf)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	errlist := firmware.Validate()
-	for _, err := range errlist {
-		log.Printf("Error found: %v\n", err.Error())
-	}
-	errlen := len(errlist)
-	if !p.warn && errlen > 0 {
-		return subcommands.ExitFailure
-	}
-
-	b, err := uefi.MarshalFirmware(firmware)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	fmt.Println(string(b))
-	if errlen > 0 {
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitSuccess
-}
-
-// Extract subcommand
-type extractCmd struct {
-	force  bool
-	warn   bool
-	remove bool
-}
-
-func (*extractCmd) Name() string {
-	return "extract"
-}
-
-func (*extractCmd) Synopsis() string {
-	return "Extract rom file and print JSON summary to stdout"
-}
-
-func (*extractCmd) Usage() string {
-	return "extract <path-to-rom-file> <directory-to-extract-into>\n"
-}
-
-func (e *extractCmd) SetFlags(f *flag.FlagSet) {
-	f.BoolVar(&e.force, "force", false, "force extract to non empty directory")
-	f.BoolVar(&e.warn, "warn", false, "warn instead of fail on validation errors")
-	f.BoolVar(&e.remove, "remove", false, "remove existing directory before extracting")
-}
-
-func (e *extractCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	args := f.Args()
-	if len(args) < 2 {
-		log.Print(e.Usage())
-		return subcommands.ExitUsageError
-	}
-
-	romfile := args[0]
-	buf, err := ioutil.ReadFile(romfile)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-
-	firmware, err := uefi.Parse(buf)
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-	errlist := firmware.Validate()
-	for _, err := range errlist {
-		log.Printf("Error found: %v\n", err.Error())
-	}
-	errlen := len(errlist)
-	if !e.warn && errlen > 0 {
-		return subcommands.ExitFailure
-	}
-
-	if e.remove {
-		if err := os.RemoveAll(args[1]); err != nil {
-			log.Printf("Error removing path %v, got %v\n", args[1], err)
-		}
-	}
-	if !e.force {
-		// check that directory doesn't exist or is empty
-		files, err := ioutil.ReadDir(args[1])
-		if err == nil {
-			if len(files) != 0 {
-				log.Print("Existing directory not empty, use --force to override")
-				return subcommands.ExitFailure
-			}
-		} else if !os.IsNotExist(err) {
-			// error was not EEXIST, we don't know what went wrong.
-			log.Print(err)
-			return subcommands.ExitFailure
-		}
-	}
-
-	// Extract all elements.
-	if err := (&visitors.Extract{DirPath: args[1]}).Run(firmware); err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-
-	if errlen > 0 {
-		// Return failure even if warn is set.
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitSuccess
-}
-
-// Assemble subcommand
-type assembleCmd struct {
-}
-
-func (*assembleCmd) Name() string {
-	return "assemble"
-}
-
-func (*assembleCmd) Synopsis() string {
-	return "Assemble rom file from directory tree."
-}
-
-func (*assembleCmd) Usage() string {
-	return "assemble <directory-to-assemble-from> <newromfile>\n"
-}
-
-func (*assembleCmd) SetFlags(_ *flag.FlagSet) {}
-
-func (a *assembleCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	args := f.Args()
-	if len(args) < 2 {
-		log.Print(a.Usage())
-		return subcommands.ExitUsageError
-	}
-
-	// Parse.
-	firmware, err := (&visitors.ParseDir{DirPath: args[0]}).Parse()
-	if err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-
-	// Save.
-	if err := (&visitors.Save{DirPath: args[1]}).Run(firmware); err != nil {
-		log.Print(err)
-		return subcommands.ExitFailure
-	}
-
-	return subcommands.ExitSuccess
-}
-
 func main() {
-	subcommands.Register(subcommands.HelpCommand(), "")
-	subcommands.Register(subcommands.FlagsCommand(), "")
-	subcommands.Register(subcommands.CommandsCommand(), "")
-	subcommands.Register(&parseCmd{}, "")
-	subcommands.Register(&extractCmd{}, "")
-	subcommands.Register(&assembleCmd{}, "")
 	flag.Parse()
+	if flag.NArg() == 0 {
+		log.Fatal("at least one argument is required")
+	}
 
-	ctx := context.Background()
-	os.Exit(int(subcommands.Execute(ctx)))
+	v, err := visitors.ParseCLI(flag.Args()[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Load and parse the image.
+	// TODO: if os.Args[1] is a directory, re-assemble it
+	path := flag.Args()[0]
+	f, err := os.Stat(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var parsedRoot uefi.Firmware
+	if m := f.Mode(); m.IsDir() {
+		// Call ParseDir
+		pd := visitors.ParseDir{DirPath: path}
+		if parsedRoot, err = pd.Parse(); err != nil {
+			log.Fatal(err)
+		}
+		// Assemble the tree from the bottom up
+		a := visitors.Assemble{}
+		if err = a.Run(parsedRoot); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		// Regular file
+		image, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		parsedRoot, err = uefi.Parse(image)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Execute the instructions from the command line.
+	if err := visitors.ExecuteCLI(parsedRoot, v); err != nil {
+		log.Fatal(err)
+	}
 }
