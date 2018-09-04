@@ -25,7 +25,9 @@ func (v *Save) Run(f uefi.Firmware) error {
 func (v *Save) Visit(f uefi.Firmware) error {
 	a := &Assemble{}
 	// Assemble the binary to make sure the top level buffer is correct
-	f.Apply(a)
+	if err := f.Apply(a); err != nil {
+		return err
+	}
 	return ioutil.WriteFile(v.DirPath, f.Buf(), 0666)
 }
 
