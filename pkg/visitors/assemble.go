@@ -61,8 +61,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 
 		fileOffset := f.DataOffset
 		if f.DataOffset != fBufLen {
-			return fmt.Errorf("fv header buffer size mismatch with DataOffset! buflen was %#x, DataOffset was %#x",
-				fBufLen, f.DataOffset)
+			// remove all old file data
+			fBuf = fBuf[:f.DataOffset]
+			f.SetBuf(fBuf)
 		}
 
 		for _, file := range f.Files {
