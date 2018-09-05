@@ -28,6 +28,9 @@ jobs:
             mv dep-linux-amd64 dep
             chmod +x dep
       - run:
+          name: Install golint
+          command: go get -u golang.org/x/lint/golint
+      - run:
           name: Install ineffassign
           command: go get github.com/gordonklaus/ineffassign
       - run:
@@ -48,6 +51,9 @@ jobs:
       - run:
           name: gofmt
           command: test -z $(gofmt -s -l cmds pkg)
+      - run:
+          name: golint
+          command: golint --set_exit_status $(go list ./... | grep -v /vendor/)
       - run:
           name: ineffassign
           command: ineffassign .
