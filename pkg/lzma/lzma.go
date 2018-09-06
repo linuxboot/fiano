@@ -33,7 +33,6 @@ func Decode(encodedData []byte) ([]byte, error) {
 // Encode encodes a byte slice with LZMA.
 func Encode(decodedData []byte) ([]byte, error) {
 	// These options are supported by the xz's LZMA command and EDK2's LZMA.
-	// TODO: This does not support the f86 feature used in EDK2.
 	wc := lzma.WriterConfig{
 		SizeInHeader: true,
 		Size:         int64(len(decodedData)),
