@@ -75,7 +75,6 @@ func main() {
 	}
 
 	// Load and parse the image.
-	// TODO: if os.Args[1] is a directory, re-assemble it
 	path := flag.Args()[0]
 	f, err := os.Stat(path)
 	if err != nil {
