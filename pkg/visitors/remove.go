@@ -41,7 +41,16 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 		for i := 0; i < len(f.Files); i++ {
 			for _, m := range v.Matches {
 				if f.Files[i] == m {
-					f.Files = append(f.Files[:i], f.Files[i+1:]...)
+					if m.Header.Type == uefi.FVFileTypePEIM {
+						// Create a new pad file of the exact same size
+						pf, err := uefi.CreatePadFile(m.Header.ExtendedSize)
+						if err != nil {
+							return err
+						}
+						f.Files[i] = pf
+					} else {
+						f.Files = append(f.Files[:i], f.Files[i+1:]...)
+					}
 				}
 			}
 		}
