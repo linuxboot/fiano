@@ -51,7 +51,7 @@ Example usage:
 
 ## Installation
 
-    # Golang version 1.10 is required
+    # Golang version 1.11 is required:
     go version
 
     # For UTK:
@@ -59,3 +59,9 @@ Example usage:
 
     # For fmap:
     go get github.com/linuxboot/fiano/cmds/fmap
+
+## Updating Dependencies
+
+    # Latest released version of dep is required:
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+    dep ensure
