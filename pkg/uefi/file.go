@@ -156,8 +156,8 @@ type FileHeader struct {
 	State      uint8    `json:"-"`
 }
 
-// Checks if the large file attribute is set
-func (a fileAttr) isLarge() bool {
+// IsLarge checks if the large file attribute is set
+func (a fileAttr) IsLarge() bool {
 	return a&0x01 != 0
 }
 
@@ -185,7 +185,7 @@ func (a fileAttr) hasChecksum() bool {
 // HeaderLen is a helper function to return the length of the file header
 // depending on the file size
 func (f *File) HeaderLen() uint64 {
-	if f.Header.Attributes.isLarge() {
+	if f.Header.Attributes.IsLarge() {
 		return FileHeaderExtMinLength
 	}
 	return FileHeaderMinLength
@@ -194,7 +194,7 @@ func (f *File) HeaderLen() uint64 {
 func (f *File) checksumHeader() uint8 {
 	fh := f.Header
 	headerSize := FileHeaderMinLength
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		headerSize = FileHeaderExtMinLength
 	}
 	// Sum over header without State and IntegrityCheck.File.
@@ -305,7 +305,7 @@ func (f *File) ChecksumAndAssemble(fileData []byte) error {
 	// Write out the updated header to the buffer with the new checksums.
 	// Write the extended header only if the large attribute flag is set.
 	header = new(bytes.Buffer)
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		err = binary.Write(header, binary.LittleEndian, fh)
 	} else {
 		err = binary.Write(header, binary.LittleEndian, fh.FileHeader)
@@ -337,7 +337,7 @@ func (f *File) Validate() []error {
 				fh.UUID, buflen))
 			return errs
 		}
-		if !fh.Attributes.isLarge() {
+		if !fh.Attributes.IsLarge() {
 			errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
 				fh.UUID))
 			return errs
@@ -365,7 +365,7 @@ func (f *File) Validate() []error {
 			fh.UUID, fh.Checksum.File, EmptyBodyChecksum))
 	} else if fh.Attributes.hasChecksum() {
 		headerSize := FileHeaderMinLength
-		if fh.Attributes.isLarge() {
+		if fh.Attributes.IsLarge() {
 			headerSize = FileHeaderExtMinLength
 		}
 		if sum := Checksum8(f.buf[headerSize:]); sum != 0 {
@@ -411,7 +411,7 @@ func CreatePadFile(size uint64) (*File, error) {
 	// Create empty pad filedata based on size
 	var fileData []byte
 	fileData = make([]byte, size-FileHeaderMinLength)
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		fileData = make([]byte, size-FileHeaderExtMinLength)
 	}
 	// Fill with empty bytes

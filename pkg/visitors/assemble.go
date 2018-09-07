@@ -43,6 +43,8 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {
 
 	case *uefi.FirmwareVolume:
+		// If we see a file larger than 16 mb, we need to change the FV GUID
+		var largeFile bool
 		if len(f.Files) == 0 {
 			// No children, buffer should already contain data.
 			return nil
@@ -67,6 +69,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 		for _, file := range f.Files {
+			if file.Header.Attributes.IsLarge() {
+				largeFile = true
+			}
 			fileBuf := file.Buf()
 			fileLen := uint64(len(fileBuf))
 			if fileLen == 0 {
@@ -132,6 +137,14 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		// Write the length to the correct spot
 		// TODO: handle the whole header instead of doing this
 		binary.LittleEndian.PutUint64(fBuf[32:], f.Length)
+
+		// Write the correct GUID to the correct spot
+		if largeFile && f.FileSystemGUID == *uefi.FFS2 {
+			// There is a large file, we need to swap to FFSV3
+			f.FileSystemGUID = *uefi.FFS3
+			// Write it out
+			copy(fBuf[16:32], f.FileSystemGUID[:])
+		}
 
 		// Write the block map count
 		binary.LittleEndian.PutUint32(fBuf[56:], f.Blocks[0].Count)
