@@ -2,6 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// glzma compresses and decompresses in the same manner as EDK2's LzmaCompress.
+//
+// Synopsis:
+//     glzma -o OUTPUT_FILE (-d|-e) [-f86] INPUT_FILE
+//
+// Options:
+//     -d: decode
+//     -e: encode
+//     -f86: Use the x86 branch/call/jump filter. See `man xz` for more information.
+//     -o OUTPUT_FILE: output file
 package main
 
 import (
