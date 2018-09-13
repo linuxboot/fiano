@@ -66,7 +66,14 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) e
 	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%v\n", indent(v.indent), node, name, typez, size)
 	v2 := *v
 	v2.indent++
-	return f.ApplyChildren(&v2)
+	if err := f.ApplyChildren(&v2); err != nil {
+		return err
+	}
+	if fv, ok := f.(*uefi.FirmwareVolume); ok {
+		// Print free space at the end of the volume
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%v\n", indent(v2.indent), "Volume Free Space", "", "", fv.FreeSpace)
+	}
+	return nil
 }
 
 func init() {
