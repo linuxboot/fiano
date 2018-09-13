@@ -1,0 +1,40 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package visitors
+
+import (
+	"io/ioutil"
+	"testing"
+
+	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/uuid"
+)
+
+// This GUID exists somewhere in the OVMF image.
+var testGUID = uuid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
+
+func parseImage(t *testing.T) uefi.Firmware {
+	image, err := ioutil.ReadFile("../../integration/roms/OVMF.rom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsedRoot, err := uefi.Parse(image)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsedRoot
+}
+
+func find(t *testing.T, f uefi.Firmware, guid *uuid.UUID) []*uefi.File {
+	find := &Find{
+		Predicate: func(f *uefi.File, name string) bool {
+			return f.Header.UUID == *guid
+		},
+	}
+	if err := find.Run(f); err != nil {
+		t.Fatal(err)
+	}
+	return find.Matches
+}
