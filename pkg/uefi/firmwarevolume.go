@@ -99,7 +99,8 @@ type FirmwareVolume struct {
 	buf         []byte
 	FVOffset    uint64 // Byte offset from start of BIOS region.
 	ExtractPath string
-	Resizable   bool // Determines if this FV is resizable.
+	Resizable   bool   // Determines if this FV is resizable.
+	FreeSpace   uint64 `json:"-"`
 }
 
 // Buf returns the buffer.
@@ -229,6 +230,7 @@ func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
 	}
 	// Overwrite old data in the firmware volume.
 	fv.buf = append(fv.buf, fBuf...)
+	fv.FreeSpace = Align8(fv.Length - uint64(len(fv.buf)))
 	return nil
 }
 
@@ -319,6 +321,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 		}
 		if file == nil {
 			// We've reached free space. Terminate
+			fv.FreeSpace = fv.Length - offset
 			break
 		}
 		fv.Files = append(fv.Files, file)
