@@ -11,6 +11,9 @@ workflows:
       - race:
           requires:
             - clean-code
+      - coverage:
+          requires:
+            - clean-code
       - check_licenses:
           requires:
             - clean-code
@@ -82,6 +85,30 @@ jobs:
       - run:
           name: Race detector
           command: go test -race ./...
+  coverage:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: /go/src/github.com/linuxboot/fiano
+    environment:
+      - CGO_ENABLED: 0
+    steps:
+      - checkout
+      - run:
+          name: Test Coverage
+          command: |
+            set -e
+            > coverage.txt
+            for d in $(go list ./... | grep -v vendor); do
+                go test -coverprofile=profile.out -covermode=atomic $d
+                if [ -f profile.out ]; then
+                    cat profile.out >> coverage.txt
+                    rm profile.out
+                fi
+            done
+      - run:
+          name: Report Coverage
+          when: on_success
+          command: bash <(curl -s https://codecov.io/bash)
   check_licenses:
     docker:
       - image: circleci/golang:1.11
