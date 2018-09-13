@@ -60,7 +60,7 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("remove", 1, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("remove", "remove a file from the volume", 1, func(args []string) (uefi.Visitor, error) {
 		searchRE, err := regexp.Compile(args[0])
 		if err != nil {
 			return nil, err

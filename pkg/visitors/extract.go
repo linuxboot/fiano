@@ -141,7 +141,7 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 
 func init() {
 	var fileIndex uint64
-	RegisterCLI("extract", 1, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("extract", "extract the files to a directory", 1, func(args []string) (uefi.Visitor, error) {
 		return &Extract{
 			DirPath: args[0],
 			Index:   &fileIndex,

@@ -66,7 +66,7 @@ func (v *Cat) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("cat", 1, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("cat", "cat a file with a regexp that matches a GUID", 1, func(args []string) (uefi.Visitor, error) {
 		searchRE, err := regexp.Compile(args[0])
 		if err != nil {
 			return nil, err

@@ -63,7 +63,7 @@ func (v *ReplacePE32) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("replace_pe32", 2, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("replace_pe32", "replace a pe32 given a GUID2 and new file", 2, func(args []string) (uefi.Visitor, error) {
 		searchRE, err := regexp.Compile(args[0])
 		if err != nil {
 			return nil, err
