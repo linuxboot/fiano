@@ -138,59 +138,6 @@ func (fv *FirmwareVolume) GetErasePolarity() uint8 {
 	return 0
 }
 
-// Validate Firmware Volume
-func (fv *FirmwareVolume) Validate() []error {
-	// TODO: Add more verification if needed.
-	errs := make([]error, 0)
-	// Check for min length
-	fvlen := uint64(len(fv.buf))
-	// We need this check in case HeaderLen doesn't exist, and bail out early
-	if fvlen < FirmwareVolumeMinSize {
-		errs = append(errs, fmt.Errorf("length too small!, buffer is only %#x bytes long", fvlen))
-		return errs
-	}
-	// Check header length
-	if fv.HeaderLen < FirmwareVolumeMinSize {
-		errs = append(errs, fmt.Errorf("header length too small, got: %#x", fv.HeaderLen))
-		return errs
-	}
-	// Check for full header and bail out if its not fully formed.
-	if fvlen < uint64(fv.HeaderLen) {
-		errs = append(errs, fmt.Errorf("buffer smaller than header!, header is %#x bytes, buffer is %#x bytes",
-			fv.HeaderLen, fvlen))
-		return errs
-	}
-	// Do we want to fail in this case? maybe not.
-	if FVGUIDs[fv.FileSystemGUID] == "" {
-		errs = append(errs, fmt.Errorf("unknown FV type! Guid was %v", fv.FileSystemGUID))
-	}
-	// UEFI PI spec says version should always be 2
-	if fv.Revision != 2 {
-		errs = append(errs, fmt.Errorf("revision should be 2, was %v", fv.Revision))
-	}
-	// Check Signature
-	fvSigInt := binary.LittleEndian.Uint32([]byte("_FVH"))
-	if fv.Signature != fvSigInt {
-		errs = append(errs, fmt.Errorf("signature was not _FVH, got: %#08x", fv.Signature))
-	}
-	// Check length
-	if fv.Length != fvlen {
-		errs = append(errs, fmt.Errorf("length mismatch!, header has %#x, buffer is %#x bytes long", fv.Length, fvlen))
-	}
-	// Check checksum
-	sum, err := Checksum16(fv.buf[:fv.HeaderLen])
-	if err != nil {
-		errs = append(errs, fmt.Errorf("unable to checksum FV header: %v", err))
-	} else if sum != 0 {
-		errs = append(errs, fmt.Errorf("header did not sum to 0, got: %#x", sum))
-	}
-
-	for _, f := range fv.Files {
-		errs = append(errs, f.Validate()...)
-	}
-	return errs
-}
-
 func fillFFs(b []byte) {
 	for i := range b {
 		b[i] = 0xFF

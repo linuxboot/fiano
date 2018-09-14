@@ -278,33 +278,6 @@ func (s *Section) GenSecHeader() error {
 	return nil
 }
 
-// Validate File Section
-func (s *Section) Validate() []error {
-	errs := make([]error, 0)
-	buflen := uint32(len(s.buf))
-	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
-
-	// Size Checks
-	sh := &s.Header
-	if sh.Size == blankSize {
-		if buflen < SectionExtMinLength {
-			errs = append(errs, fmt.Errorf("section length too small!, buffer is only %#x bytes long for extended header",
-				buflen))
-			return errs
-		}
-	} else if uint32(Read3Size(s.Header.Size)) != sh.ExtendedSize {
-		errs = append(errs, errors.New("section size not copied into extendedsize"))
-		return errs
-	}
-	if buflen != sh.ExtendedSize {
-		errs = append(errs, fmt.Errorf("section size mismatch! Size is %#x, buf length is %#x",
-			sh.ExtendedSize, buflen))
-		return errs
-	}
-
-	return errs
-}
-
 // NewSection parses a sequence of bytes and returns a Section
 // object, if a valid one is passed, or an error.
 func NewSection(buf []byte, fileOrder int) (*Section, error) {
