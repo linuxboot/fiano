@@ -4,11 +4,6 @@
 
 package uefi
 
-import (
-	"errors"
-	"fmt"
-)
-
 // PDRegion represents the PD Region in the firmware.
 type PDRegion struct {
 	// holds the raw data
@@ -47,17 +42,4 @@ func (pd *PDRegion) Apply(v Visitor) error {
 // ApplyChildren calls the visitor on each child node of PDRegion.
 func (pd *PDRegion) ApplyChildren(v Visitor) error {
 	return nil
-}
-
-// Validate Region
-func (pd *PDRegion) Validate() []error {
-	// TODO: Add more verification if needed.
-	errs := make([]error, 0)
-	if pd.Position == nil {
-		errs = append(errs, errors.New("PDRegion position is nil"))
-	}
-	if !pd.Position.Valid() {
-		errs = append(errs, fmt.Errorf("PDRegion is not valid, region was %v", *pd.Position))
-	}
-	return errs
 }
