@@ -55,6 +55,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -63,6 +64,13 @@ import (
 	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: utk [flags] <file name> [0 or more operations]\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(), "Operations:\n%s", visitors.ListCLI())
+	}
+}
 func main() {
 	flag.Parse()
 	if flag.NArg() == 0 {

@@ -32,7 +32,7 @@ func (v *Save) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("save", 1, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("save", "assemble a firmware volume from a directory tree", 1, func(args []string) (uefi.Visitor, error) {
 		return &Save{
 			DirPath: args[0],
 		}, nil

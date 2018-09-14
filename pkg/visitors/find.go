@@ -59,7 +59,7 @@ func (v *Find) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("find", 1, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("find", "find a file by a GUID regexp", 1, func(args []string) (uefi.Visitor, error) {
 		searchRE, err := regexp.Compile(args[0])
 		if err != nil {
 			return nil, err

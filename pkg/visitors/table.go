@@ -77,7 +77,7 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) e
 }
 
 func init() {
-	RegisterCLI("table", 0, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("table", "print out important information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
 		return &Table{}, nil
 	})
 }
