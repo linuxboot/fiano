@@ -243,48 +243,70 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 	f.regions = append(f.regions, &f.IFD)
 
 	// BIOS region
+	// We test this one case because it is not optional
 	if !f.IFD.Region.BIOS.Valid() {
 		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
 	}
-	br, err := NewBIOSRegion(buf[f.IFD.Region.BIOS.BaseOffset():f.IFD.Region.BIOS.EndOffset()], &f.IFD.Region.BIOS)
-	if err != nil {
-		return nil, err
-	}
-	f.BIOS = br
-	// Add to extractable regions
-	f.regions = append(f.regions, f.BIOS)
 
-	// ME region
-	if f.IFD.Region.ME.Valid() {
-		mer, err := NewMERegion(buf[f.IFD.Region.ME.BaseOffset():f.IFD.Region.ME.EndOffset()], &f.IFD.Region.ME)
+	var regions = []struct {
+		n          string
+		valid      func() bool
+		start, end func() uint32
+		extract    func([]byte) (Firmware, error)
+	}{
+		{"BIOS", f.IFD.Region.BIOS.Valid, f.IFD.Region.BIOS.BaseOffset, f.IFD.Region.BIOS.EndOffset, func(b []byte) (Firmware, error) {
+			bios, err := NewBIOSRegion(b, &f.IFD.Region.BIOS)
+			if err != nil {
+				return nil, err
+			}
+			f.BIOS = bios
+			return bios, err
+		},
+		},
+		{"ME", f.IFD.Region.ME.Valid, f.IFD.Region.ME.BaseOffset, f.IFD.Region.ME.EndOffset, func(b []byte) (Firmware, error) {
+			me, err := NewMERegion(b, &f.IFD.Region.ME)
+			if err != nil {
+				return nil, err
+			}
+			f.ME = me
+			return me, err
+		},
+		},
+		{"GBE", f.IFD.Region.GBE.Valid, f.IFD.Region.GBE.BaseOffset, f.IFD.Region.GBE.EndOffset, func(b []byte) (Firmware, error) {
+			gbe, err := NewGBERegion(b, &f.IFD.Region.GBE)
+			if err != nil {
+				return nil, err
+			}
+			f.GBE = gbe
+			return gbe, err
+		},
+		},
+		{"PD", f.IFD.Region.PD.Valid, f.IFD.Region.PD.BaseOffset, f.IFD.Region.PD.EndOffset, func(b []byte) (Firmware, error) {
+			pd, err := NewPDRegion(b, &f.IFD.Region.PD)
+			if err != nil {
+				return nil, err
+			}
+			f.PD = pd
+			return pd, err
+		},
+		},
+	}
+	for _, r := range regions {
+		if !r.valid() {
+			continue
+		}
+		s, e := int(r.start()), int(r.end())
+		if len(buf) < s {
+			return nil, fmt.Errorf("%d byte buf is too short for start %s: need %d bytes", len(buf), r.n, r.end())
+		}
+		if len(buf) < e {
+			return nil, fmt.Errorf("%d byte buf is too short for end %s: need %d bytes", len(buf), r.n, r.end())
+		}
+		nf, err := r.extract(buf[s:e])
 		if err != nil {
 			return nil, err
 		}
-		f.ME = mer
-		// Add to extractable regions
-		f.regions = append(f.regions, f.ME)
-	}
-
-	// GBE region
-	if f.IFD.Region.GBE.Valid() {
-		gber, err := NewGBERegion(buf[f.IFD.Region.GBE.BaseOffset():f.IFD.Region.GBE.EndOffset()], &f.IFD.Region.GBE)
-		if err != nil {
-			return nil, err
-		}
-		f.GBE = gber
-		// Add to extractable regions
-		f.regions = append(f.regions, f.GBE)
-	}
-
-	// PD region
-	if f.IFD.Region.PD.Valid() {
-		pdr, err := NewPDRegion(buf[f.IFD.Region.PD.BaseOffset():f.IFD.Region.PD.EndOffset()], &f.IFD.Region.PD)
-		if err != nil {
-			return nil, err
-		}
-		f.PD = pdr
-		// Add to extractable regions
-		f.regions = append(f.regions, f.PD)
+		f.regions = append(f.regions, nf)
 	}
 
 	return &f, nil
