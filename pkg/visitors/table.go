@@ -28,28 +28,28 @@ func (v *Table) Run(f uefi.Firmware) error {
 func (v *Table) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {
 	case *uefi.FlashImage:
-		return v.printRow(f, "Image", "", "", "")
+		return v.printRow(f, "Image", "", "")
 	case *uefi.FirmwareVolume:
-		return v.printRow(f, "FV", f.FileSystemGUID.String(), "", f.Length)
+		return v.printRow(f, "FV", f.FileSystemGUID.String(), "")
 	case *uefi.File:
 		// TODO: make name part of the file node
-		return v.printRow(f, "File", f.Header.UUID.String(), f.Header.Type, f.Header.ExtendedSize)
+		return v.printRow(f, "File", f.Header.UUID.String(), f.Header.Type)
 	case *uefi.Section:
-		return v.printRow(f, "Sec", f.Name, f.Type, fmt.Sprintf("%d", f.Header.ExtendedSize))
+		return v.printRow(f, "Sec", f.Name, f.Type)
 	case *uefi.FlashDescriptor:
-		return v.printRow(f, "IFD", "", "", "")
+		return v.printRow(f, "IFD", "", "")
 	case *uefi.BIOSRegion:
-		return v.printRow(f, "BIOS", "", "", "")
+		return v.printRow(f, "BIOS", "", "")
 	case *uefi.BIOSPadding:
-		return v.printRow(f, "BIOS Pad", "", "", fmt.Sprintf("%d", len(f.Buf())))
+		return v.printRow(f, "BIOS Pad", "", "")
 	case *uefi.MERegion:
-		return v.printRow(f, "ME", "", "", "")
+		return v.printRow(f, "ME", "", "")
 	case *uefi.GBERegion:
-		return v.printRow(f, "GBE", "", "", "")
+		return v.printRow(f, "GBE", "", "")
 	case *uefi.PDRegion:
-		return v.printRow(f, "PD", "", "", "")
+		return v.printRow(f, "PD", "", "")
 	default:
-		return v.printRow(f, fmt.Sprintf("%T", f), "", "", "")
+		return v.printRow(f, fmt.Sprintf("%T", f), "", "")
 	}
 }
 
@@ -57,13 +57,13 @@ func indent(n int) string {
 	return strings.Repeat(" ", n)
 }
 
-func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) error {
+func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
 	if v.W == nil {
 		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		defer func() { v.W.Flush() }()
 		fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
 	}
-	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%v\n", indent(v.indent), node, name, typez, size)
+	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, len(f.Buf()))
 	v2 := *v
 	v2.indent++
 	if err := f.ApplyChildren(&v2); err != nil {
@@ -71,7 +71,7 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez, size interface{}) e
 	}
 	if fv, ok := f.(*uefi.FirmwareVolume); ok {
 		// Print free space at the end of the volume
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%v\n", indent(v2.indent), "Volume Free Space", "", "", fv.FreeSpace)
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", fv.FreeSpace)
 	}
 	return nil
 }
