@@ -45,17 +45,17 @@ import (
 )
 
 var cmds = map[string]struct {
-	nArgs     int
-	parseFMap bool
-	f         func(a cmdArgs) error
+	nArgs               int
+	openFile, parseFMap bool
+	f                   func(a cmdArgs) error
 }{
-	"checksum": {1, true, checksum},
-	"extract":  {1, true, extract},
-	"jget":     {1, true, jsonGet},
-	"jput":     {1, false, jsonPut},
-	"summary":  {0, true, summary},
-	"usage":    {0, true, usage},
-	"verify":   {0, true, verify},
+	"checksum": {1, true, true, checksum},
+	"extract":  {1, true, true, extract},
+	"jget":     {1, true, true, jsonGet},
+	"jput":     {1, false, false, jsonPut},
+	"summary":  {0, true, true, summary},
+	"usage":    {0, true, false, usage},
+	"verify":   {0, true, true, verify},
 }
 
 type cmdArgs struct {
@@ -266,8 +266,8 @@ func main() {
 		args: os.Args[2 : len(os.Args)-1],
 	}
 
-	// Open file and read fmap, but only for specific commands.
-	if cmd.parseFMap {
+	// Open file, but only for specific commands.
+	if cmd.openFile {
 		// Open file.
 		r, err := os.Open(os.Args[len(os.Args)-1])
 		if err != nil {
@@ -275,9 +275,12 @@ func main() {
 		}
 		a.r = r
 		defer r.Close()
+	}
 
+	// Parse fmap, but only for specific commands.
+	if cmd.parseFMap {
 		// Parse fmap.
-		f, m, err := fmap.Read(r)
+		f, m, err := fmap.Read(a.r)
 		if err != nil {
 			log.Fatal(err)
 		}
