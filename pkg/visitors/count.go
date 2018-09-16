@@ -17,24 +17,26 @@ import (
 // Count counts the number of each firmware type.
 type Count struct {
 	// Optionally write result as JSON.
-	W io.Writer
+	W io.Writer `json:"-"`
 
 	// Output
-	Count map[string]int
+	FirmwareTypeCount map[string]int
+	FileTypeCount     map[string]int
+	SectionTypeCount  map[string]int
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *Count) Run(f uefi.Firmware) error {
-	if v.Count == nil {
-		v.Count = map[string]int{}
-	}
+	v.FirmwareTypeCount = map[string]int{}
+	v.FileTypeCount = map[string]int{}
+	v.SectionTypeCount = map[string]int{}
 
 	if err := f.Apply(v); err != nil {
 		return err
 	}
 
 	if v.W != nil {
-		b, err := json.MarshalIndent(v.Count, "", "\t")
+		b, err := json.MarshalIndent(v, "", "\t")
 		if err != nil {
 			return err
 		}
@@ -46,11 +48,20 @@ func (v *Count) Run(f uefi.Firmware) error {
 
 // Visit applies the Count visitor to any Firmware type.
 func (v *Count) Visit(f uefi.Firmware) error {
-	firmwareType := strings.TrimPrefix(fmt.Sprintf("%T", f), "*uefi.")
-	if n, ok := v.Count[firmwareType]; ok {
-		v.Count[firmwareType] = n + 1
-	} else {
-		v.Count[firmwareType] = 1
+	incr := func(m *map[string]int, key string) {
+		if n, ok := (*m)[key]; ok {
+			(*m)[key] = n + 1
+		} else {
+			(*m)[key] = 1
+		}
+	}
+
+	incr(&v.FirmwareTypeCount, strings.TrimPrefix(fmt.Sprintf("%T", f), "*uefi."))
+	if file, ok := f.(*uefi.File); ok {
+		incr(&v.FileTypeCount, file.Type)
+	}
+	if sec, ok := f.(*uefi.Section); ok {
+		incr(&v.SectionTypeCount, sec.Type)
 	}
 	return f.ApplyChildren(v)
 }
