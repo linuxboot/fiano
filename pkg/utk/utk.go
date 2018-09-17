@@ -11,7 +11,7 @@ import (
 )
 
 // Run runs the utk command with the given arguments.
-func Run(args []string) error {
+func Run(args ...string) error {
 	if len(args) == 0 {
 		return errors.New("at least one argument is required")
 	}
