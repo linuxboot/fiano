@@ -7,12 +7,17 @@ package visitors
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // JSON prints any Firmware node as JSON.
-type JSON struct{}
+type JSON struct {
+	// JSON is written to this writer.
+	W io.Writer
+}
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *JSON) Run(f uefi.Firmware) error {
@@ -25,12 +30,14 @@ func (v *JSON) Visit(f uefi.Firmware) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(b))
+	fmt.Fprintln(v.W, string(b))
 	return nil
 }
 
 func init() {
 	RegisterCLI("json", "produce JSON for the full firmware volume", 0, func(args []string) (uefi.Visitor, error) {
-		return &JSON{}, nil
+		return &JSON{
+			W: os.Stdout,
+		}, nil
 	})
 }
