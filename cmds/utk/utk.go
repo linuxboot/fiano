@@ -72,7 +72,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	if err := utk.Run(flag.Args()); err != nil {
+	if err := utk.Run(flag.Args()...); err != nil {
 		log.Fatal(err)
 	}
 }
