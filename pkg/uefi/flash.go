@@ -112,12 +112,6 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 	return nil
 }
 
-// Validate the descriptor region
-func (fd *FlashDescriptor) Validate() []error {
-	// TODO: Validate the other sections too.
-	return fd.DescriptorMap.Validate()
-}
-
 // FlashImage is the main structure that represents an Intel Flash image. It
 // implements the Firmware interface.
 type FlashImage struct {
@@ -198,20 +192,6 @@ func (f *FlashImage) IsPCH() bool {
 // in ICH8/9/10 they start at 0. If no signature is found, it returns -1.
 func (f *FlashImage) FindSignature() (int, error) {
 	return FindSignature(f.buf)
-}
-
-// Validate runs a set of checks on the flash image and returns a list of
-// errors specifying what is wrong.
-func (f *FlashImage) Validate() []error {
-	errors := make([]error, 0)
-	_, err := f.FindSignature()
-	if err != nil {
-		errors = append(errors, err)
-	}
-	errors = append(errors, f.IFD.DescriptorMap.Validate()...)
-	// TODO also validate regions, masters, etc
-	errors = append(errors, f.BIOS.Validate()...)
-	return errors
 }
 
 func (f *FlashImage) String() string {

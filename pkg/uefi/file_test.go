@@ -38,36 +38,6 @@ func init() {
 	badFreeFormFile[16] = 0 // Zero out checksum
 }
 
-func TestValidateFile(t *testing.T) {
-	var tests = []struct {
-		name string
-		buf  []byte
-		msgs []string
-	}{
-		{"emptyPadFile", emptyPadFile, nil},
-		{"badFreeFormFile", badFreeFormFile, []string{"file FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF header checksum failure! sum was 54"}},
-		{"goodFreeFormFile", goodFreeFormFile, nil},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			f, err := NewFile(test.buf)
-			if err != nil {
-				t.Fatalf("Error was not expected, got %v", err.Error())
-			}
-			errs := f.Validate()
-			if len(errs) != len(test.msgs) {
-				t.Errorf("Errors mismatched, wanted \n%v\n, got \n%v\n", test.msgs, errs)
-			} else {
-				for i := range errs {
-					if errs[i].Error() != test.msgs[i] {
-						t.Errorf("Error mismatched, wanted \n%v\n, got \n%v\n", test.msgs[i], errs[i].Error())
-					}
-				}
-			}
-		})
-	}
-}
-
 func TestNewFile(t *testing.T) {
 	var tests = []struct {
 		name string
