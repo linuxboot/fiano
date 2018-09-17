@@ -6,7 +6,6 @@ package uefi
 
 import (
 	"errors"
-	"fmt"
 )
 
 // BIOSPadding holds the padding in between firmware volumes
@@ -35,12 +34,6 @@ func (bp *BIOSPadding) Buf() []byte {
 // SetBuf sets the buffer
 func (bp *BIOSPadding) SetBuf(buf []byte) {
 	bp.buf = buf
-}
-
-// Validate validates the BIOSPadding.
-// There's really nothing to validate since this isn't a proper UEFI data structure
-func (bp *BIOSPadding) Validate() []error {
-	return nil
 }
 
 // Apply a visitor to the BIOSPadding.
@@ -152,34 +145,4 @@ func (br *BIOSRegion) FirstFV() (*FirmwareVolume, error) {
 		}
 	}
 	return nil, errors.New("no firmware volumes in BIOS Region")
-}
-
-// Validate Region
-func (br *BIOSRegion) Validate() []error {
-	// TODO: Add more verification if needed.
-	errs := make([]error, 0)
-	if br.Position != nil && !br.Position.Valid() {
-		errs = append(errs, fmt.Errorf("BIOSRegion is not valid, region was %v", *br.Position))
-	}
-
-	if _, err := br.FirstFV(); err != nil {
-		errs = append(errs, err)
-	}
-
-	for i, e := range br.Elements {
-		errs = append(errs, e.Value.Validate()...)
-		f, ok := e.Value.(*FirmwareVolume)
-		if !ok {
-			// Not a firmware volume
-			continue
-		}
-		// We have to do this because they didn't put an encapsulating structure around the FVs.
-		// This means it's possible for different firmware volumes to report different erase polarities.
-		// Now we have to check to see if we're in some insane state.
-		if ep := f.GetErasePolarity(); ep != Attributes.ErasePolarity {
-			errs = append(errs, fmt.Errorf("erase polarity mismatch! fv 0 has %#x and fv %d has %#x",
-				Attributes.ErasePolarity, i, ep))
-		}
-	}
-	return errs
 }
