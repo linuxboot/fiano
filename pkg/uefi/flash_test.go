@@ -17,6 +17,25 @@ var (
 	pchSig        = append(make([]byte, 16), FlashSignature...) // New PCH version
 	misalignedSig = append(append(make([]byte, 10), FlashSignature...),
 		make([]byte, 20)...) // Misaligned flash signature
+
+	// FlashRegion Examples
+	fr1 = FlashRegion{Base: 1, Limit: 1}
+	fr2 = FlashRegion{Base: 2, Limit: 2}
+	fr3 = FlashRegion{Base: 3, Limit: 3}
+	// Region Examples
+	rr1 = &RawRegion{flashRegion: &fr1, RegionType: RegionTypeUnknown}
+	br  = &BIOSRegion{flashRegion: &fr2, RegionType: RegionTypeBIOS}
+	rr2 = &RawRegion{flashRegion: &fr3, RegionType: RegionTypeUnknown}
+	// Empty buffer
+	emptyFlashBuf = make([]byte, 0x4000)
+
+	// FlashImage Region test examples
+	f1 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, br, rr2}} // Full image
+	f2 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{br, rr2}}      // Front gap
+	f3 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, br}}      // Back gap
+	f4 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, rr1}}     // Overlap!
+	// Final result
+	regions = []Region{rr1, br, rr2}
 )
 
 func TestFindSignature(t *testing.T) {
@@ -62,5 +81,52 @@ func TestIsPCH(t *testing.T) {
 		if out != test.out {
 			t.Errorf("IsPCH was not correct, expected %v, got %v for \n%s", test.out, out, hex.Dump(test.buf))
 		}
+	}
+}
+
+func TestFillRegionGaps(t *testing.T) {
+	var tests = []struct {
+		name string
+		f    FlashImage
+		out  []Region // expected output after gap filling
+		msg  string   // Error message
+	}{
+		{"FullImage", f1, regions, ""},
+		{"FrontRegionGap", f2, regions, ""},
+		{"BackRegionGap", f3, regions, ""},
+		{"OverlapRegion", f4, nil, "overlapping regions! region type Unknown Region (-1) overlaps with the previous region"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.f.fillRegionGaps()
+
+			// Check error regions
+			if err == nil && test.msg != "" {
+				t.Errorf("Error was not returned, expected %v", test.msg)
+			} else if err != nil && err.Error() != test.msg {
+				t.Errorf("Mismatched Error returned, expected \n%v\n got \n%v\n", test.msg, err.Error())
+			}
+			// for cases with no error
+			if test.msg == "" {
+				if len(test.out) != len(test.f.Regions) {
+					t.Fatalf("Mismatched Region length! Expected %d regions, got %d", len(test.out), len(test.f.Regions))
+				}
+				for i := range test.out {
+					ans := test.out[i]
+					reg := test.f.Regions[i]
+					if ans.Type() != reg.Type() {
+						t.Errorf("Region type mismatch, expected \n%v\n got \n%v\n", ans.Type(), reg.Type())
+					}
+					afr := ans.FlashRegion()
+					rfr := reg.FlashRegion()
+					if afr.Base != rfr.Base {
+						t.Errorf("Region base mismatch, expected \n%v\n got \n%v\n", afr.Base, rfr.Base)
+					}
+					if afr.Limit != rfr.Limit {
+						t.Errorf("Region Limit mismatch, expected \n%v\n got \n%v\n", afr.Limit, rfr.Limit)
+					}
+				}
+			}
+		})
 	}
 }

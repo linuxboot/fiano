@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"sort"
 )
 
 // FlashSignature is the sequence of bytes that a Flash image is expected to
@@ -120,14 +121,11 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	BIOS *BIOSRegion `json:",omitempty"`
-	ME   *MERegion   `json:",omitempty"`
-	GBE  *GBERegion  `json:",omitempty"`
-	PD   *PDRegion   `json:",omitempty"`
+	Regions []Region `json:",omitempty"`
 
 	// Metadata for extraction and recovery
 	ExtractPath string
-	regions     []Firmware
+	FlashSize   uint64
 }
 
 // Buf returns the buffer.
@@ -152,23 +150,8 @@ func (f *FlashImage) ApplyChildren(v Visitor) error {
 	if err := f.IFD.Apply(v); err != nil {
 		return err
 	}
-	if f.BIOS != nil {
-		if err := f.BIOS.Apply(v); err != nil {
-			return err
-		}
-	}
-	if f.ME != nil {
-		if err := f.ME.Apply(v); err != nil {
-			return err
-		}
-	}
-	if f.GBE != nil {
-		if err := f.GBE.Apply(v); err != nil {
-			return err
-		}
-	}
-	if f.PD != nil {
-		if err := f.PD.Apply(v); err != nil {
+	for _, r := range f.Regions {
+		if err := r.Apply(v); err != nil {
 			return err
 		}
 	}
@@ -203,6 +186,41 @@ func (f *FlashImage) String() string {
 	)
 }
 
+func (f *FlashImage) fillRegionGaps() error {
+	// Search for gaps and fill in with unknown regions
+	offset := uint64(FlashDescriptorLength)
+	var newRegions []Region
+	for _, r := range f.Regions {
+		nextBase := uint64(r.FlashRegion().BaseOffset())
+		if nextBase < offset {
+			// Something is wrong, overlapping regions
+			// TODO: print a better error message describing what it overlaps with
+			return fmt.Errorf("overlapping regions! region type %s overlaps with the previous region",
+				r.Type().String())
+		}
+		if nextBase > offset {
+			// There is a gap, create an unknown region
+			tempFR := &FlashRegion{Base: uint16(offset / RegionBlockSize),
+				Limit: uint16(nextBase/RegionBlockSize) - 1}
+			newRegions = append(newRegions, &RawRegion{buf: f.buf[offset:nextBase],
+				flashRegion: tempFR,
+				RegionType:  RegionTypeUnknown})
+		}
+		offset = uint64(r.FlashRegion().EndOffset())
+		newRegions = append(newRegions, r)
+	}
+	// check for the last region
+	if offset != f.FlashSize {
+		tempFR := &FlashRegion{Base: uint16(offset / RegionBlockSize),
+			Limit: uint16(f.FlashSize/RegionBlockSize) - 1}
+		newRegions = append(newRegions, &RawRegion{buf: f.buf[offset:f.FlashSize],
+			flashRegion: tempFR,
+			RegionType:  RegionTypeUnknown})
+	}
+	f.Regions = newRegions
+	return nil
+}
+
 // NewFlashImage tries to create a FlashImage structure, and returns a FlashImage
 // and an error if any. This only works with images that operate in Descriptor
 // mode.
@@ -213,59 +231,49 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			len(buf),
 		)
 	}
-	f := FlashImage{buf: buf}
+	f := FlashImage{buf: buf, FlashSize: uint64(len(buf))}
 	f.IFD.buf = buf[:FlashDescriptorLength]
 	if err := f.IFD.ParseFlashDescriptor(); err != nil {
 		return nil, err
 	}
 
-	// Add to extractable regions
-	f.regions = append(f.regions, &f.IFD)
+	// FlashRegions
+	frs := f.IFD.Region.FlashRegions
 
-	// BIOS region
-	if !f.IFD.Region.BIOS.Valid() {
-		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
+	// BIOS region has to be valid
+	if !frs[RegionTypeBIOS].Valid() {
+		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", frs[RegionTypeBIOS])
 	}
-	br, err := NewBIOSRegion(buf[f.IFD.Region.BIOS.BaseOffset():f.IFD.Region.BIOS.EndOffset()], &f.IFD.Region.BIOS)
-	if err != nil {
+
+	// Parse all the regions
+	for i, fr := range frs {
+		if !fr.Valid() {
+			continue
+		}
+		if o := uint64(fr.BaseOffset()); o > f.FlashSize {
+			return nil, fmt.Errorf("region out of bounds: BaseOffset %#x, Flash size %#x",
+				o, f.FlashSize)
+		}
+		if o := uint64(fr.EndOffset()); o > f.FlashSize {
+			return nil, fmt.Errorf("region out of bounds: EndOffset %#x, Flash size %#x",
+				o, f.FlashSize)
+		}
+		if c, ok := regionConstructors[FlashRegionType(i)]; ok {
+			r, err := c(buf[fr.BaseOffset():fr.EndOffset()], &frs[i], FlashRegionType(i))
+			if err != nil {
+				return nil, err
+			}
+			f.Regions = append(f.Regions, r)
+		}
+	}
+
+	// Sort the regions by offset so we can look for gaps
+	sort.Slice(f.Regions, func(i, j int) bool {
+		return f.Regions[i].FlashRegion().Base < f.Regions[j].FlashRegion().Base
+	})
+
+	if err := f.fillRegionGaps(); err != nil {
 		return nil, err
 	}
-	f.BIOS = br
-	// Add to extractable regions
-	f.regions = append(f.regions, f.BIOS)
-
-	// ME region
-	if f.IFD.Region.ME.Valid() {
-		mer, err := NewMERegion(buf[f.IFD.Region.ME.BaseOffset():f.IFD.Region.ME.EndOffset()], &f.IFD.Region.ME)
-		if err != nil {
-			return nil, err
-		}
-		f.ME = mer
-		// Add to extractable regions
-		f.regions = append(f.regions, f.ME)
-	}
-
-	// GBE region
-	if f.IFD.Region.GBE.Valid() {
-		gber, err := NewGBERegion(buf[f.IFD.Region.GBE.BaseOffset():f.IFD.Region.GBE.EndOffset()], &f.IFD.Region.GBE)
-		if err != nil {
-			return nil, err
-		}
-		f.GBE = gber
-		// Add to extractable regions
-		f.regions = append(f.regions, f.GBE)
-	}
-
-	// PD region
-	if f.IFD.Region.PD.Valid() {
-		pdr, err := NewPDRegion(buf[f.IFD.Region.PD.BaseOffset():f.IFD.Region.PD.EndOffset()], &f.IFD.Region.PD)
-		if err != nil {
-			return nil, err
-		}
-		f.PD = pdr
-		// Add to extractable regions
-		f.regions = append(f.regions, f.PD)
-	}
-
 	return &f, nil
 }

@@ -206,8 +206,8 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 		}
 
 	case *uefi.BIOSRegion:
-		if f.Position != nil && !f.Position.Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("BIOSRegion is not valid, region was %v", *f.Position))
+		if f.FlashRegion() != nil && !f.FlashRegion().Valid() {
+			v.Errors = append(v.Errors, fmt.Errorf("BIOSRegion is not valid, region was %v", *f.FlashRegion()))
 		}
 
 		if _, err := f.FirstFV(); err != nil {
@@ -233,31 +233,14 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 		}
 		return nil // We already traversed the children manually.
 
-	case *uefi.MERegion:
-		if f.Position == nil {
-			v.Errors = append(v.Errors, errors.New("MERegion position is nil"))
+	case *uefi.RawRegion:
+		if f.FlashRegion() == nil {
+			v.Errors = append(v.Errors, errors.New("Region position is nil"))
 		}
-		if !f.Position.Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("MERegion is not valid, region was %v", *f.Position))
-		}
-
-	case *uefi.GBERegion:
-		if f.Position == nil {
-			v.Errors = append(v.Errors, errors.New("GBERegion position is nil"))
-		}
-		if !f.Position.Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("GBERegion is not valid, region was %v", *f.Position))
-		}
-
-	case *uefi.PDRegion:
-		if f.Position == nil {
-			v.Errors = append(v.Errors, errors.New("PDRegion position is nil"))
-		}
-		if !f.Position.Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("PDRegion is not valid, region was %v", *f.Position))
+		if !f.FlashRegion().Valid() {
+			v.Errors = append(v.Errors, fmt.Errorf("Region is not valid, region was %v", *f.FlashRegion()))
 		}
 	}
-
 	return f.ApplyChildren(v)
 }
 

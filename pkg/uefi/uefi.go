@@ -90,9 +90,7 @@ var firmwareTypes = map[string]func() Firmware{
 	"*uefi.FirmwareVolume":  func() Firmware { return &FirmwareVolume{} },
 	"*uefi.FlashDescriptor": func() Firmware { return &FlashDescriptor{} },
 	"*uefi.FlashImage":      func() Firmware { return &FlashImage{} },
-	"*uefi.GBERegion":       func() Firmware { return &GBERegion{} },
-	"*uefi.MERegion":        func() Firmware { return &MERegion{} },
-	"*uefi.PDRegion":        func() Firmware { return &PDRegion{} },
+	"*uefi.RawRegion":       func() Firmware { return &RawRegion{} },
 	"*uefi.Section":         func() Firmware { return &Section{} },
 }
 
@@ -132,7 +130,7 @@ func Parse(buf []byte) (Firmware, error) {
 	}
 	// Non intel image such as edk2's OVMF
 	// We don't know how to parse this header, so treat it as a large BIOSRegion
-	return NewBIOSRegion(buf, nil)
+	return NewBIOSRegion(buf, nil, RegionTypeBIOS)
 }
 
 // ExtractBinary simply dumps the binary to a specified directory and filename.

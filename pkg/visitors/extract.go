@@ -116,17 +116,9 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "biosregion.bin")
 		}
 
-	case *uefi.GBERegion:
-		v2.DirPath = filepath.Join(v.DirPath, "gbe")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "gberegion.bin")
-
-	case *uefi.MERegion:
-		v2.DirPath = filepath.Join(v.DirPath, "me")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "meregion.bin")
-
-	case *uefi.PDRegion:
-		v2.DirPath = filepath.Join(v.DirPath, "pd")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "pdregion.bin")
+	case *uefi.RawRegion:
+		v2.DirPath = filepath.Join(v.DirPath, f.Type().String())
+		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%#x.bin", f.FlashRegion().BaseOffset()))
 
 	case *uefi.BIOSPadding:
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("biospad_%#x", f.Offset))

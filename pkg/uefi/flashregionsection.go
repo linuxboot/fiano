@@ -11,33 +11,26 @@ import (
 	"strings"
 )
 
-// FlashRegionSectionSize is the size of the Region descriptor. It is made up by 18 fields, each 16-bits large.
-const FlashRegionSectionSize = 36
+// FlashRegionSectionSize is the size of the Region descriptor. It is made up by 16 fields, each 2x16-bits large.
+const FlashRegionSectionSize = 64
 
 // FlashRegionSection holds the metadata of all the different flash regions like PDR, Gbe and the Bios region.
 type FlashRegionSection struct {
 	_                   uint16
 	FlashBlockEraseSize uint16
-	BIOS                Region
-	ME                  Region
-	GBE                 Region
-	PD                  Region
+
+	// This isn't documented anywhere, but I've only seen images with 16 slots for FlashRegion entries, with the
+	// FlashMasterSection coming immediately after, so I'm assuming that's the max for now.
+	FlashRegions [15]FlashRegion
 }
 
 // ValidRegions returns a list of names of the regions with non-zero size.
 func (f *FlashRegionSection) ValidRegions() []string {
 	var regions []string
-	if f.BIOS.Valid() {
-		regions = append(regions, "BIOS")
-	}
-	if f.ME.Valid() {
-		regions = append(regions, "ME")
-	}
-	if f.GBE.Valid() {
-		regions = append(regions, "GbE")
-	}
-	if f.PD.Valid() {
-		regions = append(regions, "PDR")
+	for i, r := range f.FlashRegions {
+		if r.Valid() {
+			regions = append(regions, flashRegionTypeNames[FlashRegionType(i)])
+		}
 	}
 	return regions
 }
