@@ -53,18 +53,35 @@ type BIOSRegion struct {
 	buf      []byte
 	Elements []*TypedFirmware `json:",omitempty"`
 
-	//Metadata for extraction and recovery
+	// Metadata for extraction and recovery
 	ExtractPath string
 	Length      uint64
-	// This is a pointer to the Region struct laid out in the ifd
-	Position *Region `json:",omitempty"`
+	// This is a pointer to the FlashRegion struct laid out in the ifd.
+	flashRegion *FlashRegion
+	RegionType  FlashRegionType
 }
 
-// NewBIOSRegion parses a sequence of bytes and returns a BIOSRegion
+// Type returns the flash region type.
+func (br *BIOSRegion) Type() FlashRegionType {
+	return RegionTypeBIOS
+}
+
+// SetFlashRegion sets the Flash Region.
+func (br *BIOSRegion) SetFlashRegion(fr *FlashRegion) {
+	br.flashRegion = fr
+}
+
+// FlashRegion gets the Flash Region.
+func (br *BIOSRegion) FlashRegion() (fr *FlashRegion) {
+	return br.flashRegion
+}
+
+// NewBIOSRegion parses a sequence of bytes and returns a Region
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
-func NewBIOSRegion(buf []byte, r *Region) (*BIOSRegion, error) {
-	br := BIOSRegion{buf: buf, Position: r, Length: uint64(len(buf))}
+func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error) {
+	br := BIOSRegion{buf: buf, flashRegion: r, Length: uint64(len(buf)),
+		RegionType: RegionTypeBIOS}
 	var absOffset uint64
 	for {
 		offset := FindFirmwareVolumeOffset(buf)

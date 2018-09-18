@@ -6,7 +6,6 @@ package visitors
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -310,63 +309,47 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		// Assemble regions.
 		// We need to sort them since a) we don't really know the order until we parse the block numbers
 		// and b) the order may have changed anyway.
-		if !f.IFD.Region.BIOS.Valid() {
-			return fmt.Errorf("no BIOS region: invalid region parameters %v", f.IFD.Region.BIOS)
+		if !f.IFD.Region.FlashRegions[uefi.RegionTypeBIOS].Valid() {
+			return fmt.Errorf("no BIOS region: invalid region parameters %v",
+				f.IFD.Region.FlashRegions[uefi.RegionTypeBIOS])
 		}
-		type region struct {
-			P   *uefi.Region
-			buf []byte
-		}
-		regions := make([]region, 0, 4)
 
-		if f.BIOS == nil {
-			return errors.New("bios struct is nil, firmware tree is malformed")
-		}
-		// Point position to struct read from IFD rather than json.
-		f.BIOS.Position = &f.IFD.Region.BIOS
-		biosbuf := f.BIOS.Buf()
-		regions = append(regions, region{f.BIOS.Position, biosbuf})
-
-		// ME region
-		if f.IFD.Region.ME.Valid() {
-			if f.ME == nil {
-				// Not in tree, error out since we don't have an ExtractPath.
-				return errors.New("no ME region unmarshalled from JSON, but ME region is present in IFD")
+		// Point FlashRegion to struct read from IFD rather than json.
+		for _, r := range f.Regions {
+			if int(r.Type()) >= len(f.IFD.Region.FlashRegions) {
+				// This is unknown, there's no IFD entry
+				continue
 			}
-			f.ME.Position = &f.IFD.Region.ME
-			mebuf := f.ME.Buf()
-			regions = append(regions, region{f.ME.Position, mebuf})
+			r.SetFlashRegion(&f.IFD.Region.FlashRegions[r.Type()])
 		}
 
-		// GBE region
-		if f.IFD.Region.GBE.Valid() {
-			if f.GBE == nil {
-				// Not in tree, error out since we don't have an ExtractPath.
-				return errors.New("no GBE region unmarshalled from JSON, but GBE region is present in IFD")
-			}
-			f.GBE.Position = &f.IFD.Region.GBE
-			gbebuf := f.GBE.Buf()
-			regions = append(regions, region{f.GBE.Position, gbebuf})
-		}
+		// Sort Regions, prepare to set flash buffer
+		sort.Slice(f.Regions, func(i, j int) bool {
+			return f.Regions[i].FlashRegion().Base < f.Regions[j].FlashRegion().Base
+		})
 
-		// PD region
-		if f.IFD.Region.PD.Valid() {
-			if f.PD == nil {
-				// Not in JSON, error out since we don't have an ExtractPath.
-				return errors.New("no PD region unmarshalled from JSON, but PD region is present in IFD")
-			}
-			f.PD.Position = &f.IFD.Region.PD
-			pdbuf := f.PD.Buf()
-			regions = append(regions, region{f.PD.Position, pdbuf})
-		}
-
-		// Sort regions so we can output the flash file correctly.
-		sort.Slice(regions, func(i, j int) bool { return regions[i].P.Base < regions[j].P.Base })
-		// append all slices together and return.
+		// Search for gaps
+		// if there are gaps or overlaps, fail immediately
+		offset := uint64(uefi.FlashDescriptorLength)
 		fBuf := make([]byte, 0, 0)
 		fBuf = append(fBuf, ifdbuf...)
-		for _, r := range regions {
-			fBuf = append(fBuf, r.buf...)
+		for _, r := range f.Regions {
+			nextBase := uint64(r.FlashRegion().BaseOffset())
+			if nextBase < offset {
+				// Something is wrong, overlapping regions
+				// TODO: print a better error message describing what it overlaps with
+				return fmt.Errorf("overlapping regions! region %v overlaps with the previous region", r)
+			}
+			if nextBase > offset {
+				// There is a gap
+				return fmt.Errorf("gap between regions from %v to %v", offset, nextBase)
+			}
+			offset = uint64(r.FlashRegion().EndOffset())
+			fBuf = append(fBuf, r.Buf()...)
+		}
+		// check for the last region
+		if offset != f.FlashSize {
+			return fmt.Errorf("gap between at end of flash from %v to %v", offset, f.FlashSize)
 		}
 
 		f.SetBuf(fBuf)
