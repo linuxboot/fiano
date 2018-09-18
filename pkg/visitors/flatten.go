@@ -52,10 +52,7 @@ func (v *Flatten) Run(f uefi.Firmware) error {
 		case *uefi.FlashImage:
 			// TODO: Cannot remove IFD
 			// f.IFD = nil
-			f.BIOS = nil
-			f.ME = nil
-			f.GBE = nil
-			f.PD = nil
+			f.Regions = nil
 		case *uefi.Section:
 			f.Encapsulated = nil
 		}

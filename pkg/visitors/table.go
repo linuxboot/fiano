@@ -42,12 +42,8 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		return v.printRow(f, "BIOS", "", "")
 	case *uefi.BIOSPadding:
 		return v.printRow(f, "BIOS Pad", "", "")
-	case *uefi.MERegion:
-		return v.printRow(f, "ME", "", "")
-	case *uefi.GBERegion:
-		return v.printRow(f, "GBE", "", "")
-	case *uefi.PDRegion:
-		return v.printRow(f, "PD", "", "")
+	case *uefi.RawRegion:
+		return v.printRow(f, f.Type().String(), "", "")
 	default:
 		return v.printRow(f, fmt.Sprintf("%T", f), "", "")
 	}
