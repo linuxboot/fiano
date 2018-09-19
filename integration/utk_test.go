@@ -5,12 +5,13 @@
 package main
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/linuxboot/fiano/pkg/utk"
 )
 
 // Returns all the ROM names (files which end in .rom) inside the roms folder.
@@ -25,53 +26,14 @@ func romList(t *testing.T) []string {
 	return roms
 }
 
-// Builds UTK into temporary directory.
-func buildUTK(t *testing.T) (tmpDir string, utk string) {
+// Create a temporary directory.
+func createTempDir(t *testing.T) string {
 	// Create temporary directory for test files.
-	var err error
-	tmpDir, err = ioutil.TempDir("", "utk-test")
+	tmpDir, err := ioutil.TempDir("", "utk-test")
 	if err != nil {
 		t.Fatalf("could not create temp dir: %v", err)
 	}
-
-	// Build UTK in the tmpDir.
-	cmd := exec.Command("go", "build", "github.com/linuxboot/fiano/cmds/utk")
-	cmd.Dir = tmpDir
-	if err := cmd.Run(); err != nil {
-		os.RemoveAll(tmpDir)
-		t.Fatalf("could not build UTK: %v", err)
-	}
-	utk = filepath.Join(tmpDir, "utk")
-
-	return
-}
-
-// TestParse tests the parse subcommand of UTK. The amount of testing is
-// negligible. This simply tests that valid ROMs produce valid JSON. Warnings
-// are printed but ignored.
-func TestParse(t *testing.T) {
-	// Build UTK.
-	tmpDir, utk := buildUTK(t)
-	defer os.RemoveAll(tmpDir)
-
-	for _, tt := range romList(t) {
-		t.Run(tt, func(t *testing.T) {
-			cmd := exec.Command(utk, tt, "json")
-			cmd.Stderr = os.Stderr
-			out, err := cmd.Output()
-
-			// Warnings are acceptable as long as valid JSON is outputted.
-			if err != nil {
-				t.Log("non-zero exit status returned")
-			}
-
-			var dec interface{}
-			err = json.Unmarshal(out, &dec)
-			if err != nil {
-				t.Errorf("invalid json: %q", string(out))
-			}
-		})
-	}
+	return tmpDir
 }
 
 // TestExtractAssembleExtract tests the extract and assemble subcommand of UTK.
@@ -87,8 +49,8 @@ func TestParse(t *testing.T) {
 // compression algorithm being used). To compare the ROMs logically, step 3 is
 // required to decompresses it.
 func TestExtractAssembleExtract(t *testing.T) {
-	// Build UTK.
-	tmpDir, utk := buildUTK(t)
+	// Create a temporary directory.
+	tmpDir := createTempDir(t)
 	defer os.RemoveAll(tmpDir)
 
 	for _, tt := range romList(t) {
@@ -106,17 +68,17 @@ func TestExtractAssembleExtract(t *testing.T) {
 			)
 
 			// Extract
-			cmd := exec.Command(utk, tt, "extract", dir1)
-			cmd.Stderr = os.Stderr
-			cmd.Run()
+			if err := utk.Run(tt, "extract", dir1); err != nil {
+				t.Fatal(err)
+			}
 			// Assemble
-			cmd = exec.Command(utk, dir1, "save", tmpRom)
-			cmd.Stderr = os.Stderr
-			cmd.Run()
+			if err := utk.Run(dir1, "save", tmpRom); err != nil {
+				t.Fatal(err)
+			}
 			// Extract
-			cmd = exec.Command(utk, tmpRom, "extract", dir2)
-			cmd.Stderr = os.Stderr
-			cmd.Run()
+			if err := utk.Run(tmpRom, "extract", dir2); err != nil {
+				t.Fatal(err)
+			}
 
 			// Output directories must not be empty.
 			for _, d := range []string{dir1, dir2} {
@@ -130,7 +92,7 @@ func TestExtractAssembleExtract(t *testing.T) {
 			}
 
 			// Recursively test for equality.
-			cmd = exec.Command("diff", "-r", dir1, dir2)
+			cmd := exec.Command("diff", "-r", dir1, dir2)
 			cmd.Stderr = os.Stderr
 			cmd.Stdout = os.Stdout
 			if err := cmd.Run(); err != nil {

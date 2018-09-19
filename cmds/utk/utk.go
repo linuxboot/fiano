@@ -56,11 +56,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 
-	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/utk"
 	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
@@ -71,49 +69,10 @@ func init() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Operations:\n%s", visitors.ListCLI())
 	}
 }
+
 func main() {
 	flag.Parse()
-	if flag.NArg() == 0 {
-		log.Fatal("at least one argument is required")
-	}
-
-	v, err := visitors.ParseCLI(flag.Args()[1:])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Load and parse the image.
-	path := flag.Args()[0]
-	f, err := os.Stat(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var parsedRoot uefi.Firmware
-	if m := f.Mode(); m.IsDir() {
-		// Call ParseDir
-		pd := visitors.ParseDir{DirPath: path}
-		if parsedRoot, err = pd.Parse(); err != nil {
-			log.Fatal(err)
-		}
-		// Assemble the tree from the bottom up
-		a := visitors.Assemble{}
-		if err = a.Run(parsedRoot); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		// Regular file
-		image, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-		parsedRoot, err = uefi.Parse(image)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// Execute the instructions from the command line.
-	if err := visitors.ExecuteCLI(parsedRoot, v); err != nil {
+	if err := utk.Run(flag.Args()...); err != nil {
 		log.Fatal(err)
 	}
 }
