@@ -64,3 +64,19 @@ func TestIsPCH(t *testing.T) {
 		}
 	}
 }
+
+// TestShort catches cases where the firmware header has bogus start and offset values.
+func TestShort(t *testing.T) {
+	t.Skip()
+	var tests = []struct {
+		buf []byte
+		out bool
+	}{
+		{emptySig, false},
+		{pchSig, true},
+	}
+	for _, test := range tests {
+		f, err := NewFlashImage(test.buf)
+		t.Logf("f %v err %v", f, err)
+	}
+}
