@@ -156,8 +156,8 @@ type FileHeader struct {
 	State      uint8    `json:"-"`
 }
 
-// Checks if the large file attribute is set
-func (a fileAttr) isLarge() bool {
+// IsLarge checks if the large file attribute is set.
+func (a fileAttr) IsLarge() bool {
 	return a&0x01 != 0
 }
 
@@ -177,24 +177,24 @@ func (a *fileAttr) setLarge(large bool) {
 	}
 }
 
-// Checks if we need to checksum the file body
-func (a fileAttr) hasChecksum() bool {
+// HasChecksum checks if we need to checksum the file body.
+func (a fileAttr) HasChecksum() bool {
 	return a&0x40 != 0
 }
 
-// HeaderLen is a helper function to return the length of the file header
-// depending on the file size
+// HeaderLen returns the length of the file header depending on the file size.
 func (f *File) HeaderLen() uint64 {
-	if f.Header.Attributes.isLarge() {
+	if f.Header.Attributes.IsLarge() {
 		return FileHeaderExtMinLength
 	}
 	return FileHeaderMinLength
 }
 
-func (f *File) checksumHeader() uint8 {
+// ChecksumHeader returns a checksum of the header.
+func (f *File) ChecksumHeader() uint8 {
 	fh := f.Header
 	headerSize := FileHeaderMinLength
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		headerSize = FileHeaderExtMinLength
 	}
 	// Sum over header without State and IntegrityCheck.File.
@@ -292,11 +292,11 @@ func (f *File) ChecksumAndAssemble(fileData []byte) error {
 	f.buf = header.Bytes()
 	// We need to get rid of whatever it sums to so that the overall sum is zero
 	// Sorry about the name :(
-	fh.Checksum.Header -= f.checksumHeader()
+	fh.Checksum.Header -= f.ChecksumHeader()
 
 	// Checksum the body
 	fh.Checksum.File = EmptyBodyChecksum
-	if fh.Attributes.hasChecksum() {
+	if fh.Attributes.HasChecksum() {
 		// if the empty checksum had been set to 0 instead of 0xAA
 		// this could have been a bit nicer. BUT NOOOOOOO.
 		fh.Checksum.File = 0 - Checksum8(fileData)
@@ -305,7 +305,7 @@ func (f *File) ChecksumAndAssemble(fileData []byte) error {
 	// Write out the updated header to the buffer with the new checksums.
 	// Write the extended header only if the large attribute flag is set.
 	header = new(bytes.Buffer)
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		err = binary.Write(header, binary.LittleEndian, fh)
 	} else {
 		err = binary.Write(header, binary.LittleEndian, fh.FileHeader)
@@ -317,67 +317,6 @@ func (f *File) ChecksumAndAssemble(fileData []byte) error {
 
 	f.buf = append(f.buf, fileData...)
 	return nil
-}
-
-// Validate Firmware File
-func (f *File) Validate() []error {
-	errs := make([]error, 0)
-	buflen := uint64(len(f.buf))
-	blankSize := [3]uint8{0xFF, 0xFF, 0xFF}
-	if buflen < FileHeaderMinLength {
-		errs = append(errs, fmt.Errorf("file length too small!, buffer is only %#x bytes long", buflen))
-		return errs
-	}
-
-	// Size Checks
-	fh := &f.Header
-	if fh.Size == blankSize {
-		if buflen < FileHeaderExtMinLength {
-			errs = append(errs, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
-				fh.UUID, buflen))
-			return errs
-		}
-		if !fh.Attributes.isLarge() {
-			errs = append(errs, fmt.Errorf("file %v using extended header, but large attribute is not set",
-				fh.UUID))
-			return errs
-		}
-	} else if Read3Size(f.Header.Size) != fh.ExtendedSize {
-		errs = append(errs, fmt.Errorf("file %v size not copied into extendedsize",
-			fh.UUID))
-		return errs
-	}
-	if buflen != fh.ExtendedSize {
-		errs = append(errs, fmt.Errorf("file %v size mismatch! Size is %#x, buf length is %#x",
-			fh.UUID, fh.ExtendedSize, buflen))
-		return errs
-	}
-
-	// Header Checksums
-	if sum := f.checksumHeader(); sum != 0 {
-		errs = append(errs, fmt.Errorf("file %v header checksum failure! sum was %v",
-			fh.UUID, sum))
-	}
-
-	// Body Checksum
-	if !fh.Attributes.hasChecksum() && fh.Checksum.File != EmptyBodyChecksum {
-		errs = append(errs, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
-			fh.UUID, fh.Checksum.File, EmptyBodyChecksum))
-	} else if fh.Attributes.hasChecksum() {
-		headerSize := FileHeaderMinLength
-		if fh.Attributes.isLarge() {
-			headerSize = FileHeaderExtMinLength
-		}
-		if sum := Checksum8(f.buf[headerSize:]); sum != 0 {
-			errs = append(errs, fmt.Errorf("file %v body checksum failure! sum was %v",
-				fh.UUID, sum))
-		}
-	}
-
-	for _, s := range f.Sections {
-		errs = append(errs, s.Validate()...)
-	}
-	return errs
 }
 
 // CreatePadFile creates an empty pad file in order to align the next file.
@@ -411,7 +350,7 @@ func CreatePadFile(size uint64) (*File, error) {
 	// Create empty pad filedata based on size
 	var fileData []byte
 	fileData = make([]byte, size-FileHeaderMinLength)
-	if fh.Attributes.isLarge() {
+	if fh.Attributes.IsLarge() {
 		fileData = make([]byte, size-FileHeaderExtMinLength)
 	}
 	// Fill with empty bytes

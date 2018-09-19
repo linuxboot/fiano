@@ -32,8 +32,6 @@ var Attributes ROMAttributes
 // implementations (e.g. Flash image, or FirmwareVolume) must implement this
 // interface.
 type Firmware interface {
-	Validate() []error
-
 	Buf() []byte
 	SetBuf(buf []byte)
 
