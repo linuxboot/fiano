@@ -17,6 +17,13 @@ import (
 
 // Assemble reconstitutes the firmware tree assuming that the leaf node buffers are accurate
 type Assemble struct {
+	// This is set when a file or section >=16MiB is encountered during assembly.
+	// This tells the enclosing FV to use the FFSV3 GUID instead of the FFSV2 GUID,
+	// and the enclosing FV resets it.
+	// TODO: figure out if, in the case where the FVs are triply nested, must the FVs further up
+	// also use the FFSV3 GUID? In that case we should fix this since only the innermost
+	// enclosing FV changes to FFSV3
+	useFFS3 bool
 }
 
 // Run just applies the visitor.
@@ -133,6 +140,17 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		// TODO: handle the whole header instead of doing this
 		binary.LittleEndian.PutUint64(fBuf[32:], f.Length)
 
+		// Write the correct GUID to the correct spot
+		// Refer to EFI_FIRMWARE_FILE_SYSTEM3_GUID in section 3.2.2, volume 3 in
+		// the UEFI PI Specification version 1.6
+		if v.useFFS3 && f.FileSystemGUID == *uefi.FFS2 {
+			// There is a large file or section, we need to swap to FFSV3
+			f.FileSystemGUID = *uefi.FFS3
+			// Write it out
+			copy(fBuf[16:32], f.FileSystemGUID[:])
+		}
+		v.useFFS3 = false
+
 		// Write the block map count
 		binary.LittleEndian.PutUint32(fBuf[56:], f.Blocks[0].Count)
 		// Checksum the header again
@@ -194,6 +212,10 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 		f.SetSize(uefi.FileHeaderMinLength+dLen, true)
+		// We need to use FFSV3
+		if f.Header.ExtendedSize > 0xFFFFFF {
+			v.useFFS3 = true
+		}
 
 		// Set state to valid based on erase polarity
 		fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
@@ -253,6 +275,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 
 		// Fix up the header
 		err = f.GenSecHeader()
+		if f.Header.ExtendedSize > 0xFFFFFF {
+			v.useFFS3 = true
+		}
 
 	case *uefi.FlashDescriptor:
 		err = f.ParseFlashDescriptor()
