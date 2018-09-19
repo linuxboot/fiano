@@ -53,7 +53,7 @@ jobs:
             go tool vet cmds pkg
       - run:
           name: gofmt
-          command: test -z $(gofmt -s -l cmds pkg)
+          command: test -z "$(gofmt -s -l cmds pkg)"
       - run:
           name: golint
           command: golint --set_exit_status $(go list ./... | grep -v /vendor/)
