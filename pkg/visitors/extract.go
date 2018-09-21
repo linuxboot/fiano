@@ -22,22 +22,44 @@ var (
 
 // Extract extracts any Firmware node to DirPath
 type Extract struct {
-	DirPath string
-	Index   *uint64
+	BasePath string
+	DirPath  string
+	Index    *uint64
+}
+
+// extractBinary simply dumps the binary to a specified directory and filename.
+// It creates the directory if it doesn't already exist, and dumps the buffer to it.
+// It returns the filepath of the binary, and an error if it exists.
+// This is meant as a helper function for other Extract functions.
+func (v *Extract) extractBinary(buf []byte, filename string) (string, error) {
+	// Create the directory if it doesn't exist
+	dirPath := filepath.Join(v.BasePath, v.DirPath)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", err
+	}
+
+	// Dump the binary.
+	fp := filepath.Join(dirPath, filename)
+	if err := ioutil.WriteFile(fp, buf, 0666); err != nil {
+		// Make sure we return "" since we don't want an invalid path to be serialized out.
+		return "", err
+	}
+	// Return only the relative path from the root of the tree
+	return filepath.Join(v.DirPath, filename), nil
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *Extract) Run(f uefi.Firmware) error {
 	// Optionally remove directory if it already exists.
 	if *remove {
-		if err := os.RemoveAll(v.DirPath); err != nil {
+		if err := os.RemoveAll(v.BasePath); err != nil {
 			return err
 		}
 	}
 
 	if !*force {
 		// Check that directory does not exist or is empty.
-		files, err := ioutil.ReadDir(v.DirPath)
+		files, err := ioutil.ReadDir(v.BasePath)
 		if err == nil {
 			if len(files) != 0 {
 				return errors.New("Existing directory not empty, use --force to override")
@@ -49,18 +71,13 @@ func (v *Extract) Run(f uefi.Firmware) error {
 	}
 
 	// Create the directory if it does not exist.
-	if err := os.MkdirAll(v.DirPath, 0755); err != nil {
+	if err := os.MkdirAll(v.BasePath, 0755); err != nil {
 		return err
 	}
 
-	// Change working directory so we can use relative paths.
-	// TODO: commands after this in the pipeline are in unexpected directory
-	if err := os.Chdir(v.DirPath); err != nil {
-		return err
-	}
-
-	var fileIndex uint64
-	if err := f.Apply(&Extract{DirPath: ".", Index: &fileIndex}); err != nil {
+	// Reset the index
+	*v.Index = 0
+	if err := f.Apply(v); err != nil {
 		return err
 	}
 
@@ -69,7 +86,7 @@ func (v *Extract) Run(f uefi.Firmware) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile("summary.json", json, 0666)
+	return ioutil.WriteFile(filepath.Join(v.BasePath, "summary.json"), json, 0666)
 }
 
 // Visit applies the Extract visitor to any Firmware type.
@@ -84,9 +101,9 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 	case *uefi.FirmwareVolume:
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("%#x", f.FVOffset))
 		if len(f.Files) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "fv.bin")
+			f.ExtractPath, err = v2.extractBinary(f.Buf(), "fv.bin")
 		} else {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf()[:f.DataOffset], v2.DirPath, "fvh.bin")
+			f.ExtractPath, err = v2.extractBinary(f.Buf()[:f.DataOffset], "fvh.bin")
 		}
 
 	case *uefi.File:
@@ -96,33 +113,33 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 		v2.DirPath = filepath.Join(v2.DirPath, fmt.Sprint(*v.Index))
 		*v.Index++
 		if len(f.Sections) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.GUID))
+			f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%v.ffs", f.Header.GUID))
 		}
 
 	case *uefi.Section:
 		// For sections we use the file order as the folder name.
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprint(f.FileOrder))
 		if len(f.Encapsulated) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.sec", f.FileOrder))
+			f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%v.sec", f.FileOrder))
 		}
 
 	case *uefi.FlashDescriptor:
 		v2.DirPath = filepath.Join(v.DirPath, "ifd")
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "flashdescriptor.bin")
+		f.ExtractPath, err = v2.extractBinary(f.Buf(), "flashdescriptor.bin")
 
 	case *uefi.BIOSRegion:
 		v2.DirPath = filepath.Join(v.DirPath, "bios")
 		if len(f.Elements) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "biosregion.bin")
+			f.ExtractPath, err = v2.extractBinary(f.Buf(), "biosregion.bin")
 		}
 
 	case *uefi.RawRegion:
 		v2.DirPath = filepath.Join(v.DirPath, f.Type().String())
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%#x.bin", f.FlashRegion().BaseOffset()))
+		f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%#x.bin", f.FlashRegion().BaseOffset()))
 
 	case *uefi.BIOSPadding:
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprintf("biospad_%#x", f.Offset))
-		f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, "pad.bin")
+		f.ExtractPath, err = v2.extractBinary(f.Buf(), "pad.bin")
 	}
 	if err != nil {
 		return err
@@ -135,8 +152,9 @@ func init() {
 	var fileIndex uint64
 	RegisterCLI("extract", "extract the files to a directory", 1, func(args []string) (uefi.Visitor, error) {
 		return &Extract{
-			DirPath: args[0],
-			Index:   &fileIndex,
+			BasePath: args[0],
+			DirPath:  ".",
+			Index:    &fileIndex,
 		}, nil
 	})
 }
