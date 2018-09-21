@@ -76,7 +76,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			fileBuf := file.Buf()
 			fileLen := uint64(len(fileBuf))
 			if fileLen == 0 {
-				log.Fatal(file.Header.UUID)
+				log.Fatal(file.Header.GUID)
 			}
 
 			// Pad to the 8 byte alignments.
@@ -101,13 +101,13 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 						return err
 					}
 					if err = f.InsertFile(alignedOffset, pfile.Buf()); err != nil {
-						return fmt.Errorf("File %s: %v", pfile.Header.UUID, err)
+						return fmt.Errorf("File %s: %v", pfile.Header.GUID, err)
 					}
 				}
 				alignedOffset = newOffset
 			}
 			if err = f.InsertFile(alignedOffset, fileBuf); err != nil {
-				return fmt.Errorf("File %s: %v", file.Header.UUID, err)
+				return fmt.Errorf("File %s: %v", file.Header.GUID, err)
 			}
 			fileOffset = alignedOffset + fileLen
 		}

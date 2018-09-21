@@ -33,7 +33,7 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		return v.printRow(f, "FV", f.FileSystemGUID.String(), "")
 	case *uefi.File:
 		// TODO: make name part of the file node
-		return v.printRow(f, "File", f.Header.UUID.String(), f.Header.Type)
+		return v.printRow(f, "File", f.Header.GUID.String(), f.Header.Type)
 	case *uefi.Section:
 		return v.printRow(f, "Sec", f.Name, f.Type)
 	case *uefi.FlashDescriptor:

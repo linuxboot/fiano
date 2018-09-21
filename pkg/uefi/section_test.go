@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/linuxboot/fiano/pkg/uuid"
+	"github.com/linuxboot/fiano/pkg/guid"
 )
 
 var (
@@ -153,26 +153,26 @@ func TestParseDepEx(t *testing.T) {
 				0x08, // END
 			},
 			out: []DepExOp{
-				{OpCode: "PUSH", GUID: uuid.MustParse("665E3FF6-46CC-11D4-9A38-0090273FC14D")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("26BACCB1-6F42-11D4-BCE7-0080C73C8881")},
+				{OpCode: "PUSH", GUID: guid.MustParse("665E3FF6-46CC-11D4-9A38-0090273FC14D")},
+				{OpCode: "PUSH", GUID: guid.MustParse("26BACCB1-6F42-11D4-BCE7-0080C73C8881")},
 				{OpCode: "AND"},
-				{OpCode: "PUSH", GUID: uuid.MustParse("26BACCB2-6F42-11D4-BCE7-0080C73C8881")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("1DA97072-BDDC-4B30-99F1-72A0B56FFF2A")},
-				{OpCode: "AND"},
-				{OpCode: "AND"},
-				{OpCode: "PUSH", GUID: uuid.MustParse("27CFAC87-46CC-11D4-9A38-0090273FC14D")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("27CFAC88-46CC-11D4-9A38-0090273FC14D")},
-				{OpCode: "AND"},
-				{OpCode: "PUSH", GUID: uuid.MustParse("96D08253-8483-11D4-BCF1-0080C73C8881")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("A46423E3-4617-49F1-B9FF-D1BFA9115839")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("26BACCB3-6F42-11D4-BCE7-0080C73C8881")},
-				{OpCode: "AND"},
-				{OpCode: "PUSH", GUID: uuid.MustParse("1E5668E2-8481-11D4-BCF1-0080C73C8881")},
-				{OpCode: "PUSH", GUID: uuid.MustParse("6441F818-6362-4E44-B570-7DBA31DD2453")},
+				{OpCode: "PUSH", GUID: guid.MustParse("26BACCB2-6F42-11D4-BCE7-0080C73C8881")},
+				{OpCode: "PUSH", GUID: guid.MustParse("1DA97072-BDDC-4B30-99F1-72A0B56FFF2A")},
 				{OpCode: "AND"},
 				{OpCode: "AND"},
+				{OpCode: "PUSH", GUID: guid.MustParse("27CFAC87-46CC-11D4-9A38-0090273FC14D")},
+				{OpCode: "PUSH", GUID: guid.MustParse("27CFAC88-46CC-11D4-9A38-0090273FC14D")},
 				{OpCode: "AND"},
-				{OpCode: "PUSH", GUID: uuid.MustParse("665E3FF5-46CC-11D4-9A38-0090273FC14D")},
+				{OpCode: "PUSH", GUID: guid.MustParse("96D08253-8483-11D4-BCF1-0080C73C8881")},
+				{OpCode: "PUSH", GUID: guid.MustParse("A46423E3-4617-49F1-B9FF-D1BFA9115839")},
+				{OpCode: "PUSH", GUID: guid.MustParse("26BACCB3-6F42-11D4-BCE7-0080C73C8881")},
+				{OpCode: "AND"},
+				{OpCode: "PUSH", GUID: guid.MustParse("1E5668E2-8481-11D4-BCF1-0080C73C8881")},
+				{OpCode: "PUSH", GUID: guid.MustParse("6441F818-6362-4E44-B570-7DBA31DD2453")},
+				{OpCode: "AND"},
+				{OpCode: "AND"},
+				{OpCode: "AND"},
+				{OpCode: "PUSH", GUID: guid.MustParse("665E3FF5-46CC-11D4-9A38-0090273FC14D")},
 				{OpCode: "AND"},
 				{OpCode: "END"}},
 		},

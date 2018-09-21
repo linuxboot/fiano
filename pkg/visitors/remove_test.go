@@ -16,7 +16,7 @@ func TestRemove(t *testing.T) {
 	// Apply the visitor.
 	remove := &Remove{
 		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.UUID == *testGUID
+			return f.Header.GUID == *testGUID
 		},
 	}
 	if err := remove.Run(f); err != nil {
