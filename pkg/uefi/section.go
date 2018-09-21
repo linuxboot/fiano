@@ -13,9 +13,9 @@ import (
 	"log"
 	"unsafe"
 
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/lzma"
 	"github.com/linuxboot/fiano/pkg/unicode"
-	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 const (
@@ -85,8 +85,8 @@ const (
 
 // Well-known GUIDs.
 var (
-	LZMAGUID    = *uuid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
-	LZMAX86GUID = *uuid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
+	LZMAGUID    = *guid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
+	LZMAX86GUID = *guid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
 )
 
 // SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
@@ -106,7 +106,7 @@ type SectionExtHeader struct {
 // SectionGUIDDefinedHeader contains the fields for a EFI_SECTION_GUID_DEFINED
 // encapsulated section header.
 type SectionGUIDDefinedHeader struct {
-	GUID       uuid.UUID
+	GUID       guid.GUID
 	DataOffset uint16
 	Attributes uint16
 }
@@ -179,7 +179,7 @@ var DepExOpCodes = map[byte]DepExOpCode{
 // DepExOp contains one operation for the dependency expression.
 type DepExOp struct {
 	OpCode DepExOpCode
-	GUID   *uuid.UUID `json:",omitempty"`
+	GUID   *guid.GUID `json:",omitempty"`
 }
 
 // Section represents a Firmware File Section
@@ -387,7 +387,7 @@ func parseDepEx(b []byte) ([]DepExOp, error) {
 		if opCodeStr, ok := DepExOpCodes[opCodeByte]; ok {
 			op := DepExOp{OpCode: opCodeStr}
 			if opCodeStr == "BEFORE" || opCodeStr == "AFTER" || opCodeStr == "PUSH" {
-				op.GUID = &uuid.UUID{}
+				op.GUID = &guid.GUID{}
 				if err := binary.Read(r, binary.LittleEndian, op.GUID); err != nil {
 					return nil, fmt.Errorf("invalid DEPEX, could not read GUID: %v", err)
 				}

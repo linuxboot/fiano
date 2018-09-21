@@ -67,7 +67,7 @@ func init() {
 		}
 		return &Remove{
 			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.UUID.String())
+				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
 			},
 		}, nil
 	})

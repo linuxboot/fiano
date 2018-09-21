@@ -66,7 +66,7 @@ func init() {
 		}
 		return &Find{
 			Predicate: func(f *uefi.File, name string) bool {
-				if searchRE.MatchString(name) || searchRE.MatchString(f.Header.UUID.String()) {
+				if searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String()) {
 					b, err := json.MarshalIndent(f, "", "\t")
 					if err != nil {
 						log.Fatal(err)

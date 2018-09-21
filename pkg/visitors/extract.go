@@ -91,12 +91,12 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 
 	case *uefi.File:
 		// For files we use the GUID as the folder name.
-		v2.DirPath = filepath.Join(v.DirPath, f.Header.UUID.String())
+		v2.DirPath = filepath.Join(v.DirPath, f.Header.GUID.String())
 		// Crappy hack to make unique ids unique
 		v2.DirPath = filepath.Join(v2.DirPath, fmt.Sprint(*v.Index))
 		*v.Index++
 		if len(f.Sections) == 0 {
-			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.UUID))
+			f.ExtractPath, err = uefi.ExtractBinary(f.Buf(), v2.DirPath, fmt.Sprintf("%v.ffs", f.Header.GUID))
 		}
 
 	case *uefi.Section:

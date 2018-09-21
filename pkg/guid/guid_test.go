@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package uuid
+package guid
 
 import (
 	"fmt"
@@ -10,39 +10,39 @@ import (
 )
 
 var (
-	// UUID examples
-	exampleUUID UUID = [16]byte{0x67, 0x45, 0x23, 0x01, 0xAB, 0x89, 0xEF, 0xCD,
+	// GUID examples
+	exampleGUID GUID = [16]byte{0x67, 0x45, 0x23, 0x01, 0xAB, 0x89, 0xEF, 0xCD,
 		0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}
-	// UUID string examples
-	exampleUUIDString   = "01234567-89AB-CDEF-0123-456789ABCDEF"
-	shortUUIDString     = "0123456789ABCDEF0123456789ABCDEF"
-	badUUIDStringLength = "01234567"
+	// GUID string examples
+	exampleGUIDString   = "01234567-89AB-CDEF-0123-456789ABCDEF"
+	shortGUIDString     = "0123456789ABCDEF0123456789ABCDEF"
+	badGUIDStringLength = "01234567"
 	badHex              = "GHGHGHGHGHGHGH"
 
-	// UUID JSON examples
-	exampleJSON       = `{"UUID" : "` + exampleUUIDString + `"}`
-	exampleJSONBadHex = `{"UUID" : "` + badHex + `"}`
-	exampleJSONBadKey = `{"UU" : "` + exampleUUIDString + `"}`
+	// GUID JSON examples
+	exampleJSON       = `{"GUID" : "` + exampleGUIDString + `"}`
+	exampleJSONBadHex = `{"GUID" : "` + badHex + `"}`
+	exampleJSONBadKey = `{"UU" : "` + exampleGUIDString + `"}`
 )
 
 func TestParse(t *testing.T) {
 	var tests = []struct {
 		s   string
-		u   *UUID
+		u   *GUID
 		msg string
 	}{
-		{exampleUUIDString, &exampleUUID, ""},
-		{shortUUIDString, &exampleUUID, ""},
-		{badUUIDStringLength, nil, fmt.Sprintf("uuid string has incorrect length, need string of the format \n%v\n, got \n%v",
-			UExample, badUUIDStringLength)},
-		{badHex, nil, fmt.Sprintf("uuid string not correct, need string of the format \n%v\n, got \n%v",
+		{exampleGUIDString, &exampleGUID, ""},
+		{shortGUIDString, &exampleGUID, ""},
+		{badGUIDStringLength, nil, fmt.Sprintf("guid string has incorrect length, need string of the format \n%v\n, got \n%v",
+			UExample, badGUIDStringLength)},
+		{badHex, nil, fmt.Sprintf("guid string not correct, need string of the format \n%v\n, got \n%v",
 			UExample, badHex)},
 	}
 	for _, test := range tests {
 		u, err := Parse(test.s)
 		if u == nil {
 			if test.u != nil {
-				t.Errorf("UUID was expected: %v, got nil", test.u)
+				t.Errorf("GUID was expected: %v, got nil", test.u)
 			}
 			if err == nil {
 				t.Errorf("Error was not returned, expected %v", test.msg)
@@ -50,7 +50,7 @@ func TestParse(t *testing.T) {
 				t.Errorf("Mismatched Error returned, expected \n%v\n got \n%v\n", test.msg, err.Error())
 			}
 		} else if *u != *test.u {
-			t.Errorf("UUID was parsed incorrectly, expected %v\n, got %v\n, string was %v", test.u, u, test.s)
+			t.Errorf("GUID was parsed incorrectly, expected %v\n, got %v\n, string was %v", test.u, u, test.s)
 		}
 	}
 }
@@ -58,9 +58,9 @@ func TestParse(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	var tests = []struct {
 		j string
-		u *UUID
+		u *GUID
 	}{
-		{exampleJSON, &exampleUUID},
+		{exampleJSON, &exampleGUID},
 	}
 	for _, test := range tests {
 		j, err := test.u.MarshalJSON()
@@ -76,17 +76,17 @@ func TestMarshal(t *testing.T) {
 func TestUnmarshal(t *testing.T) {
 	var tests = []struct {
 		j   string
-		u   *UUID
+		u   *GUID
 		msg string
 	}{
-		{exampleJSON, &exampleUUID, ""},
-		{exampleJSONBadHex, nil, fmt.Sprintf("uuid string not correct, need string of the format \n%v\n, got \n%v",
+		{exampleJSON, &exampleGUID, ""},
+		{exampleJSONBadHex, nil, fmt.Sprintf("guid string not correct, need string of the format \n%v\n, got \n%v",
 			UExample, badHex)},
-		{exampleJSONBadKey, nil, fmt.Sprintf("uuid string has incorrect length, need string of the format \n%v\n, got \n%v",
+		{exampleJSONBadKey, nil, fmt.Sprintf("guid string has incorrect length, need string of the format \n%v\n, got \n%v",
 			UExample, "")},
 	}
 	for _, test := range tests {
-		var g UUID
+		var g GUID
 		err := g.UnmarshalJSON([]byte(test.j))
 		if test.msg == "" && err != nil {
 			t.Errorf("No error was expected, got %v", err)
@@ -98,7 +98,7 @@ func TestUnmarshal(t *testing.T) {
 			t.Errorf("Got Error msg %v, was expecting %v", err.Error(), test.msg)
 		}
 		if test.u != nil && *test.u != g {
-			t.Errorf("UUIDs are not equal. Expected:\n%v\ngot:\n%v", test.u, g)
+			t.Errorf("GUIDs are not equal. Expected:\n%v\ngot:\n%v", test.u, g)
 		}
 	}
 }

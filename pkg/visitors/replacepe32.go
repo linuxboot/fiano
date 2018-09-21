@@ -78,7 +78,7 @@ func init() {
 		// Find all the matching files and replace their inner PE32s.
 		return &ReplacePE32{
 			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.UUID.String())
+				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
 			},
 			NewPE32: newPE32,
 		}, nil
