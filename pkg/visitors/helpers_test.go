@@ -8,12 +8,12 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/uefi"
-	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 // This GUID exists somewhere in the OVMF image.
-var testGUID = uuid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
+var testGUID = guid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
 
 func parseImage(t *testing.T) uefi.Firmware {
 	image, err := ioutil.ReadFile("../../integration/roms/OVMF.rom")
@@ -27,10 +27,10 @@ func parseImage(t *testing.T) uefi.Firmware {
 	return parsedRoot
 }
 
-func find(t *testing.T, f uefi.Firmware, guid *uuid.UUID) []*uefi.File {
+func find(t *testing.T, f uefi.Firmware, guid *guid.GUID) []*uefi.File {
 	find := &Find{
 		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.UUID == *guid
+			return f.Header.GUID == *guid
 		},
 	}
 	if err := find.Run(f); err != nil {

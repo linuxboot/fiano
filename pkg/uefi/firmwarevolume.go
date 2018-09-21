@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/linuxboot/fiano/pkg/uuid"
+	"github.com/linuxboot/fiano/pkg/guid"
 )
 
 // FirmwareVolume constants
@@ -22,19 +22,19 @@ const (
 
 // Valid FV GUIDs
 var (
-	FFS1      = uuid.MustParse("7a9354d9-0468-444a-81ce-0bf617d890df")
-	FFS2      = uuid.MustParse("8c8ce578-8a3d-4f1c-9935-896185c32dd3")
-	FFS3      = uuid.MustParse("5473c07a-3dcb-4dca-bd6f-1e9689e7349a")
-	EVSA      = uuid.MustParse("fff12b8d-7696-4c8b-a985-2747075b4f50")
-	NVAR      = uuid.MustParse("cef5b9a3-476d-497f-9fdc-e98143e0422c")
-	EVSA2     = uuid.MustParse("00504624-8a59-4eeb-bd0f-6b36e96128e0")
-	AppleBoot = uuid.MustParse("04adeead-61ff-4d31-b6ba-64f8bf901f5a")
-	PFH1      = uuid.MustParse("16b45da2-7d70-4aea-a58d-760e9ecb841d")
-	PFH2      = uuid.MustParse("e360bdba-c3ce-46be-8f37-b231e5cb9f35")
+	FFS1      = guid.MustParse("7a9354d9-0468-444a-81ce-0bf617d890df")
+	FFS2      = guid.MustParse("8c8ce578-8a3d-4f1c-9935-896185c32dd3")
+	FFS3      = guid.MustParse("5473c07a-3dcb-4dca-bd6f-1e9689e7349a")
+	EVSA      = guid.MustParse("fff12b8d-7696-4c8b-a985-2747075b4f50")
+	NVAR      = guid.MustParse("cef5b9a3-476d-497f-9fdc-e98143e0422c")
+	EVSA2     = guid.MustParse("00504624-8a59-4eeb-bd0f-6b36e96128e0")
+	AppleBoot = guid.MustParse("04adeead-61ff-4d31-b6ba-64f8bf901f5a")
+	PFH1      = guid.MustParse("16b45da2-7d70-4aea-a58d-760e9ecb841d")
+	PFH2      = guid.MustParse("e360bdba-c3ce-46be-8f37-b231e5cb9f35")
 )
 
 // FVGUIDs holds common FV type names
-var FVGUIDs = map[uuid.UUID]string{
+var FVGUIDs = map[guid.GUID]string{
 	*FFS1:      "FFS1",
 	*FFS2:      "FFS2",
 	*FFS3:      "FFS3",
@@ -48,7 +48,7 @@ var FVGUIDs = map[uuid.UUID]string{
 
 // These are the FVs we actually try to parse beyond the header
 // We don't parse anything except FFS2 and FFS3
-var supportedFVs = map[uuid.UUID]bool{
+var supportedFVs = map[guid.GUID]bool{
 	*FFS2: true,
 	*FFS3: true,
 }
@@ -63,7 +63,7 @@ type Block struct {
 // header
 type FirmwareVolumeFixedHeader struct {
 	_               [16]uint8
-	FileSystemGUID  uuid.UUID
+	FileSystemGUID  guid.GUID
 	Length          uint64
 	Signature       uint32
 	Attributes      uint32 // UEFI PI spec volume 3.2.1 EFI_FIRMWARE_VOLUME_HEADER
@@ -78,7 +78,7 @@ type FirmwareVolumeFixedHeader struct {
 // FirmwareVolumeExtHeader contains the fields of an extended firmware volume
 // header
 type FirmwareVolumeExtHeader struct {
-	FVName        uuid.UUID
+	FVName        guid.GUID
 	ExtHeaderSize uint32
 }
 

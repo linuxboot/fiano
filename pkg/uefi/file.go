@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/linuxboot/fiano/pkg/uuid"
+	"github.com/linuxboot/fiano/pkg/guid"
 )
 
 // FVFileType represents the different types possible in an EFI file.
@@ -104,8 +104,8 @@ func (f FVFileType) String() string {
 
 // Stock GUIDS
 var (
-	ZeroGUID = uuid.MustParse("00000000-0000-0000-0000-000000000000")
-	FFGUID   = uuid.MustParse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
+	ZeroGUID = guid.MustParse("00000000-0000-0000-0000-000000000000")
+	FFGUID   = guid.MustParse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
 )
 
 // FileAlignments specifies the correct alignments based on the field in the file header.
@@ -148,7 +148,7 @@ type fileAttr uint8
 
 // FileHeader represents an EFI File header.
 type FileHeader struct {
-	UUID       uuid.UUID      // This is the GUID of the file.
+	GUID       guid.GUID      // This is the GUID of the file.
 	Checksum   IntegrityCheck `json:"-"`
 	Type       FVFileType
 	Attributes fileAttr
@@ -287,7 +287,7 @@ func (f *File) ChecksumAndAssemble(fileData []byte) error {
 	err := binary.Write(header, binary.LittleEndian, fh)
 	if err != nil {
 		return fmt.Errorf("unable to construct binary header of file %v, got %v",
-			fh.UUID, err)
+			fh.GUID, err)
 	}
 	f.buf = header.Bytes()
 	// We need to get rid of whatever it sums to so that the overall sum is zero
@@ -331,9 +331,9 @@ func CreatePadFile(size uint64) (*File, error) {
 
 	// Create empty guid
 	if Attributes.ErasePolarity == 0xFF {
-		fh.UUID = *FFGUID
+		fh.GUID = *FFGUID
 	} else if Attributes.ErasePolarity == 0 {
-		fh.UUID = *ZeroGUID
+		fh.GUID = *ZeroGUID
 	} else {
 		return nil, fmt.Errorf("erase polarity not 0x00 or 0xFF, got %#x", Attributes.ErasePolarity)
 	}
@@ -403,7 +403,7 @@ func NewFile(buf []byte) (*File, error) {
 
 	if buflen := len(buf); f.Header.ExtendedSize > uint64(buflen) {
 		return nil, fmt.Errorf("File size too big! File with GUID: %v has length %v, but is only %v bytes big",
-			f.Header.UUID, f.Header.ExtendedSize, buflen)
+			f.Header.GUID, f.Header.ExtendedSize, buflen)
 	}
 	// Slice buffer to the correct size.
 	f.buf = buf[:f.Header.ExtendedSize]
@@ -415,7 +415,7 @@ func NewFile(buf []byte) (*File, error) {
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
 		s, err := NewSection(f.buf[offset:], i)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.UUID, err)
+			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.GUID, err)
 		}
 		offset += uint64(s.Header.ExtendedSize)
 		// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be

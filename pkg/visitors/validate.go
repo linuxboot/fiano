@@ -143,35 +143,35 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 		if fh.Size == blankSize {
 			if buflen < uefi.FileHeaderExtMinLength {
 				v.Errors = append(v.Errors, fmt.Errorf("file %v length too small!, buffer is only %#x bytes long for extended header",
-					fh.UUID, buflen))
+					fh.GUID, buflen))
 				break
 			}
 			if !fh.Attributes.IsLarge() {
 				v.Errors = append(v.Errors, fmt.Errorf("file %v using extended header, but large attribute is not set",
-					fh.UUID))
+					fh.GUID))
 				break
 			}
 		} else if uefi.Read3Size(f.Header.Size) != fh.ExtendedSize {
 			v.Errors = append(v.Errors, fmt.Errorf("file %v size not copied into extendedsize",
-				fh.UUID))
+				fh.GUID))
 			break
 		}
 		if buflen != fh.ExtendedSize {
 			v.Errors = append(v.Errors, fmt.Errorf("file %v size mismatch! Size is %#x, buf length is %#x",
-				fh.UUID, fh.ExtendedSize, buflen))
+				fh.GUID, fh.ExtendedSize, buflen))
 			break
 		}
 
 		// Header Checksums
 		if sum := f.ChecksumHeader(); sum != 0 {
 			v.Errors = append(v.Errors, fmt.Errorf("file %v header checksum failure! sum was %v",
-				fh.UUID, sum))
+				fh.GUID, sum))
 		}
 
 		// Body Checksum
 		if !fh.Attributes.HasChecksum() && fh.Checksum.File != uefi.EmptyBodyChecksum {
 			v.Errors = append(v.Errors, fmt.Errorf("file %v body checksum failure! Attribute was not set, but sum was %v instead of %v",
-				fh.UUID, fh.Checksum.File, uefi.EmptyBodyChecksum))
+				fh.GUID, fh.Checksum.File, uefi.EmptyBodyChecksum))
 		} else if fh.Attributes.HasChecksum() {
 			headerSize := uefi.FileHeaderMinLength
 			if fh.Attributes.IsLarge() {
@@ -179,7 +179,7 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 			}
 			if sum := uefi.Checksum8(f.Buf()[headerSize:]); sum != 0 { // TODO: use the Payload function which does not exist yet
 				v.Errors = append(v.Errors, fmt.Errorf("file %v body checksum failure! sum was %v",
-					fh.UUID, sum))
+					fh.GUID, sum))
 			}
 		}
 

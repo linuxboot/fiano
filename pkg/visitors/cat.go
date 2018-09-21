@@ -75,7 +75,7 @@ func init() {
 		// Find all the matching files and cat the RAW sections into the Buf
 		return &Cat{
 			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.UUID.String())
+				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
 			},
 			Writer: os.Stdout,
 		}, nil

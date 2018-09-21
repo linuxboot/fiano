@@ -17,7 +17,7 @@ func TestReplacePE32(t *testing.T) {
 	// Apply the visitor.
 	replace := &ReplacePE32{
 		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.UUID == *testGUID
+			return f.Header.GUID == *testGUID
 		},
 		NewPE32: []byte("banana"),
 	}

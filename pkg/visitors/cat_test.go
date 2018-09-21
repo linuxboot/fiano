@@ -9,12 +9,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/uefi"
-	"github.com/linuxboot/fiano/pkg/uuid"
 )
 
 var (
-	catGUID = uuid.MustParse("1B45CC0A-156A-428A-AF62-49864DA0E6E6")
+	catGUID = guid.MustParse("1B45CC0A-156A-428A-AF62-49864DA0E6E6")
 	catdat  = []byte{79, 218, 58, 155, 86, 174, 36, 76, 141, 234, 240, 59, 117, 88, 174, 80}
 )
 
@@ -25,8 +25,8 @@ func TestCat(t *testing.T) {
 	var b bytes.Buffer
 	cat := &Cat{
 		Predicate: func(f *uefi.File, name string) bool {
-			m := f.Header.UUID == *catGUID
-			t.Logf("Check file UUID %v against %v: %v", f.Header.UUID.String(), *catGUID, m)
+			m := f.Header.GUID == *catGUID
+			t.Logf("Check file GUID %v against %v: %v", f.Header.GUID.String(), *catGUID, m)
 			return m
 		},
 		Writer: &b,
