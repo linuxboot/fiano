@@ -34,7 +34,7 @@ func Run(args ...string) error {
 	var parsedRoot uefi.Firmware
 	if m := f.Mode(); m.IsDir() {
 		// Call ParseDir
-		pd := visitors.ParseDir{DirPath: path}
+		pd := visitors.ParseDir{BasePath: path}
 		if parsedRoot, err = pd.Parse(); err != nil {
 			return err
 		}

@@ -97,7 +97,7 @@ func TestExtractAssembleFile(t *testing.T) {
 			if err = f.Apply(&Extract{BasePath: tmpDir, DirPath: ".", Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
-			if err = f.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+			if err = f.Apply(&ParseDir{BasePath: tmpDir}); err != nil {
 				t.Fatalf("Unable to parse files %v, got %v", test.origBuf, err.Error())
 			}
 			if err = f.Apply(&Assemble{}); err != nil {
@@ -143,7 +143,7 @@ func TestExtractAssembleFV(t *testing.T) {
 			if err = fv.Apply(&Extract{BasePath: tmpDir, DirPath: ".", Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract file %v, got %v", test.origBuf, err.Error())
 			}
-			if err = fv.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+			if err = fv.Apply(&ParseDir{BasePath: tmpDir}); err != nil {
 				t.Fatalf("Unable to parse files %v, got %v", test.origBuf, err.Error())
 			}
 			if err = fv.Apply(&Assemble{}); err != nil {
@@ -192,7 +192,7 @@ func TestExtractAssembleSection(t *testing.T) {
 			if err = s.Apply(&Extract{BasePath: tmpDir, DirPath: ".", Index: &fIndex}); err != nil {
 				t.Fatalf("Unable to extract section %v, got %v", test.buf, err.Error())
 			}
-			if err = s.Apply(&ParseDir{DirPath: tmpDir}); err != nil {
+			if err = s.Apply(&ParseDir{BasePath: tmpDir}); err != nil {
 				t.Fatalf("Unable to parse files %v, got %v", test.buf, err.Error())
 			}
 			if err = s.Apply(&Assemble{}); err != nil {
