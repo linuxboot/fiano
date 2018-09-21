@@ -11,9 +11,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"reflect"
 )
 
@@ -131,25 +128,6 @@ func Parse(buf []byte) (Firmware, error) {
 	// Non intel image such as edk2's OVMF
 	// We don't know how to parse this header, so treat it as a large BIOSRegion
 	return NewBIOSRegion(buf, nil, RegionTypeBIOS)
-}
-
-// ExtractBinary simply dumps the binary to a specified directory and filename.
-// It creates the directory if it doesn't already exist, and dumps the buffer to it.
-// It returns the filepath of the binary, and an error if it exists.
-// This is meant as a helper function for other Extract functions.
-func ExtractBinary(buf []byte, dirPath string, filename string) (string, error) {
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		return "", err
-	}
-
-	// Dump the binary.
-	fp := filepath.Join(dirPath, filename)
-	if err := ioutil.WriteFile(fp, buf, 0666); err != nil {
-		// Make sure we return "" since we don't want an invalid path to be serialized out.
-		return "", err
-	}
-	return fp, nil
 }
 
 // Checksum8 does a 8 bit checksum of the slice passed in.
