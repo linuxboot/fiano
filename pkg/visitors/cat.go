@@ -7,7 +7,6 @@ package visitors
 import (
 	"io"
 	"os"
-	"regexp"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -15,11 +14,11 @@ import (
 // Cat concatenates all RAW data sections from a file into a single byte slice.
 type Cat struct {
 	// Input
-	Predicate func(f *uefi.File, name string) bool
+	Predicate func(f uefi.Firmware) bool
 
 	// Output
 	io.Writer
-	Matches []*uefi.File
+	Matches []uefi.Firmware
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -67,17 +66,13 @@ func (v *Cat) Visit(f uefi.Firmware) error {
 
 func init() {
 	RegisterCLI("cat", "cat a file with a regexp that matches a GUID", 1, func(args []string) (uefi.Visitor, error) {
-		searchRE, err := regexp.Compile(args[0])
+		pred, err := FindFilePredicate(args[0])
 		if err != nil {
 			return nil, err
 		}
-
-		// Find all the matching files and cat the RAW sections into the Buf
 		return &Cat{
-			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
-			},
-			Writer: os.Stdout,
+			Predicate: pred,
+			Writer:    os.Stdout,
 		}, nil
 	})
 }

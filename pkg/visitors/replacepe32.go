@@ -6,7 +6,6 @@ package visitors
 
 import (
 	"io/ioutil"
-	"regexp"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -14,11 +13,11 @@ import (
 // ReplacePE32 replaces PE32 sections with NewPE32 for all files matching Predicate.
 type ReplacePE32 struct {
 	// Input
-	Predicate func(f *uefi.File, name string) bool
+	Predicate func(f uefi.Firmware) bool
 	NewPE32   []byte
 
 	// Output
-	Matches []*uefi.File
+	Matches []uefi.Firmware
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -64,7 +63,7 @@ func (v *ReplacePE32) Visit(f uefi.Firmware) error {
 
 func init() {
 	RegisterCLI("replace_pe32", "replace a pe32 given a GUID2 and new file", 2, func(args []string) (uefi.Visitor, error) {
-		searchRE, err := regexp.Compile(args[0])
+		pred, err := FindFilePredicate(args[0])
 		if err != nil {
 			return nil, err
 		}
@@ -77,10 +76,8 @@ func init() {
 
 		// Find all the matching files and replace their inner PE32s.
 		return &ReplacePE32{
-			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
-			},
-			NewPE32: newPE32,
+			Predicate: pred,
+			NewPE32:   newPE32,
 		}, nil
 	})
 }

@@ -6,8 +6,6 @@ package visitors
 
 import (
 	"testing"
-
-	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 func TestRemove(t *testing.T) {
@@ -15,9 +13,7 @@ func TestRemove(t *testing.T) {
 
 	// Apply the visitor.
 	remove := &Remove{
-		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.GUID == *testGUID
-		},
+		Predicate: FindFileGUIDPredicate(*testGUID),
 	}
 	if err := remove.Run(f); err != nil {
 		t.Fatal(err)

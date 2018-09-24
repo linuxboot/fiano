@@ -7,9 +7,12 @@ package visitors
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"regexp"
 
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -18,10 +21,13 @@ type Find struct {
 	// Input
 	// Only when this functions returns true will the file appear in the
 	// `Matches` slice.
-	Predicate func(f *uefi.File, name string) bool
+	Predicate func(f uefi.Firmware) bool
 
 	// Output
-	Matches []*uefi.File
+	Matches []uefi.Firmware
+
+	// JSON is written to this writer.
+	W io.Writer
 
 	// Private
 	currentFile *uefi.File
@@ -29,7 +35,17 @@ type Find struct {
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *Find) Run(f uefi.Firmware) error {
-	return f.Apply(v)
+	if err := f.Apply(v); err != nil {
+		return err
+	}
+	if v.W != nil {
+		b, err := json.MarshalIndent(f, "", "\t")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Fprintln(v.W, string(b))
+	}
+	return nil
 }
 
 // Visit applies the Find visitor to any Firmware type.
@@ -42,40 +58,68 @@ func (v *Find) Visit(f uefi.Firmware) error {
 			Predicate:   v.Predicate,
 			currentFile: f,
 		}
+
+		if v.Predicate(f) {
+			v.Matches = append(v.Matches, f)
+			// Don't match with direct descendents.
+			v2.currentFile = nil
+		}
+
 		err := f.ApplyChildren(v2)
 		v.Matches = append(v.Matches, v2.Matches...) // Merge together
 		return err
 
 	case *uefi.Section:
-		if v.currentFile != nil && v.Predicate(v.currentFile, f.Name) {
+		if v.currentFile != nil && v.Predicate(f) {
 			v.Matches = append(v.Matches, v.currentFile)
-			v.currentFile = nil // Do not double-match with a sibling.
+			v.currentFile = nil // Do not double-match with a sibling if there are duplicate names.
 		}
 		return f.ApplyChildren(v)
 
 	default:
+		if v.Predicate(f) {
+			v.Matches = append(v.Matches, f)
+		}
 		return f.ApplyChildren(v)
 	}
 }
 
+// FindFileGUIDPredicate is a generic predicate for searching file GUIDs only.
+func FindFileGUIDPredicate(r guid.GUID) func(f uefi.Firmware) bool {
+	return func(f uefi.Firmware) bool {
+		if f, ok := f.(*uefi.File); ok {
+			return f.Header.GUID == r
+		}
+		return false
+	}
+}
+
+// FindFilePredicate is a generic predicate for searching files and UI sections only.
+func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
+	searchRE, err := regexp.Compile(r)
+	if err != nil {
+		return nil, err
+	}
+	return func(f uefi.Firmware) bool {
+		switch f := f.(type) {
+		case *uefi.File:
+			return searchRE.MatchString(f.Header.GUID.String())
+		case *uefi.Section:
+			return searchRE.MatchString(f.Name)
+		}
+		return false
+	}, nil
+}
+
 func init() {
-	RegisterCLI("find", "find a file by a GUID regexp", 1, func(args []string) (uefi.Visitor, error) {
-		searchRE, err := regexp.Compile(args[0])
+	RegisterCLI("find", "find a file by GUID or Name", 1, func(args []string) (uefi.Visitor, error) {
+		pred, err := FindFilePredicate(args[0])
 		if err != nil {
 			return nil, err
 		}
 		return &Find{
-			Predicate: func(f *uefi.File, name string) bool {
-				if searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String()) {
-					b, err := json.MarshalIndent(f, "", "\t")
-					if err != nil {
-						log.Fatal(err)
-					}
-					fmt.Println(string(b))
-					return true
-				}
-				return false
-			},
+			Predicate: pred,
+			W:         os.Stdout,
 		}, nil
 	})
 }
