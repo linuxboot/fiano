@@ -27,11 +27,9 @@ func parseImage(t *testing.T) uefi.Firmware {
 	return parsedRoot
 }
 
-func find(t *testing.T, f uefi.Firmware, guid *guid.GUID) []*uefi.File {
+func find(t *testing.T, f uefi.Firmware, guid *guid.GUID) []uefi.Firmware {
 	find := &Find{
-		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.GUID == *guid
-		},
+		Predicate: FindFileGUIDPredicate(*guid),
 	}
 	if err := find.Run(f); err != nil {
 		t.Fatal(err)

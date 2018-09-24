@@ -5,18 +5,16 @@
 package visitors
 
 import (
-	"regexp"
-
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Remove all firmware files with the given GUID.
 type Remove struct {
 	// Input
-	Predicate func(f *uefi.File, name string) bool
+	Predicate func(f uefi.Firmware) bool
 
 	// Output
-	Matches []*uefi.File
+	Matches []uefi.Firmware
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -41,6 +39,7 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 		for i := 0; i < len(f.Files); i++ {
 			for _, m := range v.Matches {
 				if f.Files[i] == m {
+					m := m.(*uefi.File)
 					if m.Header.Type == uefi.FVFileTypePEIM {
 						// Create a new pad file of the exact same size
 						pf, err := uefi.CreatePadFile(m.Header.ExtendedSize)
@@ -61,14 +60,12 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 
 func init() {
 	RegisterCLI("remove", "remove a file from the volume", 1, func(args []string) (uefi.Visitor, error) {
-		searchRE, err := regexp.Compile(args[0])
+		pred, err := FindFilePredicate(args[0])
 		if err != nil {
 			return nil, err
 		}
 		return &Remove{
-			Predicate: func(f *uefi.File, name string) bool {
-				return searchRE.MatchString(name) || searchRE.MatchString(f.Header.GUID.String())
-			},
+			Predicate: pred,
 		}, nil
 	})
 }

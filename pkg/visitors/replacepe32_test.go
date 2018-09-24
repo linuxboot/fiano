@@ -16,10 +16,8 @@ func TestReplacePE32(t *testing.T) {
 
 	// Apply the visitor.
 	replace := &ReplacePE32{
-		Predicate: func(f *uefi.File, name string) bool {
-			return f.Header.GUID == *testGUID
-		},
-		NewPE32: []byte("banana"),
+		Predicate: FindFileGUIDPredicate(*testGUID),
+		NewPE32:   []byte("banana"),
 	}
 	if err := replace.Run(f); err != nil {
 		t.Fatal(err)
@@ -36,7 +34,11 @@ func TestReplacePE32(t *testing.T) {
 		t.Fatalf("got %d matches; expected 1", len(results))
 	}
 	want := []byte{0x0a, 0x00, 0x00, byte(uefi.SectionTypePE32), 'b', 'a', 'n', 'a', 'n', 'a'}
-	got := results[0].Sections[0].Buf()
+	file, ok := results[0].(*uefi.File)
+	if !ok {
+		t.Fatalf("did not match a file, got type :%T", file)
+	}
+	got := file.Sections[0].Buf()
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("want %v; got %v", want, got)
 	}
