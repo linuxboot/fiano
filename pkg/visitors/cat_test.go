@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/guid"
-	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 var (
@@ -24,12 +23,8 @@ func TestCat(t *testing.T) {
 	// Apply the visitor.
 	var b bytes.Buffer
 	cat := &Cat{
-		Predicate: func(f *uefi.File, name string) bool {
-			m := f.Header.GUID == *catGUID
-			t.Logf("Check file GUID %v against %v: %v", f.Header.GUID.String(), *catGUID, m)
-			return m
-		},
-		Writer: &b,
+		Predicate: FindFileGUIDPredicate(*catGUID),
+		Writer:    &b,
 	}
 	if err := cat.Run(f); err != nil {
 		t.Fatal(err)
