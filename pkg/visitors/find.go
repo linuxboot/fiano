@@ -39,7 +39,7 @@ func (v *Find) Run(f uefi.Firmware) error {
 		return err
 	}
 	if v.W != nil {
-		b, err := json.MarshalIndent(f, "", "\t")
+		b, err := json.MarshalIndent(v.Matches, "", "\t")
 		if err != nil {
 			log.Fatal(err)
 		}
