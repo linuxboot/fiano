@@ -111,6 +111,25 @@ func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 	}, nil
 }
 
+// FindFileFVPredicate is a generic predicate for searching FVs, files and UI sections.
+func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
+	searchRE, err := regexp.Compile(r)
+	if err != nil {
+		return nil, err
+	}
+	return func(f uefi.Firmware) bool {
+		switch f := f.(type) {
+		case *uefi.FirmwareVolume:
+			return searchRE.MatchString(f.FVName.String())
+		case *uefi.File:
+			return searchRE.MatchString(f.Header.GUID.String())
+		case *uefi.Section:
+			return searchRE.MatchString(f.Name)
+		}
+		return false
+	}, nil
+}
+
 func init() {
 	RegisterCLI("find", "find a file by GUID or Name", 1, func(args []string) (uefi.Visitor, error) {
 		pred, err := FindFilePredicate(args[0])
