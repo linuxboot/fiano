@@ -170,19 +170,16 @@ func Write(f io.WriteSeeker, fmap *FMap, m *Metadata) error {
 	return binary.Write(f, binary.LittleEndian, fmap.Areas)
 }
 
-// ReadArea reads an area from the fmap as a binary stream.
-func (f *FMap) ReadArea(r io.ReadSeeker, i int) (io.Reader, error) {
+// ReadArea provides an io.SectionReader for an Area of the FMAP.
+func (f *FMap) ReadArea(r io.ReaderAt, i int) (*io.SectionReader, error) {
 	if i < 0 || int(f.NAreas) <= i {
 		return nil, errors.New("Area index out of range")
 	}
-	if _, err := r.Seek(int64(f.Areas[i].Offset), io.SeekStart); err != nil {
-		return nil, err
-	}
-	return io.LimitReader(r, int64(f.Areas[i].Size)), nil
+	return io.NewSectionReader(r, int64(f.Areas[i].Offset), int64(f.Areas[i].Size)), nil
 }
 
 // Checksum performs a hash of the static areas.
-func (f *FMap) Checksum(r io.ReadSeeker, h hash.Hash) ([]byte, error) {
+func (f *FMap) Checksum(r io.ReaderAt, h hash.Hash) ([]byte, error) {
 	for i, v := range f.Areas {
 		if v.Flags&FmapAreaStatic == 0 {
 			continue
