@@ -2,15 +2,15 @@
 
 
 [[projects]]
-  digest = "1:09352d860d9ac877586151d1d715c31f1df86717defe6c4e1d1fbe9ceb2778d9"
+  digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
   name = "github.com/u-root/u-root"
   packages = [
     "pkg/golang",
     "pkg/testutil",
   ]
   pruneopts = "UT"
-  revision = "4fed9c9f3497932004cb777e28e1a2af7260fb83"
-  version = "v1.0.0"
+  revision = "70e4254bbc315a0c6bf758f1737ca6998435d3a2"
+  version = "v2.0.0"
 
 [[projects]]
   digest = "1:ba8028944baec941af3e7e7d9a51b3161a7168a042188b058da662bfc33fd1aa"
