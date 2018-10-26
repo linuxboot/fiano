@@ -245,18 +245,25 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		return nil, fmt.Errorf("no BIOS region: invalid region parameters %v", frs[RegionTypeBIOS])
 	}
 
+	nr := int(f.IFD.DescriptorMap.NumberOfRegions)
 	// Parse all the regions
 	for i, fr := range frs {
+		// Parse only a smaller number of regions if number of regions isn't 0
+		// Number of regions is deprecated in newer IFDs and is just 0, older IFDs report
+		// the number of regions and have falsely "valid" regions after that number.
+		if nr != 0 && i >= nr {
+			break
+		}
 		if !fr.Valid() {
 			continue
 		}
 		if o := uint64(fr.BaseOffset()); o > f.FlashSize {
-			return nil, fmt.Errorf("region out of bounds: BaseOffset %#x, Flash size %#x",
-				o, f.FlashSize)
+			return nil, fmt.Errorf("region %d, %v out of bounds: BaseOffset %#x, Flash size %#x",
+				i, fr, o, f.FlashSize)
 		}
 		if o := uint64(fr.EndOffset()); o > f.FlashSize {
-			return nil, fmt.Errorf("region out of bounds: EndOffset %#x, Flash size %#x",
-				o, f.FlashSize)
+			return nil, fmt.Errorf("region %d, %v out of bounds: EndOffset %#x, Flash size %#x",
+				i, fr, o, f.FlashSize)
 		}
 		if c, ok := regionConstructors[FlashRegionType(i)]; ok {
 			r, err := c(buf[fr.BaseOffset():fr.EndOffset()], &frs[i], FlashRegionType(i))
