@@ -257,13 +257,15 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		if !fr.Valid() {
 			continue
 		}
-		if o := uint64(fr.BaseOffset()); o > f.FlashSize {
-			return nil, fmt.Errorf("region %d, %v out of bounds: BaseOffset %#x, Flash size %#x",
-				i, fr, o, f.FlashSize)
+		if o := uint64(fr.BaseOffset()); o >= f.FlashSize {
+			fmt.Printf("region %s (%d, %v) out of bounds: BaseOffset %#x, Flash size %#x, skipping...\n",
+				flashRegionTypeNames[FlashRegionType(i)], i, fr, o, f.FlashSize)
+			continue
 		}
 		if o := uint64(fr.EndOffset()); o > f.FlashSize {
-			return nil, fmt.Errorf("region %d, %v out of bounds: EndOffset %#x, Flash size %#x",
-				i, fr, o, f.FlashSize)
+			fmt.Printf("region %s (%d, %v) out of bounds: EndOffset %#x, Flash size %#x, skipping...\n",
+				flashRegionTypeNames[FlashRegionType(i)], i, fr, o, f.FlashSize)
+			continue
 		}
 		if c, ok := regionConstructors[FlashRegionType(i)]; ok {
 			r, err := c(buf[fr.BaseOffset():fr.EndOffset()], &frs[i], FlashRegionType(i))
