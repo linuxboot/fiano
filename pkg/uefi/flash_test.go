@@ -23,19 +23,22 @@ var (
 	fr2 = FlashRegion{Base: 2, Limit: 2}
 	fr3 = FlashRegion{Base: 3, Limit: 3}
 	// Region Examples
-	rr1 = &RawRegion{flashRegion: &fr1, RegionType: RegionTypeUnknown}
-	br  = &BIOSRegion{flashRegion: &fr2, RegionType: RegionTypeBIOS}
-	rr2 = &RawRegion{flashRegion: &fr3, RegionType: RegionTypeUnknown}
+	rr1 = &RawRegion{FRegion: &fr1, RegionType: RegionTypeUnknown}
+	br  = &BIOSRegion{FRegion: &fr2, RegionType: RegionTypeBIOS}
+	rr2 = &RawRegion{FRegion: &fr3, RegionType: RegionTypeUnknown}
 	// Empty buffer
 	emptyFlashBuf = make([]byte, 0x4000)
 
 	// FlashImage Region test examples
-	f1 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, br, rr2}} // Full image
-	f2 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{br, rr2}}      // Front gap
-	f3 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, br}}      // Back gap
-	f4 = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []Region{rr1, rr1}}     // Overlap!
+	trr1 = MakeTyped(rr1)
+	trr2 = MakeTyped(rr2)
+	tbr  = MakeTyped(br)
+	f1   = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []*TypedFirmware{trr1, tbr, trr2}} // Full image
+	f2   = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []*TypedFirmware{tbr, trr2}}       // Front gap
+	f3   = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []*TypedFirmware{trr1, tbr}}       // Back gap
+	f4   = FlashImage{buf: emptyFlashBuf, FlashSize: 0x4000, Regions: []*TypedFirmware{trr1, trr1}}      // Overlap!
 	// Final result
-	regions = []Region{rr1, br, rr2}
+	regions = []*TypedFirmware{trr1, tbr, trr2}
 )
 
 func TestFindSignature(t *testing.T) {
@@ -88,8 +91,8 @@ func TestFillRegionGaps(t *testing.T) {
 	var tests = []struct {
 		name string
 		f    FlashImage
-		out  []Region // expected output after gap filling
-		msg  string   // Error message
+		out  []*TypedFirmware // expected output after gap filling
+		msg  string           // Error message
 	}{
 		{"FullImage", f1, regions, ""},
 		{"FrontRegionGap", f2, regions, ""},
@@ -112,8 +115,8 @@ func TestFillRegionGaps(t *testing.T) {
 					t.Fatalf("Mismatched Region length! Expected %d regions, got %d", len(test.out), len(test.f.Regions))
 				}
 				for i := range test.out {
-					ans := test.out[i]
-					reg := test.f.Regions[i]
+					ans := test.out[i].Value.(Region)
+					reg := test.f.Regions[i].Value.(Region)
 					if ans.Type() != reg.Type() {
 						t.Errorf("Region type mismatch, expected \n%v\n got \n%v\n", ans.Type(), reg.Type())
 					}

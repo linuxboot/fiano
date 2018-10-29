@@ -57,8 +57,8 @@ type BIOSRegion struct {
 	ExtractPath string
 	Length      uint64
 	// This is a pointer to the FlashRegion struct laid out in the ifd.
-	flashRegion *FlashRegion
-	RegionType  FlashRegionType
+	FRegion    *FlashRegion
+	RegionType FlashRegionType
 }
 
 // Type returns the flash region type.
@@ -68,19 +68,19 @@ func (br *BIOSRegion) Type() FlashRegionType {
 
 // SetFlashRegion sets the Flash Region.
 func (br *BIOSRegion) SetFlashRegion(fr *FlashRegion) {
-	br.flashRegion = fr
+	br.FRegion = fr
 }
 
 // FlashRegion gets the Flash Region.
 func (br *BIOSRegion) FlashRegion() (fr *FlashRegion) {
-	return br.flashRegion
+	return br.FRegion
 }
 
 // NewBIOSRegion parses a sequence of bytes and returns a Region
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error) {
-	br := BIOSRegion{flashRegion: r, Length: uint64(len(buf)),
+	br := BIOSRegion{FRegion: r, Length: uint64(len(buf)),
 		RegionType: RegionTypeBIOS}
 	var absOffset uint64
 
