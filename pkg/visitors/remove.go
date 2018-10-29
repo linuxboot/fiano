@@ -12,6 +12,7 @@ import (
 type Remove struct {
 	// Input
 	Predicate func(f uefi.Firmware) bool
+	Pad       bool
 
 	// Output
 	Matches []uefi.Firmware
@@ -40,7 +41,7 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 			for _, m := range v.Matches {
 				if f.Files[i] == m {
 					m := m.(*uefi.File)
-					if m.Header.Type == uefi.FVFileTypePEIM {
+					if v.Pad || m.Header.Type == uefi.FVFileTypePEIM {
 						// Create a new pad file of the exact same size
 						pf, err := uefi.CreatePadFile(m.Header.ExtendedSize)
 						if err != nil {
@@ -66,6 +67,17 @@ func init() {
 		}
 		return &Remove{
 			Predicate: pred,
+			Pad:       false,
+		}, nil
+	})
+	RegisterCLI("remove_pad", "remove a file from the volume and replace it with a pad file of the same size", 1, func(args []string) (uefi.Visitor, error) {
+		pred, err := FindFilePredicate(args[0])
+		if err != nil {
+			return nil, err
+		}
+		return &Remove{
+			Predicate: pred,
+			Pad:       true,
 		}, nil
 	})
 }

@@ -346,6 +346,7 @@ func CreatePadFile(size uint64) (*File, error) {
 	// This also sets the large file attribute if file is big.
 	f.SetSize(size, false)
 	fh.Type = FVFileTypePad
+	f.Type = fh.Type.String()
 
 	// Create empty pad filedata based on size
 	var fileData []byte
