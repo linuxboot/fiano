@@ -121,7 +121,7 @@ type FlashImage struct {
 	// Holds the Flash Descriptor
 	IFD FlashDescriptor
 	// Actual regions
-	Regions []Region `json:",omitempty"`
+	Regions []*TypedFirmware `json:",omitempty"`
 
 	// Metadata for extraction and recovery
 	ExtractPath string
@@ -151,7 +151,7 @@ func (f *FlashImage) ApplyChildren(v Visitor) error {
 		return err
 	}
 	for _, r := range f.Regions {
-		if err := r.Apply(v); err != nil {
+		if err := r.Value.Apply(v); err != nil {
 			return err
 		}
 	}
@@ -189,8 +189,9 @@ func (f *FlashImage) String() string {
 func (f *FlashImage) fillRegionGaps() error {
 	// Search for gaps and fill in with unknown regions
 	offset := uint64(FlashDescriptorLength)
-	var newRegions []Region
-	for _, r := range f.Regions {
+	var newRegions []*TypedFirmware
+	for _, t := range f.Regions {
+		r, _ := t.Value.(Region)
 		nextBase := uint64(r.FlashRegion().BaseOffset())
 		if nextBase < offset {
 			// Something is wrong, overlapping regions
@@ -202,20 +203,20 @@ func (f *FlashImage) fillRegionGaps() error {
 			// There is a gap, create an unknown region
 			tempFR := &FlashRegion{Base: uint16(offset / RegionBlockSize),
 				Limit: uint16(nextBase/RegionBlockSize) - 1}
-			newRegions = append(newRegions, &RawRegion{buf: f.buf[offset:nextBase],
-				flashRegion: tempFR,
-				RegionType:  RegionTypeUnknown})
+			newRegions = append(newRegions, MakeTyped(&RawRegion{buf: f.buf[offset:nextBase],
+				FRegion:    tempFR,
+				RegionType: RegionTypeUnknown}))
 		}
 		offset = uint64(r.FlashRegion().EndOffset())
-		newRegions = append(newRegions, r)
+		newRegions = append(newRegions, MakeTyped(r))
 	}
 	// check for the last region
 	if offset != f.FlashSize {
 		tempFR := &FlashRegion{Base: uint16(offset / RegionBlockSize),
 			Limit: uint16(f.FlashSize/RegionBlockSize) - 1}
-		newRegions = append(newRegions, &RawRegion{buf: f.buf[offset:f.FlashSize],
-			flashRegion: tempFR,
-			RegionType:  RegionTypeUnknown})
+		newRegions = append(newRegions, MakeTyped(&RawRegion{buf: f.buf[offset:f.FlashSize],
+			FRegion:    tempFR,
+			RegionType: RegionTypeUnknown}))
 	}
 	f.Regions = newRegions
 	return nil
@@ -278,13 +279,15 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 			if err != nil {
 				return nil, err
 			}
-			f.Regions = append(f.Regions, r)
+			f.Regions = append(f.Regions, MakeTyped(r))
 		}
 	}
 
 	// Sort the regions by offset so we can look for gaps
 	sort.Slice(f.Regions, func(i, j int) bool {
-		return f.Regions[i].FlashRegion().Base < f.Regions[j].FlashRegion().Base
+		ri := f.Regions[i].Value.(Region)
+		rj := f.Regions[j].Value.(Region)
+		return ri.FlashRegion().Base < rj.FlashRegion().Base
 	})
 
 	if err := f.fillRegionGaps(); err != nil {

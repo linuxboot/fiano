@@ -315,9 +315,20 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 		// Point FlashRegion to struct read from IFD rather than json.
-		for _, r := range f.Regions {
+		nr := int(f.IFD.DescriptorMap.NumberOfRegions)
+		for _, t := range f.Regions {
+			r := t.Value.(uefi.Region)
+
+			if r.Type() == uefi.RegionTypeUnknown {
+				continue
+			}
+			if nr != 0 && int(r.Type()) > nr {
+				// Region exceeds original number of regions.
+				// TODO: handle this in some way by increasing the number of regions.
+				continue
+			}
 			if int(r.Type()) >= len(f.IFD.Region.FlashRegions) {
-				// This is unknown, there's no IFD entry
+				// This is some new unknown region, there's no IFD entry
 				continue
 			}
 			r.SetFlashRegion(&f.IFD.Region.FlashRegions[r.Type()])
@@ -325,7 +336,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 
 		// Sort Regions, prepare to set flash buffer
 		sort.Slice(f.Regions, func(i, j int) bool {
-			return f.Regions[i].FlashRegion().Base < f.Regions[j].FlashRegion().Base
+			ri := f.Regions[i].Value.(uefi.Region)
+			rj := f.Regions[j].Value.(uefi.Region)
+			return ri.FlashRegion().Base < rj.FlashRegion().Base
 		})
 
 		// Search for gaps
@@ -333,7 +346,8 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		offset := uint64(uefi.FlashDescriptorLength)
 		fBuf := make([]byte, 0, 0)
 		fBuf = append(fBuf, ifdbuf...)
-		for _, r := range f.Regions {
+		for _, t := range f.Regions {
+			r := t.Value.(uefi.Region)
 			nextBase := uint64(r.FlashRegion().BaseOffset())
 			if nextBase < offset {
 				// Something is wrong, overlapping regions

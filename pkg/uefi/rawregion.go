@@ -11,24 +11,24 @@ type RawRegion struct {
 	// Metadata for extraction and recovery
 	ExtractPath string
 	// This is a pointer to the FlashRegion struct laid out in the ifd.
-	flashRegion *FlashRegion
+	FRegion *FlashRegion
 	// Region Type as per the IFD
 	RegionType FlashRegionType
 }
 
 // SetFlashRegion sets the flash region.
 func (rr *RawRegion) SetFlashRegion(fr *FlashRegion) {
-	rr.flashRegion = fr
+	rr.FRegion = fr
 }
 
 // FlashRegion gets the flash region.
 func (rr *RawRegion) FlashRegion() (fr *FlashRegion) {
-	return rr.flashRegion
+	return rr.FRegion
 }
 
 // NewRawRegion creates a new region.
 func NewRawRegion(buf []byte, r *FlashRegion, rt FlashRegionType) (Region, error) {
-	rr := &RawRegion{flashRegion: r, RegionType: rt}
+	rr := &RawRegion{FRegion: r, RegionType: rt}
 	rr.buf = make([]byte, len(buf))
 	copy(rr.buf, buf)
 	return rr, nil
