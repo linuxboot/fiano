@@ -9,6 +9,7 @@ package visitors
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -76,8 +77,13 @@ func ExecuteCLI(f uefi.Firmware, v []uefi.Visitor) error {
 // name: help
 func ListCLI() string {
 	var s string
-	for n, i := range visitorRegistry {
-		s += fmt.Sprintf("%s: %s\n", n, i.help)
+	names := []string{}
+	for n := range visitorRegistry {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		s += fmt.Sprintf("%s: %s\n", n, visitorRegistry[n].help)
 	}
 	return s
 }
