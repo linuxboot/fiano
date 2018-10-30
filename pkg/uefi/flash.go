@@ -88,7 +88,7 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 	fd.DescriptorMapStart = uint(descriptorMapStart)
 
 	// Descriptor Map
-	desc, err := NewFlashDescriptorMap(fd.buf[fd.DescriptorMapStart : fd.DescriptorMapStart+FlashDescriptorMapSize])
+	desc, err := NewFlashDescriptorMap(fd.buf[fd.DescriptorMapStart:])
 	if err != nil {
 		return err
 	}
@@ -225,14 +225,20 @@ func (f *FlashImage) fillRegionGaps() error {
 // and an error if any. This only works with images that operate in Descriptor
 // mode.
 func NewFlashImage(buf []byte) (*FlashImage, error) {
-	if len(buf) < FlashDescriptorMapSize {
+	if len(buf) < FlashDescriptorLength {
 		return nil, fmt.Errorf("Flash Descriptor Map size too small: expected %v bytes, got %v",
-			FlashDescriptorMapSize,
+			FlashDescriptorLength,
 			len(buf),
 		)
 	}
-	f := FlashImage{buf: buf, FlashSize: uint64(len(buf))}
-	f.IFD.buf = buf[:FlashDescriptorLength]
+	f := FlashImage{FlashSize: uint64(len(buf))}
+
+	// Copy out buffers
+	f.buf = make([]byte, len(buf))
+	copy(f.buf, buf)
+	f.IFD.buf = make([]byte, FlashDescriptorLength)
+	copy(f.IFD.buf, buf[:FlashDescriptorLength])
+
 	if err := f.IFD.ParseFlashDescriptor(); err != nil {
 		return nil, err
 	}
