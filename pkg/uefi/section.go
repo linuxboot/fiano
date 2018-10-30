@@ -311,8 +311,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		return nil, fmt.Errorf("section size mismatch! Section has size %v, but buffer is %v bytes big",
 			s.Header.ExtendedSize, buflen)
 	}
-	// Slice buffer to the correct size.
-	s.buf = buf[:s.Header.ExtendedSize]
+	// Copy out the buffer.
+	newBuf := buf[:s.Header.ExtendedSize]
+	s.buf = make([]byte, s.Header.ExtendedSize)
+	copy(s.buf, newBuf)
 
 	// Section type specific data
 	switch s.Header.Type {
