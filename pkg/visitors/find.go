@@ -96,7 +96,7 @@ func FindFileGUIDPredicate(r guid.GUID) func(f uefi.Firmware) bool {
 
 // FindFilePredicate is a generic predicate for searching files and UI sections only.
 func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
-	searchRE, err := regexp.Compile(r)
+	searchRE, err := regexp.Compile("^" + r + "$")
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 
 // FindFileFVPredicate is a generic predicate for searching FVs, files and UI sections.
 func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
-	searchRE, err := regexp.Compile(r)
+	searchRE, err := regexp.Compile("^" + r + "$")
 	if err != nil {
 		return nil, err
 	}
