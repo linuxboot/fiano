@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	// FlashDescriptorMapSize is the size in bytes of the Intel flash descriptor
-	FlashDescriptorMapSize = 0x1000
 	// FlashDescriptorMapMaxBase is the maximum base address for a flash descriptor
 	// region
 	FlashDescriptorMapMaxBase = 0xe0
@@ -45,12 +43,6 @@ type FlashDescriptorMap struct {
 
 // NewFlashDescriptorMap initializes a FlashDescriptor from a slice of bytes.
 func NewFlashDescriptorMap(buf []byte) (*FlashDescriptorMap, error) {
-	if len(buf) < FlashDescriptorMapSize {
-		return nil, fmt.Errorf("Flash Descriptor Map size too small: expected %v bytes, got %v",
-			FlashDescriptorMapSize,
-			len(buf),
-		)
-	}
 	r := bytes.NewReader(buf)
 	var descriptor FlashDescriptorMap
 	if err := binary.Read(r, binary.LittleEndian, &descriptor); err != nil {

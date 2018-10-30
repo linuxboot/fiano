@@ -80,9 +80,14 @@ func (br *BIOSRegion) FlashRegion() (fr *FlashRegion) {
 // object, if a valid one is passed, or an error. It also points to the
 // Region struct uncovered in the ifd.
 func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error) {
-	br := BIOSRegion{buf: buf, flashRegion: r, Length: uint64(len(buf)),
+	br := BIOSRegion{flashRegion: r, Length: uint64(len(buf)),
 		RegionType: RegionTypeBIOS}
 	var absOffset uint64
+
+	// Copy the buffer
+	br.buf = make([]byte, len(buf))
+	copy(br.buf, buf)
+
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
 		if offset < 0 {

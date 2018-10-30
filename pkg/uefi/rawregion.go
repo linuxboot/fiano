@@ -28,7 +28,9 @@ func (rr *RawRegion) FlashRegion() (fr *FlashRegion) {
 
 // NewRawRegion creates a new region.
 func NewRawRegion(buf []byte, r *FlashRegion, rt FlashRegionType) (Region, error) {
-	rr := &RawRegion{buf: buf, flashRegion: r, RegionType: rt}
+	rr := &RawRegion{flashRegion: r, RegionType: rt}
+	rr.buf = make([]byte, len(buf))
+	copy(rr.buf, buf)
 	return rr, nil
 }
 

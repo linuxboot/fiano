@@ -406,8 +406,10 @@ func NewFile(buf []byte) (*File, error) {
 		return nil, fmt.Errorf("File size too big! File with GUID: %v has length %v, but is only %v bytes big",
 			f.Header.GUID, f.Header.ExtendedSize, buflen)
 	}
-	// Slice buffer to the correct size.
-	f.buf = buf[:f.Header.ExtendedSize]
+	// Copy out the buffer.
+	newBuf := buf[:f.Header.ExtendedSize]
+	f.buf = make([]byte, f.Header.ExtendedSize)
+	copy(f.buf, newBuf)
 
 	// Parse sections
 	if _, ok := SupportedFiles[f.Header.Type]; !ok {
