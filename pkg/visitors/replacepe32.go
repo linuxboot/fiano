@@ -5,6 +5,8 @@
 package visitors
 
 import (
+	"bytes"
+	"errors"
 	"io/ioutil"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -22,7 +24,12 @@ type ReplacePE32 struct {
 
 // Run wraps Visit and performs some setup and teardown tasks.
 func (v *ReplacePE32) Run(f uefi.Firmware) error {
-	// First run "find" to generate a list of matches to replace.
+	// Check that we're actually replacing with a PE32 image
+	if !bytes.HasPrefix(v.NewPE32, []byte("MZ")) {
+		return errors.New("supplied binary is not a valid pe32 image")
+	}
+
+	// Run "find" to generate a list of matches to replace.
 	find := Find{
 		Predicate: v.Predicate,
 	}
@@ -32,6 +39,13 @@ func (v *ReplacePE32) Run(f uefi.Firmware) error {
 
 	// Use this list of matches for replacing sections.
 	v.Matches = find.Matches
+	if len(find.Matches) == 0 {
+		return errors.New("no matches found for replacement")
+	}
+	if len(find.Matches) > 1 {
+		return errors.New("multiple matches found! There can be only one. Use find to list all matches")
+	}
+
 	for _, m := range v.Matches {
 		if err := m.Apply(v); err != nil {
 			return err
@@ -62,7 +76,7 @@ func (v *ReplacePE32) Visit(f uefi.Firmware) error {
 }
 
 func init() {
-	RegisterCLI("replace_pe32", "replace a pe32 given a GUID2 and new file", 2, func(args []string) (uefi.Visitor, error) {
+	RegisterCLI("replace_pe32", "replace a pe32 given a GUID and new file", 2, func(args []string) (uefi.Visitor, error) {
 		pred, err := FindFilePredicate(args[0])
 		if err != nil {
 			return nil, err
