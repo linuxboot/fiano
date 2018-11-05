@@ -2,12 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package lzma implements reading and writing of LZMA compressed files.
-//
-// This package is specifically designed for the LZMA format used popular UEFI
-// implementations. It requires the `lzma` and `unlzma` programs to be
-// installed and on the path.
-package lzma
+package compression
 
 import (
 	"bytes"
@@ -21,8 +16,16 @@ import (
 var lzmaDictCapExps = []uint{18, 20, 21, 22, 22, 23, 23, 24, 25, 26}
 var compressionLevel = 7
 
+// LZMA implements Compressor and uses a Go-based implementation.
+type LZMA struct{}
+
+// Name returns the type of compression employed.
+func (c *LZMA) Name() string {
+	return "LZMA"
+}
+
 // Decode decodes a byte slice of LZMA data.
-func Decode(encodedData []byte) ([]byte, error) {
+func (c *LZMA) Decode(encodedData []byte) ([]byte, error) {
 	r, err := lzma.NewReader(bytes.NewBuffer(encodedData))
 	if err != nil {
 		return nil, err
@@ -31,7 +34,7 @@ func Decode(encodedData []byte) ([]byte, error) {
 }
 
 // Encode encodes a byte slice with LZMA.
-func Encode(decodedData []byte) ([]byte, error) {
+func (c *LZMA) Encode(decodedData []byte) ([]byte, error) {
 	// These options are supported by the xz's LZMA command and EDK2's LZMA.
 	wc := lzma.WriterConfig{
 		SizeInHeader: true,

@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/linuxboot/fiano/pkg/lzma"
+	"github.com/linuxboot/fiano/pkg/compression"
 )
 
 var (
@@ -42,16 +42,18 @@ func main() {
 		log.Fatal("expected one input file")
 	}
 
+	var compressor compression.Compressor
+	if *f86 {
+		compressor = compression.CompressorFromGUID(&compression.LZMAX86GUID)
+	} else {
+		compressor = compression.CompressorFromGUID(&compression.LZMAGUID)
+	}
+
 	var op func([]byte) ([]byte, error)
-	switch {
-	case *d && !*f86:
-		op = lzma.Decode
-	case *d && *f86:
-		op = lzma.DecodeX86
-	case *e && !*f86:
-		op = lzma.Encode
-	case *e && *f86:
-		op = lzma.EncodeX86
+	if *d {
+		op = compressor.Decode
+	} else {
+		op = compressor.Encode
 	}
 
 	in, err := ioutil.ReadFile(flag.Args()[0])
