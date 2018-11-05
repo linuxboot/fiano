@@ -10,7 +10,7 @@ import (
 	"log"
 	"sort"
 
-	"github.com/linuxboot/fiano/pkg/lzma"
+	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -250,23 +250,15 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		case uefi.SectionTypeGUIDDefined:
 			ts := f.TypeSpecific.Header.(*uefi.SectionGUIDDefined)
 			if ts.Attributes&uint16(uefi.GUIDEDSectionProcessingRequired) != 0 {
-				var fBuf []byte
-				switch ts.GUID {
-				case uefi.LZMAGUID:
-					fBuf, err = lzma.Encode(secData)
-					f.SetBuf(fBuf)
-					if err != nil {
-						return err
-					}
-				case uefi.LZMAX86GUID:
-					fBuf, err = lzma.EncodeX86(secData)
-					if err != nil {
-						return err
-					}
-				default:
+				compressor := compression.CompressorFromGUID(&ts.GUID)
+				if compressor == nil {
 					return fmt.Errorf("unknown guid defined from section %v, should not have encapsulated sections", f)
 				}
-				f.SetBuf(fBuf)
+				if fBuf, err := compressor.Encode(secData); err == nil {
+					f.SetBuf(fBuf)
+				} else {
+					return err
+				}
 			}
 		default:
 			f.SetBuf(secData)

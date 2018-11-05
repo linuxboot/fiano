@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package lzma
+package compression
 
 import (
 	"io/ioutil"
@@ -14,22 +14,31 @@ var tests = []struct {
 	name            string
 	encodedFilename string
 	decodedFilename string
-	encode          func([]byte) ([]byte, error)
-	decode          func([]byte) ([]byte, error)
+	compressor      Compressor
 }{
 	{
-		name:            "random data",
+		name:            "random data LZMA",
 		encodedFilename: "testdata/random.bin.lzma",
 		decodedFilename: "testdata/random.bin",
-		encode:          Encode,
-		decode:          Decode,
+		compressor:      &LZMA{},
 	},
 	{
-		name:            "random data x86",
+		name:            "random data SystemLZMA",
+		encodedFilename: "testdata/random.bin.lzma",
+		decodedFilename: "testdata/random.bin",
+		compressor:      &SystemLZMA{"xz"},
+	},
+	{
+		name:            "random data LZMAX86",
 		encodedFilename: "testdata/random.bin.lzma86",
 		decodedFilename: "testdata/random.bin",
-		encode:          EncodeX86,
-		decode:          DecodeX86,
+		compressor:      &LZMAX86{&LZMA{}},
+	},
+	{
+		name:            "random data SystemLZMAX86",
+		encodedFilename: "testdata/random.bin.lzma86",
+		decodedFilename: "testdata/random.bin",
+		compressor:      &LZMAX86{&SystemLZMA{"xz"}},
 	},
 }
 
@@ -43,11 +52,11 @@ func TestEncodeDecode(t *testing.T) {
 			}
 
 			// Encoded and decode
-			encoded, err := tt.encode(want)
+			encoded, err := tt.compressor.Encode(want)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := tt.decode(encoded)
+			got, err := tt.compressor.Decode(encoded)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -72,7 +81,7 @@ func TestDecode(t *testing.T) {
 			}
 
 			// Decode
-			got, err := tt.decode(encoded)
+			got, err := tt.compressor.Decode(encoded)
 			if err != nil {
 				t.Fatal(err)
 			}

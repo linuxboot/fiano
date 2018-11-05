@@ -13,8 +13,8 @@ import (
 	"log"
 	"unsafe"
 
+	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/guid"
-	"github.com/linuxboot/fiano/pkg/lzma"
 	"github.com/linuxboot/fiano/pkg/unicode"
 )
 
@@ -81,12 +81,6 @@ type GUIDEDSectionAttribute uint16
 const (
 	GUIDEDSectionProcessingRequired GUIDEDSectionAttribute = 0x01
 	GUIDEDSectionAuthStatusValid    GUIDEDSectionAttribute = 0x02
-)
-
-// Well-known GUIDs.
-var (
-	LZMAGUID    = *guid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
-	LZMAX86GUID = *guid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
 )
 
 // SectionHeader represents an EFI_COMMON_SECTION_HEADER as specified in
@@ -328,21 +322,17 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		// Determine how to interpret the section based on the GUID.
 		var encapBuf []byte
 		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
-			var err error
-			switch typeSpec.GUID {
-			case LZMAGUID:
-				typeSpec.Compression = "LZMA"
-				encapBuf, err = lzma.Decode(buf[typeSpec.DataOffset:])
-			case LZMAX86GUID:
-				typeSpec.Compression = "LZMAX86"
-				encapBuf, err = lzma.DecodeX86(buf[typeSpec.DataOffset:])
-			default:
+			if compressor := compression.CompressorFromGUID(&typeSpec.GUID); compressor != nil {
+				typeSpec.Compression = compressor.Name()
+				var err error
+				encapBuf, err = compressor.Decode(buf[typeSpec.DataOffset:])
+				if err != nil {
+					log.Print(err)
+					typeSpec.Compression = "UNKNOWN"
+					encapBuf = []byte{}
+				}
+			} else {
 				typeSpec.Compression = "UNKNOWN"
-			}
-			if err != nil {
-				log.Print(err)
-				typeSpec.Compression = "UNKNOWN"
-				encapBuf = []byte{}
 			}
 		}
 
