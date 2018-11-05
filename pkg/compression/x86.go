@@ -2,11 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package lzma
+package compression
 
-// DecodeX86 decodes LZMA data with the x86 extension.
-func DecodeX86(encodedData []byte) ([]byte, error) {
-	decodedData, err := Decode(encodedData)
+// LZMAX86 implements Compressor and includes the X86 filter which is popular
+// in some UEFI implementations.
+type LZMAX86 struct {
+	// The X86 filter is layered on top of an existing LZMA implementation.
+	lzma Compressor
+}
+
+// Name returns the type of compression employed.
+func (c *LZMAX86) Name() string {
+	return "LZMAX86"
+}
+
+// Decode decodes LZMA data with the x86 extension.
+func (c *LZMAX86) Decode(encodedData []byte) ([]byte, error) {
+	decodedData, err := c.lzma.Decode(encodedData)
 	if err != nil {
 		return nil, err
 	}
@@ -15,15 +27,15 @@ func DecodeX86(encodedData []byte) ([]byte, error) {
 	return decodedData, nil
 }
 
-// EncodeX86 encodes LZMA data with the x86 extension.
-func EncodeX86(decodedData []byte) ([]byte, error) {
+// Encode encodes LZMA data with the x86 extension.
+func (c *LZMAX86) Encode(decodedData []byte) ([]byte, error) {
 	// x86Convert modifies the input, so a copy is recommened.
 	decodedDataCpy := make([]byte, len(decodedData))
 	copy(decodedDataCpy, decodedData)
 
 	var x86State uint32
 	x86Convert(decodedDataCpy, uint(len(decodedDataCpy)), 0, &x86State, true)
-	return Encode(decodedDataCpy)
+	return c.lzma.Encode(decodedDataCpy)
 }
 
 // Adapted from: https://github.com/tianocore/edk2/blob/00f5e11913a8706a1733da2b591502d59f848a99/BaseTools/Source/C/LzmaCompress/Sdk/C/Bra86.c
