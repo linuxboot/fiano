@@ -5,6 +5,7 @@
 package visitors
 
 import (
+	"bytes"
 	"io/ioutil"
 	"testing"
 
@@ -35,4 +36,16 @@ func find(t *testing.T, f uefi.Firmware, guid *guid.GUID) []uefi.Firmware {
 		t.Fatal(err)
 	}
 	return find.Matches
+}
+
+func comment(t *testing.T, f uefi.Firmware) []uefi.Firmware {
+	var b bytes.Buffer
+	c := &Comment{W: &b, s: "hi"}
+	if err := c.Run(f); err != nil {
+		t.Fatal(err)
+	}
+	if b.String() != "hi\n" {
+		t.Fatalf("Comment: go %q, wanted 'hi'", b.String())
+	}
+	return nil
 }
