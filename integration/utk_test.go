@@ -5,13 +5,17 @@
 package utk_test
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/utk"
+	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
 // Returns all the ROM names (files which end in .rom) inside the roms folder.
@@ -97,6 +101,59 @@ func TestExtractAssembleExtract(t *testing.T) {
 			cmd.Stdout = os.Stdout
 			if err := cmd.Run(); err != nil {
 				t.Error("directories did not recursively compare equal")
+			}
+		})
+	}
+}
+
+// TestRegressionJson tests for regression in the JSON. After making a change
+// which affects the tree, you must commit changes to the golden JSON files
+// with:
+//
+//     utk integration/roms/OVMF.rom json > integration/roms/OVMF.json
+//
+// Otherwise, this test will fail. This gives you a chance to review how your
+// code affects the tree and identify any mistakes.
+func TestRegressionJson(t *testing.T) {
+	// Create a temporary directory.
+	tmpDir := createTempDir(t)
+	defer os.RemoveAll(tmpDir)
+
+	for _, tt := range romList(t) {
+		t.Run(tt, func(t *testing.T) {
+			goldenJSONFile := strings.TrimSuffix(tt, ".rom") + ".json"
+			newJSONFile := filepath.Join(tmpDir, filepath.Base(goldenJSONFile))
+			if _, err := os.Stat(goldenJSONFile); os.IsNotExist(err) {
+				t.Skip("skipping test because no golden JSON file exists")
+			}
+
+			// Read and parse the image.
+			image, err := ioutil.ReadFile(tt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			parsedRoot, err := uefi.Parse(image)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			buf := &bytes.Buffer{}
+			json := &visitors.JSON{buf}
+			if err := json.Run(parsedRoot); err != nil {
+				t.Fatal(err)
+			}
+			if buf.String() == "" || buf.String() == "null" {
+				t.Fatal("no json")
+			}
+			if err := ioutil.WriteFile(newJSONFile, buf.Bytes(), 0666); err != nil {
+				t.Fatal(err)
+			}
+
+			// Print diff.
+			cmd := exec.Command("diff", goldenJSONFile, newJSONFile)
+			cmd.Stdout = os.Stdout
+			if err := cmd.Run(); err != nil {
+				t.Error("json files did not compare equal")
 			}
 		})
 	}
