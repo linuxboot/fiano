@@ -16,6 +16,8 @@ type Remove struct {
 
 	// Output
 	Matches []uefi.Firmware
+	// Calling this function undoes the removals performed by this visitor.
+	Undo func()
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -40,6 +42,8 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 		for i := 0; i < len(f.Files); i++ {
 			for _, m := range v.Matches {
 				if f.Files[i] == m {
+					originalList := append([]*uefi.File{}, f.Files...)
+
 					m := m.(*uefi.File)
 					if v.Pad || m.Header.Type == uefi.FVFileTypePEIM {
 						// Create a new pad file of the exact same size
@@ -50,6 +54,15 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 						f.Files[i] = pf
 					} else {
 						f.Files = append(f.Files[:i], f.Files[i+1:]...)
+					}
+
+					// Creates a stack of undoes in case there are multiple FVs.
+					prev := v.Undo
+					v.Undo = func() {
+						f.Files = originalList
+						if prev != nil {
+							prev()
+						}
 					}
 				}
 			}

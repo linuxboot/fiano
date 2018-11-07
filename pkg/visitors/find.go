@@ -94,6 +94,16 @@ func FindFileGUIDPredicate(r guid.GUID) func(f uefi.Firmware) bool {
 	}
 }
 
+// FindFileTypePredicate is a generic predicate for searching file types only.
+func FindFileTypePredicate(t uefi.FVFileType) func(f uefi.Firmware) bool {
+	return func(f uefi.Firmware) bool {
+		if f, ok := f.(*uefi.File); ok {
+			return f.Header.Type == t
+		}
+		return false
+	}
+}
+
 // FindFilePredicate is a generic predicate for searching files and UI sections only.
 func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 	searchRE, err := regexp.Compile("^" + r + "$")

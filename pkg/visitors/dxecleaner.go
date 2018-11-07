@@ -1,0 +1,162 @@
+// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package visitors
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"syscall"
+
+	"github.com/linuxboot/fiano/pkg/guid"
+	"github.com/linuxboot/fiano/pkg/uefi"
+)
+
+// DXECleaner removes DXEs sequentially in multiple rounds. Each round, an
+// attempt is made to remove each DXE. The Test function determines if the
+// removal was successful. Additional rounds are performed until all DXEs are
+// removed.
+type DXECleaner struct {
+	// This function tests whether the firmware boots. The return values can be:
+	//
+	//     - (false, nil): The firmware was tested and failed to boot.
+	//     - (false, err): The firmware was tested and failed to boot due to err.
+	//     - (true, nil):  The firmware was tested and booted.
+	//     - (true, err):  Failed to test the firmware due to err.
+	Test func(f uefi.Firmware) (bool, error)
+
+	// List of GUIDs which were removed.
+	Removals []guid.GUID
+
+	// Logs are written to this writer.
+	W io.Writer
+}
+
+// Run wraps Visit and performs some setup and teardown tasks.
+func (v *DXECleaner) Run(f uefi.Firmware) error {
+	var printf = func(format string, a ...interface{}) {
+		if v.W != nil {
+			fmt.Fprintf(v.W, format, a...)
+		}
+	}
+
+	// Find list of DXEs.
+	find := (&Find{
+		Predicate: FindFileTypePredicate(uefi.FVFileTypeDriver),
+	})
+	if err := find.Run(f); err != nil {
+		return err
+	}
+	var dxes []guid.GUID
+	for i := range find.Matches {
+		dxes = append(dxes, find.Matches[i].(*uefi.File).Header.GUID)
+	}
+	if len(dxes) == 0 {
+		return errors.New("found no DXEs in firmware image")
+	}
+
+	// Print list of removals in a format which can be passed back into UTK.
+	defer func() {
+		printf("Summary of removed DXEs:\n")
+		if len(v.Removals) == 0 {
+			printf("  Could not remove any DXEs\n")
+		} else {
+			for _, r := range v.Removals {
+				printf("  remove %s \\\n", r)
+			}
+		}
+	}()
+
+	// Main algorithm to remove DXEs.
+	moreRoundsNeeded := true
+	for i := 0; moreRoundsNeeded; i++ {
+		printf("Beginning of round %d\n", i+1)
+		moreRoundsNeeded = false
+		for i := 0; i < len(dxes); i++ {
+			// Remove the DXE from the image.
+			printf("Trying to remove %v\n", dxes[i])
+			remove := &Remove{Predicate: FindFileGUIDPredicate(dxes[i])}
+			if err := remove.Run(f); err != nil {
+				return err
+			}
+
+			if removedSuccessfully, err := v.Test(f); err == context.Canceled {
+				printf("Canceled by user!\n")
+				return nil
+			} else if removedSuccessfully && err != nil {
+				return err
+			} else if removedSuccessfully {
+				printf("  Success!\n")
+				v.Removals = append(v.Removals, dxes[i])
+				dxes = append(dxes[:i], dxes[i+1:]...)
+				i--
+				moreRoundsNeeded = true
+			} else {
+				printf("  Failed!\n")
+				remove.Undo()
+			}
+		}
+	}
+	return nil
+}
+
+// Visit applies the DXEClearn visitor to any Firmware type.
+func (v *DXECleaner) Visit(f uefi.Firmware) error {
+	return nil
+}
+
+func init() {
+	RegisterCLI("dxecleaner", "automates removal of UEFI drivers", 1, func(args []string) (uefi.Visitor, error) {
+		// When the user enters CTRL-C, the DXECleaner should stop, but
+		// also output the current progress.
+		ctx, cancel := context.WithCancel(context.Background())
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			<-c
+			cancel()
+		}()
+
+		return &DXECleaner{
+			Test: func(f uefi.Firmware) (bool, error) {
+				tmpDir, err := ioutil.TempDir("", "dxecleaner")
+				if err != nil {
+					return true, err
+				}
+				defer os.RemoveAll(tmpDir)
+				tmpFile := filepath.Join(tmpDir, "bios.bin")
+
+				if err := (&Save{tmpFile}).Run(f); err != nil {
+					return true, err
+				}
+				if err := exec.CommandContext(ctx, args[0], tmpFile).Run(); err != nil {
+					if _, ok := err.(*exec.ExitError); !ok {
+						return true, err
+					}
+					status, ok := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
+					if !ok {
+						return true, err
+					}
+					switch status.ExitStatus() {
+					case 1:
+						return true, err
+					case 2:
+						return false, err
+					default:
+						return true, fmt.Errorf("unexpected exit status %d", status.ExitStatus())
+					}
+				}
+				return true, nil
+			},
+			W: os.Stdout,
+		}, nil
+	})
+}
