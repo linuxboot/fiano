@@ -38,8 +38,9 @@ func TestDXECleaner(t *testing.T) {
 	// Parse image and run the visitor.
 	f := parseImage(t)
 	dxeCleaner := DXECleaner{
-		Test: testDXEDependencies,
-		W:    os.Stdout,
+		Test:      testDXEDependencies,
+		Predicate: FindFileTypePredicate(uefi.FVFileTypeDriver),
+		W:         os.Stdout,
 	}
 	if err := dxeCleaner.Run(f); err != nil {
 		t.Fatal(err)
