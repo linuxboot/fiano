@@ -58,3 +58,24 @@ func TestDXECleaner(t *testing.T) {
 		}
 	}
 }
+
+func TestParseBlackList(t *testing.T) {
+	tests := []struct {
+		name, input, output string
+	}{
+		{"empty_file", "", ""},
+		{"regex_and_comments", "a.*c \nde\n # comment\nf\n", "(a.*c)|(de)|(f)"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			re, err := parseBlackList(tt.name, tt.input)
+			if err != nil {
+				t.Error(err)
+			}
+			if re != tt.output {
+				t.Errorf("parseBlackList() = %q; want %q", re, tt.output)
+			}
+		})
+	}
+}
