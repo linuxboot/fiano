@@ -227,6 +227,44 @@ func (s *Section) ApplyChildren(v Visitor) error {
 	return nil
 }
 
+// CreateSection creates a new section from minimal components.
+// The guid is only used in the case of a GUID Defined section type.
+func CreateSection(t SectionType, buf []byte, encap []Firmware, g *guid.GUID) (*Section, error) {
+	s := &Section{}
+
+	s.Header.Type = t
+	// Map type to string.
+	s.Type = s.Header.Type.String()
+
+	s.buf = append([]byte{}, buf...) // Copy out buffer.
+
+	for _, e := range encap {
+		s.Encapsulated = append(s.Encapsulated, MakeTyped(e))
+	}
+
+	// Create type section header
+	switch s.Header.Type {
+	case SectionTypeGUIDDefined:
+		if g == nil {
+			return nil, errors.New("guid was nil, can't make guid defined section")
+		}
+		guidDefHeader := &SectionGUIDDefined{}
+		guidDefHeader.GUID = *g
+		switch *g {
+		case compression.LZMAGUID:
+			guidDefHeader.Compression = "LZMA"
+		case compression.LZMAX86GUID:
+			guidDefHeader.Compression = "LZMAX86"
+		default:
+			guidDefHeader.Compression = "UNKNOWN"
+		}
+		guidDefHeader.Attributes = uint16(GUIDEDSectionProcessingRequired)
+		s.TypeSpecific = &TypeSpecificHeader{SectionTypeGUIDDefined, guidDefHeader}
+	}
+
+	return s, nil
+}
+
 // GenSecHeader generates a full binary header for the section data.
 // It assumes that the passed in section struct already contains section data in the buffer,
 // the section type in the Type field, and the type specific header in the TypeSpecific field.
