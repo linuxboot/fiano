@@ -14,6 +14,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"syscall"
 
 	"github.com/linuxboot/fiano/pkg/guid"
@@ -33,6 +35,9 @@ type DXECleaner struct {
 	//     - (true, err):  Failed to test the firmware due to err.
 	Test func(f uefi.Firmware) (bool, error)
 
+	// Predicate to determine whether a DXE can be removed.
+	Predicate FindPredicate
+
 	// List of GUIDs which were removed.
 	Removals []guid.GUID
 
@@ -49,9 +54,7 @@ func (v *DXECleaner) Run(f uefi.Firmware) error {
 	}
 
 	// Find list of DXEs.
-	find := (&Find{
-		Predicate: FindFileTypePredicate(uefi.FVFileTypeDriver),
-	})
+	find := (&Find{Predicate: v.Predicate})
 	if err := find.Run(f); err != nil {
 		return err
 	}
@@ -113,8 +116,30 @@ func (v *DXECleaner) Visit(f uefi.Firmware) error {
 	return nil
 }
 
+// readBlackList returns a predicate to filter DXEs according to the black list
+// file. Each line in the black list is the GUID or name of a firmware file.
+// Empty lines and lines beginning with '#' are ignored.
+func parseBlackList(fileName, fileContents string) (FindPredicate, error) {
+	blackList := ""
+	for _, line := range strings.Split(fileContents, "\n\r") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		_, err := regexp.Compile(line)
+		if err != nil {
+			return nil, fmt.Errorf("cannot compile regex %q from blacklist file %q: %v", line, fileName, err)
+		}
+		blackList += "|(" + line + ")"
+	}
+	if blackList != "" {
+		blackList = blackList[1:]
+	}
+	return FindFilePredicate(blackList)
+}
+
 func init() {
-	RegisterCLI("dxecleaner", "automates removal of UEFI drivers", 1, func(args []string) (uefi.Visitor, error) {
+	register := func(args []string) (uefi.Visitor, error) {
 		// When the user enters CTRL-C, the DXECleaner should stop, but
 		// also output the current progress.
 		ctx, cancel := context.WithCancel(context.Background())
@@ -124,6 +149,23 @@ func init() {
 			<-c
 			cancel()
 		}()
+
+		predicate := FindFileTypePredicate(uefi.FVFileTypeDriver)
+
+		// Create blacklist for DXEs which can be skipped.
+		useBlackList := len(args) == 2
+		if useBlackList {
+			fileName := args[1]
+			fileContents, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				return nil, fmt.Errorf("cannot read blacklist file %q: %v", fileName, err)
+			}
+			blackListPredicate, err := parseBlackList(fileName, string(fileContents))
+			if err != nil {
+				return nil, err
+			}
+			predicate = FindAndPredicate(predicate, FindNotPredicate(blackListPredicate))
+		}
 
 		return &DXECleaner{
 			Test: func(f uefi.Firmware) (bool, error) {
@@ -137,7 +179,9 @@ func init() {
 				if err := (&Save{tmpFile}).Run(f); err != nil {
 					return true, err
 				}
-				if err := exec.CommandContext(ctx, args[0], tmpFile).Run(); err != nil {
+				cmd := exec.CommandContext(ctx, args[0], tmpFile)
+				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+				if err := cmd.Run(); err != nil {
 					if _, ok := err.(*exec.ExitError); !ok {
 						return true, err
 					}
@@ -156,7 +200,11 @@ func init() {
 				}
 				return true, nil
 			},
-			W: os.Stdout,
+			Predicate: predicate,
+			W:         os.Stdout,
 		}, nil
-	})
+	}
+
+	RegisterCLI("dxecleaner", "automates removal of UEFI drivers", 1, register)
+	RegisterCLI("dxecleaner_blacklist", "automates removal of UEFI drivers with a blacklist file", 2, register)
 }

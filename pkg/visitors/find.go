@@ -16,12 +16,15 @@ import (
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
+// FindPredicate is used to filter matches in the Find visitor.
+type FindPredicate = func(f uefi.Firmware) bool
+
 // Find a firmware file given its name or GUID.
 type Find struct {
 	// Input
 	// Only when this functions returns true will the file appear in the
 	// `Matches` slice.
-	Predicate func(f uefi.Firmware) bool
+	Predicate FindPredicate
 
 	// Output
 	Matches []uefi.Firmware
@@ -85,7 +88,7 @@ func (v *Find) Visit(f uefi.Firmware) error {
 }
 
 // FindFileGUIDPredicate is a generic predicate for searching file GUIDs only.
-func FindFileGUIDPredicate(r guid.GUID) func(f uefi.Firmware) bool {
+func FindFileGUIDPredicate(r guid.GUID) FindPredicate {
 	return func(f uefi.Firmware) bool {
 		if f, ok := f.(*uefi.File); ok {
 			return f.Header.GUID == r
@@ -95,7 +98,7 @@ func FindFileGUIDPredicate(r guid.GUID) func(f uefi.Firmware) bool {
 }
 
 // FindFileTypePredicate is a generic predicate for searching file types only.
-func FindFileTypePredicate(t uefi.FVFileType) func(f uefi.Firmware) bool {
+func FindFileTypePredicate(t uefi.FVFileType) FindPredicate {
 	return func(f uefi.Firmware) bool {
 		if f, ok := f.(*uefi.File); ok {
 			return f.Header.Type == t
@@ -138,6 +141,20 @@ func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
 		}
 		return false
 	}, nil
+}
+
+// FindNotPredicate is a generic predicate which takes the logical NOT of an existing predicate.
+func FindNotPredicate(predicate FindPredicate) FindPredicate {
+	return func(f uefi.Firmware) bool {
+		return !predicate(f)
+	}
+}
+
+// FindAndPredicate is a generic predicate which takes the logical OR of two existing predicates.
+func FindAndPredicate(predicate1 FindPredicate, predicate2 FindPredicate) FindPredicate {
+	return func(f uefi.Firmware) bool {
+		return predicate1(f) && predicate2(f)
+	}
 }
 
 func init() {
