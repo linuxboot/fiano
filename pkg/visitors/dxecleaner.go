@@ -116,26 +116,26 @@ func (v *DXECleaner) Visit(f uefi.Firmware) error {
 	return nil
 }
 
-// readBlackList returns a predicate to filter DXEs according to the black list
+// readBlackList returns a regex to filter DXEs according to the black list
 // file. Each line in the black list is the GUID or name of a firmware file.
 // Empty lines and lines beginning with '#' are ignored.
-func parseBlackList(fileName, fileContents string) (FindPredicate, error) {
+func parseBlackList(fileName, fileContents string) (string, error) {
 	blackList := ""
-	for _, line := range strings.Split(fileContents, "\n\r") {
+	for _, line := range strings.Split(fileContents, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		_, err := regexp.Compile(line)
 		if err != nil {
-			return nil, fmt.Errorf("cannot compile regex %q from blacklist file %q: %v", line, fileName, err)
+			return "", fmt.Errorf("cannot compile regex %q from blacklist file %q: %v", line, fileName, err)
 		}
 		blackList += "|(" + line + ")"
 	}
 	if blackList != "" {
 		blackList = blackList[1:]
 	}
-	return FindFilePredicate(blackList)
+	return blackList, nil
 }
 
 func init() {
@@ -160,11 +160,17 @@ func init() {
 			if err != nil {
 				return nil, fmt.Errorf("cannot read blacklist file %q: %v", fileName, err)
 			}
-			blackListPredicate, err := parseBlackList(fileName, string(fileContents))
+			blackListRegex, err := parseBlackList(fileName, string(fileContents))
 			if err != nil {
 				return nil, err
 			}
-			predicate = FindAndPredicate(predicate, FindNotPredicate(blackListPredicate))
+			if blackListRegex != "" {
+				blackListPredicate, err := FindFilePredicate(blackListRegex)
+				if err != nil {
+					return nil, err
+				}
+				predicate = FindAndPredicate(predicate, FindNotPredicate(blackListPredicate))
+			}
 		}
 
 		return &DXECleaner{
