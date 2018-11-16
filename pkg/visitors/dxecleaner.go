@@ -92,18 +92,18 @@ func (v *DXECleaner) Run(f uefi.Firmware) error {
 			}
 
 			if removedSuccessfully, err := v.Test(f); err == context.Canceled {
-				printf("Canceled by user!\n")
+				printf("Canceled by user %v!\n", dxes[i])
 				return nil
 			} else if removedSuccessfully && err != nil {
 				return err
 			} else if removedSuccessfully {
-				printf("  Success!\n")
+				printf("  Success %v!\n", dxes[i])
 				v.Removals = append(v.Removals, dxes[i])
 				dxes = append(dxes[:i], dxes[i+1:]...)
 				i--
 				moreRoundsNeeded = true
 			} else {
-				printf("  Failed!\n")
+				printf("  Failed %v!\n", dxes[i])
 				remove.Undo()
 			}
 		}
