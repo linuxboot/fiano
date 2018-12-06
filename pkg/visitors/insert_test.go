@@ -24,8 +24,14 @@ func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUI
 		t.Fatal(err)
 	}
 	// Apply the visitor.
+	var pred FindPredicate
+	if insertType == InsertDXE {
+		pred = FindFileTypePredicate(uefi.FVFileTypeDXECore)
+	} else {
+		pred = FindFileGUIDPredicate(testGUID)
+	}
 	insert := &Insert{
-		Predicate:  FindFileGUIDPredicate(testGUID),
+		Predicate:  pred,
 		NewFile:    ffs,
 		InsertType: insertType,
 	}
@@ -42,6 +48,7 @@ func TestInsert(t *testing.T) {
 		{InsertEnd.String(), InsertEnd},
 		{InsertAfter.String(), InsertAfter},
 		{InsertBefore.String(), InsertBefore},
+		{InsertDXE.String(), InsertDXE},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

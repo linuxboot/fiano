@@ -32,6 +32,8 @@ const (
 	InsertAfter
 	// InsertBefore inserts before the specified file.
 	InsertBefore
+	// InsertDXE inserts into the Dxe Firmware Volume.
+	InsertDXE
 	// TODO: Add InsertIn
 )
 
@@ -40,6 +42,7 @@ var insertTypeNames = map[InsertType]string{
 	InsertEnd:    "insert_end",
 	InsertAfter:  "insert_after",
 	InsertBefore: "insert_before",
+	InsertDXE:    "insert_dxe",
 }
 
 // String creates a string representation for the insert type.
@@ -108,6 +111,8 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 				switch v.InsertType {
 				case InsertFront:
 					f.Files = append([]*uefi.File{v.NewFile}, f.Files...)
+				case InsertDXE:
+					fallthrough
 				case InsertEnd:
 					f.Files = append(f.Files, v.NewFile)
 				case InsertAfter:
@@ -125,12 +130,21 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 
 func genInsertCLI(iType InsertType) func(args []string) (uefi.Visitor, error) {
 	return func(args []string) (uefi.Visitor, error) {
-		pred, err := FindFileFVPredicate(args[0])
-		if err != nil {
-			return nil, err
+		var pred FindPredicate
+		var err error
+		var filename string
+
+		if iType == InsertDXE {
+			pred = FindFileTypePredicate(uefi.FVFileTypeDXECore)
+			filename = args[0]
+		} else {
+			pred, err = FindFileFVPredicate(args[0])
+			if err != nil {
+				return nil, err
+			}
+			filename = args[1]
 		}
 
-		filename := args[1]
 		newFileBuf, err := ioutil.ReadFile(filename)
 		if err != nil {
 			return nil, err
@@ -155,6 +169,8 @@ func init() {
 		"insert a file at the beginning of a firmware volume", 2, genInsertCLI(InsertFront))
 	RegisterCLI(insertTypeNames[InsertEnd],
 		"insert a file at the end of a firmware volume", 2, genInsertCLI(InsertEnd))
+	RegisterCLI(insertTypeNames[InsertDXE],
+		"insert a file at the end of the DXE firmware volume", 1, genInsertCLI(InsertDXE))
 	RegisterCLI(insertTypeNames[InsertAfter],
 		"insert a file after another file", 2, genInsertCLI(InsertAfter))
 	RegisterCLI(insertTypeNames[InsertBefore],
