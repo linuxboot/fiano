@@ -60,9 +60,7 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 					prev := v.Undo
 					v.Undo = func() {
 						f.Files = originalList
-						if prev != nil {
-							prev()
-						}
+						v.Undo = prev
 					}
 				}
 			}
