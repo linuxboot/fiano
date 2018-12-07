@@ -121,16 +121,19 @@ func (v *DXECleaner) Visit(f uefi.Firmware) error {
 // Empty lines and lines beginning with '#' are ignored.
 func parseBlackList(fileName, fileContents string) (string, error) {
 	blackList := ""
-	for _, line := range strings.Split(fileContents, "\n") {
+	for i, line := range strings.Split(fileContents, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		_, err := regexp.Compile(line)
+		// skip multiple words, We need this for linuxboot file parsing
+		fw := strings.Split(line, " ")[0]
+		_, err := regexp.Compile(fw)
 		if err != nil {
-			return "", fmt.Errorf("cannot compile regex %q from blacklist file %q: %v", line, fileName, err)
+			return "", fmt.Errorf("cannot compile regex %q from blacklist file %q on line %v: %v",
+				fw, fileName, i, err)
 		}
-		blackList += "|(" + line + ")"
+		blackList += "|(" + fw + ")"
 	}
 	if blackList != "" {
 		blackList = blackList[1:]
