@@ -6,6 +6,7 @@ package visitors
 
 import (
 	"github.com/linuxboot/fiano/pkg/uefi"
+	"log"
 )
 
 // Remove all firmware files with the given GUID.
@@ -55,11 +56,13 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 					} else {
 						f.Files = append(f.Files[:i], f.Files[i+1:]...)
 					}
+					log.Printf("Remove: %d files now", len(f.Files))
 
 					// Creates a stack of undoes in case there are multiple FVs.
 					prev := v.Undo
 					v.Undo = func() {
 						f.Files = originalList
+						log.Printf("Undo: %d files now", len(f.Files))
 						v.Undo = prev
 					}
 				}

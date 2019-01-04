@@ -2,18 +2,19 @@
 
 
 [[projects]]
-  digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
+  digest = "1:21274448d9cdf3e24f6ae5b43bd38a632f48fede5cd23299dae6eae816b3220b"
   name = "github.com/u-root/u-root"
   packages = [
+    "pkg/forth",
     "pkg/golang",
     "pkg/testutil",
   ]
   pruneopts = "UT"
-  revision = "70e4254bbc315a0c6bf758f1737ca6998435d3a2"
-  version = "v2.0.0"
+  revision = "240c641ceb065925ebecd1a406f64161f71afaa9"
+  version = "v3.0.0"
 
 [[projects]]
-  digest = "1:ba8028944baec941af3e7e7d9a51b3161a7168a042188b058da662bfc33fd1aa"
+  digest = "1:74424672efb1cc0a95c80db0787e1a791ff562fa990facbd1530296f4f9ca7a7"
   name = "github.com/ulikunitz/xz"
   packages = [
     "internal/hash",
@@ -21,8 +22,8 @@
     "lzma",
   ]
   pruneopts = "UT"
-  revision = "0c6b41e72360850ca4f98dc341fd999726ea007f"
-  version = "v0.5.4"
+  revision = "590df8077fbcb06ad62d7714da06c00e5dd2316d"
+  version = "v0.5.5"
 
 [[projects]]
   digest = "1:fb8be2f4db4c5f3fa4b93ec808502d5933c7cf8d8fa285b32ba8c0102c309850"
@@ -46,6 +47,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/u-root/u-root/pkg/forth",
     "github.com/u-root/u-root/pkg/testutil",
     "github.com/ulikunitz/xz/lzma",
     "golang.org/x/text/encoding/unicode",
