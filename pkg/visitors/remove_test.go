@@ -81,3 +81,34 @@ func TestRemovePad(t *testing.T) {
 			padCount+1, newPadCount)
 	}
 }
+
+func TestRemoveExcept(t *testing.T) {
+	f := parseImage(t)
+
+	pred, err := FindFilePredicate(dxeCoreGUID.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	remove := &Remove{
+		Predicate:  pred,
+		RemoveDxes: true,
+	}
+	if err := remove.Run(f); err != nil {
+		t.Fatal(err)
+	}
+
+	// We expect no more dxe drivers since we only kept the core.
+	count := &Count{}
+	if err := count.Run(f); err != nil {
+		t.Fatal(err)
+	}
+	dxeCount := count.FileTypeCount["EFI_FV_FILETYPE_DRIVER"]
+	coreCount := count.FileTypeCount["EFI_FV_FILETYPE_DXE_CORE"]
+	if dxeCount != 0 {
+		t.Errorf("expected no more drivers, got %v", dxeCount)
+	}
+	if coreCount != 1 {
+		t.Errorf("expected one dxecore remaining, got %v", coreCount)
+	}
+
+}

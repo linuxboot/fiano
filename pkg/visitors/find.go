@@ -113,10 +113,14 @@ func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 	if err != nil {
 		return nil, err
 	}
+	ciRE, err := regexp.Compile("^(?i)" + r + "$")
+	if err != nil {
+		return nil, err
+	}
 	return func(f uefi.Firmware) bool {
 		switch f := f.(type) {
 		case *uefi.File:
-			return searchRE.MatchString(f.Header.GUID.String())
+			return ciRE.MatchString(f.Header.GUID.String())
 		case *uefi.Section:
 			return searchRE.MatchString(f.Name)
 		}
@@ -130,12 +134,16 @@ func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
 	if err != nil {
 		return nil, err
 	}
+	ciRE, err := regexp.Compile("^(?i)" + r + "$")
+	if err != nil {
+		return nil, err
+	}
 	return func(f uefi.Firmware) bool {
 		switch f := f.(type) {
 		case *uefi.FirmwareVolume:
 			return searchRE.MatchString(f.FVName.String())
 		case *uefi.File:
-			return searchRE.MatchString(f.Header.GUID.String())
+			return ciRE.MatchString(f.Header.GUID.String())
 		case *uefi.Section:
 			return searchRE.MatchString(f.Name)
 		}
@@ -155,6 +163,65 @@ func FindAndPredicate(predicate1 FindPredicate, predicate2 FindPredicate) FindPr
 	return func(f uefi.Firmware) bool {
 		return predicate1(f) && predicate2(f)
 	}
+}
+
+// FindExactlyOne does a find using a supplied predicate and errors if there's more than one.
+func FindExactlyOne(f uefi.Firmware, pred func(f uefi.Firmware) bool) (uefi.Firmware, error) {
+	find := &Find{
+		Predicate: pred,
+	}
+	if err := find.Run(f); err != nil {
+		return nil, err
+	}
+	// There should only be one match, there should only be one Dxe Core.
+	if mlen := len(find.Matches); mlen != 1 {
+		return nil, fmt.Errorf("expected exactly one match, got %v, matches were: %v", mlen, find.Matches)
+	}
+	return find.Matches[0], nil
+}
+
+// FindEnclosingFV finds the FV that contains a file.
+func FindEnclosingFV(f uefi.Firmware, file *uefi.File) (*uefi.FirmwareVolume, error) {
+	pred := func(f uefi.Firmware) bool {
+		switch f := f.(type) {
+		case *uefi.FirmwareVolume:
+			for _, v := range f.Files {
+				if v == file {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	dxeFV, err := FindExactlyOne(f, pred)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find DXE FV, got: %v", err)
+	}
+	// result must be a FV.
+	fv, ok := dxeFV.(*uefi.FirmwareVolume)
+	if !ok {
+		return nil, fmt.Errorf("result was not a firmware volume! was type %T", dxeFV)
+	}
+
+	return fv, nil
+}
+
+// FindDXEFV is a helper function to quickly retrieve the firmware volume that contains the DxeCore.
+func FindDXEFV(f uefi.Firmware) (*uefi.FirmwareVolume, error) {
+	// We identify the Dxe Firmware Volume via the presence of the DxeCore
+	// This will cause problems if there are multiple dxe volumes.
+	pred := FindFileTypePredicate(uefi.FVFileTypeDXECore)
+	dxeCore, err := FindExactlyOne(f, pred)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find DXE Core, got: %v", err)
+	}
+
+	// result must be a File.
+	file, ok := dxeCore.(*uefi.File)
+	if !ok {
+		return nil, fmt.Errorf("result was not a file! was type %T", file)
+	}
+	return FindEnclosingFV(f, file)
 }
 
 func init() {

@@ -1,5 +1,6 @@
 cmds/fmap/fmap
 cmds/glzma/glzma
 cmds/utk/utk
+cmds/futk/futk
 .vimrc
 *.swp
