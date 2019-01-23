@@ -12,6 +12,7 @@ import (
 
 	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/uefi"
+	"github.com/linuxboot/fiano/pkg/unicode"
 )
 
 // Assemble reconstitutes the firmware tree assuming that the leaf node buffers are accurate
@@ -227,7 +228,26 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 	case *uefi.Section:
 		if len(f.Encapsulated) == 0 {
 			// No children, buffer should already contain data.
-			return nil
+			// We allow for some modifications like UI sections and version
+			// sections
+			switch f.Header.Type {
+			default:
+				return nil
+			case uefi.SectionTypeUserInterface:
+				f.SetBuf(unicode.UTF8ToUCS2(f.Name))
+			case uefi.SectionTypeVersion:
+				newBuf := make([]byte, 2)
+				binary.LittleEndian.PutUint16(newBuf, f.BuildNumber)
+				newBuf = append(newBuf, unicode.UTF8ToUCS2(f.Version)...)
+				f.SetBuf(newBuf)
+			}
+
+			// We've got the data in the section buffer, now regenerate the header.
+			err = f.GenSecHeader()
+			if f.Header.ExtendedSize > 0xFFFFFF {
+				v.useFFS3 = true
+			}
+			return err
 		}
 
 		// Construct the section data

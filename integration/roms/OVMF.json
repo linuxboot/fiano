@@ -194,7 +194,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -448,7 +449,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -511,7 +513,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -583,7 +586,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -644,7 +648,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "4.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -707,7 +712,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -770,7 +776,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -824,7 +831,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -878,7 +886,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -932,7 +941,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -995,7 +1005,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1067,7 +1078,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1121,7 +1133,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1184,7 +1197,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1310,7 +1324,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1346,7 +1361,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1409,7 +1425,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1463,7 +1480,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1544,7 +1562,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1580,7 +1599,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1616,7 +1636,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1652,7 +1673,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1688,7 +1710,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1724,7 +1747,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1760,7 +1784,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1796,7 +1821,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1832,7 +1858,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1868,7 +1895,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -1940,7 +1968,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2012,7 +2041,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2084,7 +2114,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2120,7 +2151,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2156,7 +2188,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2192,7 +2225,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2228,7 +2262,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2334,7 +2369,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2457,7 +2493,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2500,7 +2537,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2551,7 +2589,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2605,7 +2644,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2641,7 +2681,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2677,7 +2718,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2783,7 +2825,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	},
 																	{
 																		"Header": {
@@ -2826,7 +2869,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2862,7 +2906,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2898,7 +2943,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2934,7 +2980,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -2970,7 +3017,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3006,7 +3054,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3042,7 +3091,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3105,7 +3155,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3195,7 +3246,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "2.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3301,7 +3353,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3364,7 +3417,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3400,7 +3454,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3436,7 +3491,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3472,7 +3528,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3508,7 +3565,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3544,7 +3602,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3631,7 +3690,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3721,7 +3781,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3784,7 +3845,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -3874,7 +3936,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4010,7 +4073,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4100,7 +4164,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4136,7 +4201,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4172,7 +4238,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4262,7 +4329,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4305,7 +4373,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4377,7 +4446,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4413,7 +4483,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4467,7 +4538,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4503,7 +4575,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4546,7 +4619,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4582,7 +4656,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4618,7 +4693,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4661,7 +4737,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4697,7 +4774,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4733,7 +4811,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4769,7 +4848,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4805,7 +4885,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4848,7 +4929,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4884,7 +4966,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4920,7 +5003,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4956,7 +5040,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -4992,7 +5077,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5028,7 +5114,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5064,7 +5151,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5100,7 +5188,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5136,7 +5225,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5172,7 +5262,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5287,7 +5378,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5350,7 +5442,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5404,7 +5497,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5467,7 +5561,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5530,7 +5625,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5611,7 +5707,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5674,7 +5771,8 @@
 																			"Type": 20
 																		},
 																		"Type": "EFI_SECTION_VERSION",
-																		"ExtractPath": ""
+																		"ExtractPath": "",
+																		"Version": "1.0"
 																	}
 																],
 																"ExtractPath": "",
@@ -5757,7 +5855,8 @@
 									"Type": 20
 								},
 								"Type": "EFI_SECTION_VERSION",
-								"ExtractPath": ""
+								"ExtractPath": "",
+								"Version": "1.0"
 							}
 						],
 						"ExtractPath": "",

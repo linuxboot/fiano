@@ -193,11 +193,27 @@ type Section struct {
 	// For EFI_SECTION_USER_INTERFACE
 	Name string `json:",omitempty"`
 
+	// For EFI_SECTION_VERSION
+	BuildNumber uint16 `json:",omitempty"`
+	Version     string `json:",omitempty"`
+
 	// For EFI_SECTION_DXE_DEPEX, EFI_SECTION_PEI_DEPEX, and EFI_SECTION_MM_DEPEX
 	DepEx []DepExOp `json:",omitempty"`
 
 	// Encapsulated firmware
 	Encapsulated []*TypedFirmware `json:",omitempty"`
+}
+
+// String returns the String value of the section if it makes sense,
+// such as the name or the version string.
+func (s *Section) String() string {
+	switch s.Header.Type {
+	case SectionTypeUserInterface:
+		return s.Name
+	case SectionTypeVersion:
+		return "Version " + s.Version
+	}
+	return ""
 }
 
 // Buf returns the buffer.
@@ -388,6 +404,10 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 
 	case SectionTypeUserInterface:
 		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
+
+	case SectionTypeVersion:
+		s.BuildNumber = binary.LittleEndian.Uint16(s.buf[headerSize : headerSize+2])
+		s.Version = unicode.UCS2ToUTF8(s.buf[headerSize+2:])
 
 	case SectionTypeFirmwareVolumeImage:
 		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0, true)
