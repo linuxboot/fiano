@@ -66,7 +66,7 @@ var sectionTypeNames = map[SectionType]string{
 	SectionMMDepEx:                 "EFI_SECTION_MM_DEPEX",
 }
 
-// String creates a string representation for the file type.
+// String creates a string representation for the section type.
 func (s SectionType) String() string {
 	if t, ok := sectionTypeNames[s]; ok {
 		return t
