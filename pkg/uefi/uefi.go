@@ -216,3 +216,13 @@ func Erase(buf []byte, polarity byte) {
 		buf[j] = Attributes.ErasePolarity
 	}
 }
+
+// IsErased check if the buffer is ErasePolarity
+func IsErased(buf []byte, polarity byte) bool {
+	for _, c := range buf {
+		if c != polarity {
+			return false
+		}
+	}
+	return true
+}

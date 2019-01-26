@@ -218,9 +218,12 @@ type FileHeaderExtended struct {
 
 // File represents an EFI File.
 type File struct {
-	Header   FileHeaderExtended
-	Type     string
-	Sections []*Section `json:",omitempty"`
+	Header FileHeaderExtended
+	Type   string
+
+	// a File can contain either Sections or an NVarStore but not both
+	Sections  []*Section `json:",omitempty"`
+	NVarStore *NVarStore `json:",omitempty"`
 
 	//Metadata for extraction and recovery
 	buf         []byte
@@ -410,6 +413,15 @@ func NewFile(buf []byte) (*File, error) {
 	newBuf := buf[:f.Header.ExtendedSize]
 	f.buf = make([]byte, f.Header.ExtendedSize)
 	copy(f.buf, newBuf)
+
+	// Special case for NVAR Store stored in raw file
+	if f.Header.Type == FVFileTypeRaw && f.Header.GUID == *NVAR {
+		ns, err := NewNVarStore(f.buf[f.DataOffset:])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing NVAR store in file %v: %v", f.Header.GUID, err)
+		}
+		f.NVarStore = ns
+	}
 
 	// Parse sections
 	if _, ok := SupportedFiles[f.Header.Type]; !ok {
