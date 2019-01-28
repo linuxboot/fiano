@@ -5,6 +5,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"errors"
 	"flag"
 	"fmt"
@@ -61,9 +62,13 @@ func parseFlags() error {
 		if err != nil {
 			return err
 		}
+	} else if *name != "" {
+		// We sha1 the name to get a reproducible GUID.
+		fGUID = &guid.GUID{}
+		sum := sha1.Sum([]byte(*name))
+		copy(fGUID[:], sum[:guid.Size])
 	} else {
-		//TODO: we should sha1 the name, for now just pick a default
-		fGUID = guid.MustParse("DECAFBAD-6548-6461-732d-2f2d4e455246")
+		return errors.New("no GUID or name provided, please provide at least one")
 	}
 
 	if *outfile == "" {
