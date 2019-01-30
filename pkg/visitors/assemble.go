@@ -253,8 +253,21 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 							d.OpCode)
 					}
 					newBuf = append(newBuf, opcode)
-					if d.GUID != nil {
+					// Sanity checks.
+					switch d.OpCode {
+					case "BEFORE", "AFTER", "PUSH":
+						// GUID should not be nil.
+						if d.GUID == nil {
+							return fmt.Errorf("depex opcode %v should not have nil guid",
+								d.OpCode)
+						}
 						newBuf = append(newBuf, d.GUID[:]...)
+					default:
+						// GUID should be nil.
+						if d.GUID != nil {
+							return fmt.Errorf("depex opcode %v should not have a guid! got %v",
+								d.OpCode, *d.GUID)
+						}
 					}
 				}
 				f.SetBuf(newBuf)
