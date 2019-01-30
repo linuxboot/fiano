@@ -159,31 +159,31 @@ func main() {
 	file.Header.GUID = *fGUID
 
 	mainSection := &uefi.Section{}
-	mainSection.Header.Type = secType
+	mainSection.SetType(secType)
 	mainSection.SetBuf(secData)
 	mainSection.GenSecHeader()
 	file.Sections = append(file.Sections, mainSection)
 	printf("selected section type: %v", mainSection.Header.Type)
 
 	if *name != "" {
-		uiSection := &uefi.Section{}
-		uiSection.Header.Type = uefi.SectionTypeUserInterface
-		uiSection.Name = *name
-		file.Sections = append(file.Sections, uiSection)
+		s := &uefi.Section{}
+		s.SetType(uefi.SectionTypeUserInterface)
+		s.Name = *name
+		file.Sections = append(file.Sections, s)
 	}
 
 	if *version != "" {
-		vSection := &uefi.Section{}
-		vSection.Header.Type = uefi.SectionTypeVersion
-		vSection.Version = *version
-		file.Sections = append(file.Sections, vSection)
+		s := &uefi.Section{}
+		s.SetType(uefi.SectionTypeVersion)
+		s.Version = *version
+		file.Sections = append(file.Sections, s)
 	}
 
 	if *depex != "" {
-		dSection := &uefi.Section{}
-		dSection.Header.Type = uefi.SectionTypeDXEDepEx
-		dSection.DepEx = depOps
-		file.Sections = append(file.Sections, dSection)
+		s := &uefi.Section{}
+		s.SetType(uefi.SectionTypeDXEDepEx)
+		s.DepEx = depOps
+		file.Sections = append(file.Sections, s)
 	}
 
 	save := &visitors.Save{DirPath: *outfile}
