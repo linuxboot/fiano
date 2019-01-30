@@ -242,6 +242,22 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 				binary.LittleEndian.PutUint16(newBuf, f.BuildNumber)
 				newBuf = append(newBuf, unicode.UTF8ToUCS2(f.Version)...)
 				f.SetBuf(newBuf)
+			case uefi.SectionTypeDXEDepEx, uefi.SectionTypePEIDepEx,
+				uefi.SectionMMDepEx:
+				// Assemble dependency sections.
+				newBuf := []byte{}
+				for _, d := range f.DepEx {
+					opcode, ok := uefi.DepExNamesToOpCodes[d.OpCode]
+					if !ok {
+						return fmt.Errorf("unable to map depex opcode string to opcode, string was: %v",
+							d.OpCode)
+					}
+					newBuf = append(newBuf, opcode)
+					if d.GUID != nil {
+						newBuf = append(newBuf, d.GUID[:]...)
+					}
+				}
+				f.SetBuf(newBuf)
 			}
 
 			// We've got the data in the section buffer, now regenerate the header.

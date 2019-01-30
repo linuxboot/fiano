@@ -170,6 +170,16 @@ var DepExOpCodes = map[byte]DepExOpCode{
 	0x9: "SOR",
 }
 
+// DepExNamesToOpCodes maps the operation back to the code.
+var DepExNamesToOpCodes map[DepExOpCode]byte
+
+func init() {
+	DepExNamesToOpCodes = make(map[DepExOpCode]byte)
+	for k, v := range DepExOpCodes {
+		DepExNamesToOpCodes[v] = k
+	}
+}
+
 // DepExOp contains one operation for the dependency expression.
 type DepExOp struct {
 	OpCode DepExOpCode
