@@ -26,17 +26,52 @@ var (
 	filetype   = flag.String("type", "DRIVER", "UEFI filetype")
 	version    = flag.String("version", "1.0", "File version")
 	guidString = flag.String("guid", "", "File GUID")
+	depex      = flag.String("depex", "", "Space-separated protocol guid dependencies or TRUE")
 	compress   = flag.Bool("compress", false, "Wrap section data in a compressed section")
 	auto       = flag.Bool("auto", false, "Attempt to determine section types from file extensions")
 
 	fType  uefi.FVFileType
 	fGUID  *guid.GUID
+	depOps []uefi.DepExOp
 	printf = func(string, ...interface{}) {}
 )
 
 const (
 	usageString = "Usage: create-ffs [flags] file.efi [...]"
 )
+
+func createDepExes(deps string) ([]uefi.DepExOp, error) {
+	var err error
+	ops := []uefi.DepExOp{}
+
+	if deps == "TRUE" {
+		// Create just "TRUE" and "END" for now, but this feels unnecessary to me.
+		ops = append(ops, uefi.DepExOp{OpCode: "TRUE"})
+		ops = append(ops, uefi.DepExOp{OpCode: "END"})
+		return ops, nil
+	}
+
+	// we expect a space-separated list of GUIDs
+	guids := strings.Split(deps, " ")
+	numGUIDS := len(guids)
+	for _, guidStr := range guids {
+		var g *guid.GUID
+
+		if g, err = guid.Parse(guidStr); err != nil {
+			return nil, err
+		}
+		printf("depex guid requested: %v", *g)
+		ops = append(ops, uefi.DepExOp{OpCode: "PUSH", GUID: g})
+	}
+
+	// Append an "AND" for n-1 pushes.
+	for i := 1; i < numGUIDS; i++ {
+		ops = append(ops, uefi.DepExOp{OpCode: "AND"})
+	}
+
+	ops = append(ops, uefi.DepExOp{OpCode: "END"})
+	return ops, nil
+}
 
 func parseFlags() error {
 	var ok bool
@@ -73,6 +108,13 @@ func parseFlags() error {
 
 	if *outfile == "" {
 		return errors.New("we don't currently support dumping to stdout, please specify an output file")
+	}
+
+	if *depex != "" {
+		depOps, err = createDepExes(*depex)
+		if err != nil {
+			return fmt.Errorf("can't parse depex guids, got %v", err)
+		}
 	}
 
 	return nil
@@ -137,12 +179,25 @@ func main() {
 		file.Sections = append(file.Sections, vSection)
 	}
 
-	// TODO: handle depex
+	if *depex != "" {
+		dSection := &uefi.Section{}
+		dSection.Header.Type = uefi.SectionTypeDXEDepEx
+		dSection.DepEx = depOps
+		file.Sections = append(file.Sections, dSection)
+	}
 
 	save := &visitors.Save{DirPath: *outfile}
 
 	err = file.Apply(save)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *debug {
+		// Dump file json for checking
+		jsonv := &visitors.JSON{W: os.Stdout}
+		if err = file.Apply(jsonv); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
