@@ -33,7 +33,7 @@ func TestBadDepex(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s := &uefi.Section{}
-			s.Header.Type = uefi.SectionTypeDXEDepEx
+			s.SetType(uefi.SectionTypeDXEDepEx)
 			s.DepEx = []uefi.DepExOp{test.op}
 			a := &Assemble{}
 			err := a.Run(s)

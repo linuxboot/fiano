@@ -23,6 +23,26 @@ var (
 		0x6e, 0x00, 0x75, 0x00, 0x78, 0x00, 0x00, 0x00} // Linux UI section
 )
 
+func TestSetType(t *testing.T) {
+	var tests = []struct {
+		name       string
+		t          SectionType
+		typeString string
+	}{
+		{"SetUIType", SectionTypeUserInterface, "EFI_SECTION_USER_INTERFACE"},
+		{"SetBadType", 0x55, "UNKNOWN"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := Section{}
+			s.SetType(test.t)
+			if s.Type != test.typeString {
+				t.Errorf("Section Type field mismatch, expected \"%v\", got \"%v\"", test.typeString, s.Type)
+			}
+		})
+	}
+}
+
 func TestUISection(t *testing.T) {
 	var tests = []struct {
 		name      string
