@@ -226,6 +226,12 @@ func (s *Section) String() string {
 	return ""
 }
 
+// SetType sets the section type in the header and updates the string name.
+func (s *Section) SetType(t SectionType) {
+	s.Header.Type = t
+	s.Type = t.String()
+}
+
 // Buf returns the buffer.
 // Used mostly for things interacting with the Firmware interface.
 func (s *Section) Buf() []byte {
