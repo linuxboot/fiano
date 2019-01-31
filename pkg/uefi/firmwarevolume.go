@@ -230,6 +230,11 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 	}
 	fv.Blocks = blocks
 
+	// Set the erase polarity
+	if err := SetErasePolarity(fv.GetErasePolarity()); err != nil {
+		return nil, err
+	}
+
 	// Parse the extended header and figure out the start of data
 	fv.DataOffset = uint64(fv.HeaderLen)
 	if fv.ExtHeaderOffset != 0 && uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
