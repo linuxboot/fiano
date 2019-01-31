@@ -10,6 +10,69 @@ import (
 	"testing"
 )
 
+func TestSetErasePolarity(t *testing.T) {
+	type epTest struct {
+		ep     byte
+		errStr string
+	}
+
+	var err error
+	var tests = []struct {
+		name   string
+		rounds []epTest
+	}{
+		{name: "badPolarity", rounds: []epTest{
+			{
+				ep: poisonedPolarity,
+				errStr: fmt.Sprintf("invalid erase polarity requested, should only be 0x00 or 0xFF, got 0x%2X",
+					poisonedPolarity)},
+		}},
+		{name: "good0xFF", rounds: []epTest{
+			{
+				ep:     0xFF,
+				errStr: ""},
+		}},
+		{name: "good0x00", rounds: []epTest{
+			{
+				ep:     0x00,
+				errStr: ""},
+		}},
+		{name: "good0xFFSetTwice", rounds: []epTest{
+			{
+				ep:     0xFF,
+				errStr: ""},
+			{
+				ep:     0xFF,
+				errStr: ""},
+		}},
+		{name: "MismatchedPolarity", rounds: []epTest{
+			{
+				ep:     0xFF,
+				errStr: ""},
+			{
+				ep:     0x00,
+				errStr: "conflicting erase polarities, was 0xFF, requested 0x00"},
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Reset ErasePolarity
+			Attributes.ErasePolarity = 0xF0
+			for _, r := range test.rounds {
+				err = SetErasePolarity(r.ep)
+				if err != nil {
+					if errStr := err.Error(); errStr != r.errStr {
+						t.Errorf("error mismatch, expected \"%v\", got \"%v\"",
+							r.errStr, errStr)
+					}
+				} else if r.errStr != "" {
+					t.Errorf("Expected Error %v, got nil", r.errStr)
+				}
+			}
+		})
+	}
+}
+
 func TestUnmarshalTypedFirmware(t *testing.T) {
 	inFirmware := MakeTyped(&Section{Name: "CHARLIE"})
 

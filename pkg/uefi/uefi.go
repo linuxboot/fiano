@@ -20,8 +20,31 @@ type ROMAttributes struct {
 	ErasePolarity byte // Either 0xFF or 0
 }
 
+const poisonedPolarity byte = 0xF0
+
 // Attributes holds the global attributes
-var Attributes ROMAttributes
+var Attributes = ROMAttributes{ErasePolarity: poisonedPolarity}
+
+// SetErasePolarity sets the Erase Polarity for the flash image.
+// It checks to see if there are conflicting Erase Polarities.
+func SetErasePolarity(ep byte) error {
+	if ep != 0xFF && ep != 0 {
+		// Invalid erase polarity requested.
+		return fmt.Errorf("invalid erase polarity requested, should only be 0x00 or 0xFF, got 0x%02X",
+			ep)
+	}
+	// Set it only once.
+	if Attributes.ErasePolarity != poisonedPolarity {
+		// it's already been set. Check that they are the same.
+		if Attributes.ErasePolarity != ep {
+			return fmt.Errorf("conflicting erase polarities, was 0x%02X, requested 0x%02X",
+				Attributes.ErasePolarity, ep)
+		}
+		return nil
+	}
+	Attributes.ErasePolarity = ep
+	return nil
+}
 
 // Firmware is an interface to describe generic firmware types. When the
 // firmware is parsed, all the Firmware objects are laid out in a tree (similar
