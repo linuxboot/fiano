@@ -120,15 +120,6 @@ func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error
 		buf = buf[uint64(offset)+fv.Length:]
 		br.Elements = append(br.Elements, MakeTyped(fv))
 	}
-	// We just set the global ErasePolarity. We need to make this nicer,
-	// right now we just assume they're all the same. There should be some checks
-	// TODO: implement checks for different ErasePolarities
-	fv, err := br.FirstFV()
-	if err != nil {
-		return nil, err
-	}
-	// Set the global erase polarity to be the first one found
-	Attributes.ErasePolarity = fv.GetErasePolarity()
 	return &br, nil
 }
 

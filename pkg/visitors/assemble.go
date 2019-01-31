@@ -38,7 +38,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 	// Get the damn Erase Polarity
 	if f, ok := f.(*uefi.FirmwareVolume); ok {
 		// Set Erase Polarity
-		uefi.Attributes.ErasePolarity = f.GetErasePolarity()
+		if err = uefi.SetErasePolarity(f.GetErasePolarity()); err != nil {
+			return err
+		}
 	}
 
 	// We first assemble the children.
@@ -299,7 +301,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		if err != nil {
 			return err
 		}
-		uefi.Attributes.ErasePolarity = firstFV.GetErasePolarity()
+		if err = uefi.SetErasePolarity(firstFV.GetErasePolarity()); err != nil {
+			return err
+		}
 		uefi.Erase(fBuf, uefi.Attributes.ErasePolarity)
 		// Put the elements together
 		offset := uint64(0)
