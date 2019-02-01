@@ -9,6 +9,8 @@ Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://gorepo
 [![CodeCov](https://codecov.io/gh/linuxboot/fiano/branch/master/graph/badge.svg)](https://codecov.io/gh/linuxboot/fiano/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/linuxboot/fiano/blob/master/LICENSE)
 
+![Fiano](./fiano-logo.svg)
+
 ## UTK: Generic UEFI tool kit meant to handle rom images
 
 Example usage:
