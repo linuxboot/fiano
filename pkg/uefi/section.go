@@ -171,10 +171,9 @@ var DepExOpCodes = map[byte]DepExOpCode{
 }
 
 // DepExNamesToOpCodes maps the operation back to the code.
-var DepExNamesToOpCodes map[DepExOpCode]byte
+var DepExNamesToOpCodes = map[DepExOpCode]byte{}
 
 func init() {
-	DepExNamesToOpCodes = make(map[DepExOpCode]byte)
 	for k, v := range DepExOpCodes {
 		DepExNamesToOpCodes[v] = k
 	}

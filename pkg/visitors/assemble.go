@@ -245,6 +245,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			case uefi.SectionTypeDXEDepEx, uefi.SectionTypePEIDepEx,
 				uefi.SectionMMDepEx:
 				// Assemble dependency sections.
+				// TODO: handle differences in opcode support between different dependency sections.
 				newBuf := []byte{}
 				for _, d := range f.DepEx {
 					opcode, ok := uefi.DepExNamesToOpCodes[d.OpCode]
@@ -256,16 +257,16 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 					// Sanity checks.
 					switch d.OpCode {
 					case "BEFORE", "AFTER", "PUSH":
-						// GUID should not be nil.
+						// GUID must not be nil.
 						if d.GUID == nil {
-							return fmt.Errorf("depex opcode %v should not have nil guid",
+							return fmt.Errorf("depex opcode %v must not have nil guid",
 								d.OpCode)
 						}
 						newBuf = append(newBuf, d.GUID[:]...)
 					default:
-						// GUID should be nil.
+						// GUID must be nil.
 						if d.GUID != nil {
-							return fmt.Errorf("depex opcode %v should not have a guid! got %v",
+							return fmt.Errorf("depex opcode %v must not have a guid! got %v",
 								d.OpCode, *d.GUID)
 						}
 					}
