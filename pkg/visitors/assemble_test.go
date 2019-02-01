@@ -1,4 +1,4 @@
-// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Copyright 2019 the LinuxBoot Authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -25,9 +25,9 @@ func TestBadDepex(t *testing.T) {
 		{"badOpCode", uefi.DepExOp{OpCode: "BLAH", GUID: nil},
 			"unable to map depex opcode string to opcode, string was: BLAH"},
 		{"pushNoGUID", uefi.DepExOp{OpCode: "PUSH", GUID: nil},
-			"depex opcode PUSH should not have nil guid"},
+			"depex opcode PUSH must not have nil guid"},
 		{"trueWithGUID", uefi.DepExOp{OpCode: "TRUE", GUID: ZeroGUID},
-			fmt.Sprintf("depex opcode TRUE should not have a guid! got %v", *ZeroGUID)},
+			fmt.Sprintf("depex opcode TRUE must not have a guid! got %v", *ZeroGUID)},
 	}
 
 	for _, test := range tests {
