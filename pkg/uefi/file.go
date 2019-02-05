@@ -250,6 +250,12 @@ func (f *File) Apply(v Visitor) error {
 
 // ApplyChildren calls the visitor on each child node of File.
 func (f *File) ApplyChildren(v Visitor) error {
+	if f.NVarStore != nil {
+		if err := f.NVarStore.Apply(v); err != nil {
+			return err
+		}
+		return nil
+	}
 	for _, s := range f.Sections {
 		if err := s.Apply(v); err != nil {
 			return err
