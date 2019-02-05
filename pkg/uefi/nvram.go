@@ -117,6 +117,33 @@ type NVar struct {
 	ExtOffset  int64 `json:",omitempty"`
 }
 
+// Buf returns the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (v *NVar) Buf() []byte {
+	return v.buf
+}
+
+// SetBuf sets the buffer.
+// Used mostly for things interacting with the Firmware interface.
+func (v *NVar) SetBuf(buf []byte) {
+	v.buf = buf
+}
+
+// Apply calls the visitor on the NVar.
+func (v *NVar) Apply(vr Visitor) error {
+	return vr.Visit(v)
+}
+
+// ApplyChildren calls the visitor on each child node of NVar.
+func (v *NVar) ApplyChildren(vr Visitor) error {
+	if v.NVarStore != nil {
+		if err := v.NVarStore.Apply(vr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // NVarStore represent an NVAR store
 type NVarStore struct {
 	buf []byte
@@ -144,6 +171,11 @@ func (s *NVarStore) Apply(v Visitor) error {
 
 // ApplyChildren calls the visitor on each child node of NVarStore.
 func (s *NVarStore) ApplyChildren(v Visitor) error {
+	for _, nv := range s.Entries {
+		if err := nv.Apply(v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
