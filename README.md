@@ -80,6 +80,8 @@ Example usage:
     # For fmap:
     go get github.com/linuxboot/fiano/cmds/fmap
 
+The executables are installed in `$HOME/go/bin`.
+
 ## Updating Dependencies
 
     # Latest released version of dep is required:
