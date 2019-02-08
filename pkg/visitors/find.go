@@ -79,6 +79,13 @@ func (v *Find) Visit(f uefi.Firmware) error {
 		}
 		return f.ApplyChildren(v)
 
+	case *uefi.NVar:
+		// don't find NVar embedded in NVar (TODO have a parameter for that ?)
+		if v.Predicate(f) {
+			v.Matches = append(v.Matches, f)
+		}
+		return nil
+
 	default:
 		if v.Predicate(f) {
 			v.Matches = append(v.Matches, f)
@@ -224,9 +231,34 @@ func FindDXEFV(f uefi.Firmware) (*uefi.FirmwareVolume, error) {
 	return FindEnclosingFV(f, file)
 }
 
+// FindNVarPredicate is a generic predicate for searching NVar only.
+func FindNVarPredicate(r string) (func(f uefi.Firmware) bool, error) {
+	searchRE, err := regexp.Compile("^(" + r + ")$")
+	if err != nil {
+		return nil, err
+	}
+	return func(f uefi.Firmware) bool {
+		switch f := f.(type) {
+		case *uefi.NVar:
+			return searchRE.MatchString(f.Name)
+		}
+		return false
+	}, nil
+}
+
 func init() {
 	RegisterCLI("find", "find a file by GUID or Name", 1, func(args []string) (uefi.Visitor, error) {
 		pred, err := FindFilePredicate(args[0])
+		if err != nil {
+			return nil, err
+		}
+		return &Find{
+			Predicate: pred,
+			W:         os.Stdout,
+		}, nil
+	})
+	RegisterCLI("find_nvar", "find an NVAR by Name", 1, func(args []string) (uefi.Visitor, error) {
+		pred, err := FindNVarPredicate(args[0])
 		if err != nil {
 			return nil, err
 		}
