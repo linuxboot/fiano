@@ -14,12 +14,15 @@ import (
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
-var visitorRegistry = map[string]visitorEntry{}
+// VisitorRegistry lists the visitors which have been registered. Use
+// RegisterCLI to register a visitor.
+var VisitorRegistry = map[string]VisitorEntry{}
 
-type visitorEntry struct {
-	numArgs       int
-	help          string
-	createVisitor func([]string) (uefi.Visitor, error)
+// VisitorEntry contains information for running a visitor.
+type VisitorEntry struct {
+	NumArgs       int
+	Help          string
+	CreateVisitor func([]string) (uefi.Visitor, error) `json:"-"`
 }
 
 // RegisterCLI registers a function `createVisitor` to be called when parsing
@@ -27,13 +30,13 @@ type visitorEntry struct {
 // command line, it should have an init function which registers a
 // `createVisitor` function here.
 func RegisterCLI(name string, help string, numArgs int, createVisitor func([]string) (uefi.Visitor, error)) {
-	if _, ok := visitorRegistry[name]; ok {
+	if _, ok := VisitorRegistry[name]; ok {
 		panic(fmt.Sprintf("two visitors registered the same name: '%s'", name))
 	}
-	visitorRegistry[name] = visitorEntry{
-		numArgs:       numArgs,
-		createVisitor: createVisitor,
-		help:          help,
+	VisitorRegistry[name] = VisitorEntry{
+		NumArgs:       numArgs,
+		CreateVisitor: createVisitor,
+		Help:          help,
 	}
 }
 
@@ -44,20 +47,20 @@ func ParseCLI(args []string) ([]uefi.Visitor, error) {
 	for len(args) > 0 {
 		cmd := args[0]
 		args = args[1:]
-		o, ok := visitorRegistry[cmd]
+		o, ok := VisitorRegistry[cmd]
 		if !ok {
 			return []uefi.Visitor{}, fmt.Errorf("could not find visitor '%s'", cmd)
 		}
-		if o.numArgs > len(args) {
+		if o.NumArgs > len(args) {
 			return []uefi.Visitor{}, fmt.Errorf("too few arguments for visitor '%s', got %d, expected %d",
-				cmd, len(args), o.numArgs)
+				cmd, len(args), o.NumArgs)
 		}
-		visitor, err := o.createVisitor(args[:o.numArgs])
+		visitor, err := o.CreateVisitor(args[:o.NumArgs])
 		if err != nil {
 			return []uefi.Visitor{}, err
 		}
 		visitors = append(visitors, visitor)
-		args = args[o.numArgs:]
+		args = args[o.NumArgs:]
 	}
 	return visitors, nil
 }
@@ -78,12 +81,12 @@ func ExecuteCLI(f uefi.Firmware, v []uefi.Visitor) error {
 func ListCLI() string {
 	var s string
 	names := []string{}
-	for n := range visitorRegistry {
+	for n := range VisitorRegistry {
 		names = append(names, n)
 	}
 	sort.Strings(names)
 	for _, n := range names {
-		s += fmt.Sprintf("  %-22s: %s\n", n, visitorRegistry[n].help)
+		s += fmt.Sprintf("  %-22s: %s\n", n, VisitorRegistry[n].Help)
 	}
 	return s
 }
