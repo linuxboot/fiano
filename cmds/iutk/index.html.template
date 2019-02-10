@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>iUTK -- {{.Title}}</title>
+  </head>
+  <body>
+    {{range .List}}
+      <div style="left:{{.Level}}em; position:relative">{{.Value|ToString}}</div>
+    {{else}}
+    <div><strong>no nodes</strong></div>
+    {{end}}
+  </body>
+</html>
