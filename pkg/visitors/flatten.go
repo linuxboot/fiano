@@ -23,6 +23,7 @@ type Flatten struct {
 	// Outputted flattened tree.
 	List []FlattenedFirmware
 
+	level  int
 	parent int
 }
 
@@ -31,6 +32,7 @@ type Flatten struct {
 type FlattenedFirmware struct {
 	Parent int
 	Type   string
+	Level  int
 	Value  uefi.Firmware
 }
 
@@ -77,8 +79,11 @@ func (v *Flatten) Visit(f uefi.Firmware) error {
 	v.List = append(v.List, FlattenedFirmware{
 		Parent: parent,
 		Type:   fmt.Sprintf("%T", f),
+		Level:  v.level,
 		Value:  f,
 	})
+	v.level++
+	defer func() { v.level-- }()
 	if err := f.ApplyChildren(v); err != nil {
 		return err
 	}

@@ -24,6 +24,31 @@ func (v *Table) Run(f uefi.Firmware) error {
 	return f.Apply(v)
 }
 
+// TODO: move to uefi
+// TODO: dedup
+func ToString(f uefi.Firmware) string {
+	switch f := f.(type) {
+	case *uefi.FlashImage:
+		return fmt.Sprintf("%v %v %v %#8x", "Image", "", "", len(f.Buf()))
+	case *uefi.FirmwareVolume:
+		return fmt.Sprintf("%v %v %v %#8x", "FV", f.FileSystemGUID.String(), "", len(f.Buf()))
+	case *uefi.File:
+		return fmt.Sprintf("%v %v %v %#8x", "File", f.Header.GUID.String(), f.Header.Type, len(f.Buf()))
+	case *uefi.Section:
+		return fmt.Sprintf("%v %v %v %#8x", "Sec", f.String(), f.Type, len(f.Buf()))
+	case *uefi.FlashDescriptor:
+		return fmt.Sprintf("%v %v %v %#8x", "IFD", "", "", len(f.Buf()))
+	case *uefi.BIOSRegion:
+		return fmt.Sprintf("%v %v %v %#8x", "BIOS", "", "", len(f.Buf()))
+	case *uefi.BIOSPadding:
+		return fmt.Sprintf("%v %v %v %#8x", "BIOS Pad", "", "", len(f.Buf()))
+	case *uefi.RawRegion:
+		return fmt.Sprintf("%v %v %v %#8x", f.Type().String(), "", "", len(f.Buf()))
+	default:
+		return fmt.Sprintf("%v %v %v %#8x", fmt.Sprintf("%T", f), "", "")
+	}
+}
+
 // Visit applies the Table visitor to any Firmware type.
 func (v *Table) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {
