@@ -24,6 +24,7 @@ var (
 )
 
 func jsonResponse(w http.ResponseWriter, obj interface{}) {
+	w.Header().Add("Content-Type", "application/json")
 	out, err := json.MarshalIndent(obj, "", "    ")
 	if err != nil {
 		log.Fatal(err)
@@ -42,7 +43,7 @@ func jsonResponse(w http.ResponseWriter, obj interface{}) {
 func registerHandlers(root uefi.Firmware) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			w.WriteHeader(400)
+			http.Error(w, "bad method", 400)
 			return
 		}
 
@@ -59,7 +60,7 @@ func registerHandlers(root uefi.Firmware) {
 	// Endpoint contains json-encoded output of flatten visitor.
 	http.HandleFunc("/list", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			w.WriteHeader(400)
+			http.Error(w, "bad method", 400)
 			return
 		}
 
@@ -73,17 +74,17 @@ func registerHandlers(root uefi.Firmware) {
 
 	http.HandleFunc("/visitors", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			w.WriteHeader(400)
+			http.Error(w, "bad method", 400)
 			return
 		}
 		jsonResponse(w, visitors.VisitorRegistry)
 	})
 
 	http.HandleFunc("/visitors/", func(w http.ResponseWriter, r *http.Request) {
-		/*if r.Method != "POST" {
-			w.WriteHeader(400)
+		if r.Method != "POST" {
+			http.Error(w, "bad method", 400)
 			return
-		}*/
+		}
 
 		path := []string{}
 		for _, p := range strings.Split(r.URL.Path, "/") {
@@ -92,17 +93,17 @@ func registerHandlers(root uefi.Firmware) {
 			}
 		}
 		if len(path) < 2 {
-			w.WriteHeader(400)
+			http.Error(w, "bad path", 400)
 			return
 		}
 		cmd, args := path[1], path[2:]
 		entry, ok := visitors.VisitorRegistry[cmd]
 		if !ok {
-			w.WriteHeader(400)
+			http.Error(w, "visitor not found", 400)
 			return
 		}
 		if entry.NumArgs != len(args) {
-			w.WriteHeader(400)
+			http.Error(w, "bad number of arguments", 400)
 			return
 		}
 		v, err := entry.CreateVisitor(args)
@@ -112,6 +113,7 @@ func registerHandlers(root uefi.Firmware) {
 		if err := v.Run(root); err != nil {
 			log.Fatal(err)
 		}
+		jsonResponse(w, []struct{}{})
 	})
 }
 

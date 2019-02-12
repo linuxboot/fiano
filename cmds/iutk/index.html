@@ -3,18 +3,150 @@
   <head>
     <title>iUTK</title>
     <style>
+      html, body {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
 
+      #visitors {
+        background-color: black;
+        overflow: auto;
+        position: absolute;
+        white-space: nowrap;
+
+        width: 100%;
+        height: 3em;
+        top: 0;
+        left: 0;
+      }
+
+      #visitors > button {
+        display: inline-block;
+        height: 100%;
+      }
+
+      #tree {
+        overflow: auto;
+        position: absolute;
+
+        width: 60%;
+        height: 60%;
+        top: 3em;
+        left: 0;
+      }
+
+      #sidebar {
+        background-color: green;
+        overflow: auto;
+        position: absolute;
+
+        width: 40%;
+        height: 60%;
+        top: 3em;
+        left: 60%;
+      }
+
+      #logs {
+        background-color: orange;
+        overflow: auto;
+        position: absolute;
+
+        width: 100%;
+        height: 40%;
+        top: 60%;
+        left: 0;
+      }
     </style>
 
   </head>
   <body>
-    <p id=noload>See "go doc github.com/linuxboot/fiano/cmds/iutk" for instrctions on using iutk.
+    <p id=usage>
+      See "go doc github.com/linuxboot/fiano/cmds/iutk" for instrctions on using iutk.
+    </p>
+
+    <div id=visitors></div>
+    <div id=tree></div>
+    <div id=sidebar></div>
+    <div id=logs></div>
 
     <script>
-      document.body.onload = function(){
-        var $noload = document.getElementById("noload");
+      var $ = x => document.getElementById(x);
 
-        $noload.style.display = "none";
+      function rawGet(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            callback(xhr.responseText);
+          }
+        };
+        xhr.send();
+      }
+
+      function rawPost(url, data, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            callback(xhr.responseText);
+          }
+        };
+        xhr.send(data);
+      }
+
+      function encode(text) {
+        return document.createElement('p').appendChild(
+          document.createTextNode(text)).parentNode.innerHTML;
+      }
+
+      function updateVisitors() {
+        rawGet('/visitors', data => {
+          var visitors = JSON.parse(data);
+          for (var name in visitors) {
+            if (visitors.hasOwnProperty(name)) {
+              var text = name.replace(/_/g, ' ').replace(/\b./g, x => x.toUpperCase());
+              text += " (" + visitors[name].NumArgs + ")";
+              var $button = document.createElement('button');
+              $button.appendChild(document.createTextNode(text));
+              $button.title = visitors[name].Help;
+              $button.onclick = function(name) {
+                return function () {
+                  rawPost('/visitors/' + name, '', function (data) {
+                    alert("success");
+                  });
+                }
+              }(name);
+              $('visitors').appendChild($button);
+            }
+          }
+        });
+      }
+
+      function updateTree() {
+        rawGet('/list', data => {
+          var list = JSON.parse(data);
+          $('tree').innerHTML = encode(data);
+          list.forEach(node => {
+          });
+        });
+      }
+
+      function updateLogs() {
+        rawGet('/logs', data => {
+        });
+      }
+
+      document.body.onload = function () {
+        updateVisitors();
+        updateTree();
+        //updateLogs();
+
+        // Hide the usage text.
+        $('usage').style.display = "none";
       };
     </script>
   </body>
