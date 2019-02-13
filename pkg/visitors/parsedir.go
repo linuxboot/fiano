@@ -62,6 +62,15 @@ func (v *ParseDir) Visit(f uefi.Firmware) error {
 	case *uefi.Section:
 		fBuf, err = v.readBuf(f.ExtractPath)
 
+	case *uefi.NVar:
+		if f.IsValid() {
+			var fValBuf []byte
+			fValBuf, err = v.readBuf(f.ExtractPath)
+			fBuf = append(make([]byte, f.DataOffset), fValBuf...)
+		} else {
+			fBuf, err = v.readBuf(f.ExtractPath)
+		}
+
 	case *uefi.FlashDescriptor:
 		fBuf, err = v.readBuf(f.ExtractPath)
 

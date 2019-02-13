@@ -112,7 +112,7 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 		// Crappy hack to make unique ids unique
 		v2.DirPath = filepath.Join(v2.DirPath, fmt.Sprint(*v.Index))
 		*v.Index++
-		if len(f.Sections) == 0 {
+		if len(f.Sections) == 0 && f.NVarStore == nil {
 			f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%v.ffs", f.Header.GUID))
 		}
 
@@ -121,6 +121,21 @@ func (v *Extract) Visit(f uefi.Firmware) error {
 		v2.DirPath = filepath.Join(v.DirPath, fmt.Sprint(f.FileOrder))
 		if len(f.Encapsulated) == 0 {
 			f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%v.sec", f.FileOrder))
+		}
+
+	case *uefi.NVar:
+		// For NVar we use the GUID as the folder name the Name as file name and add the offset to links to make them unique
+		v2.DirPath = filepath.Join(v.DirPath, f.GUID.String())
+		if f.IsValid() {
+			if f.NVarStore == nil {
+				if f.Type == uefi.LinkNVarEntry {
+					f.ExtractPath, err = v2.extractBinary(f.Buf()[f.DataOffset:], fmt.Sprintf("%v-%#x.bin", f.Name, f.Offset))
+				} else {
+					f.ExtractPath, err = v2.extractBinary(f.Buf()[f.DataOffset:], fmt.Sprintf("%v.bin", f.Name))
+				}
+			}
+		} else {
+			f.ExtractPath, err = v2.extractBinary(f.Buf(), fmt.Sprintf("%#x.nvar", f.Offset))
 		}
 
 	case *uefi.FlashDescriptor:
