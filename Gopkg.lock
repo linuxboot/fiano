@@ -2,10 +2,9 @@
 
 
 [[projects]]
-  digest = "1:21274448d9cdf3e24f6ae5b43bd38a632f48fede5cd23299dae6eae816b3220b"
+  digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
   name = "github.com/u-root/u-root"
   packages = [
-    "pkg/forth",
     "pkg/golang",
     "pkg/testutil",
   ]
@@ -47,7 +46,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/u-root/u-root/pkg/forth",
     "github.com/u-root/u-root/pkg/testutil",
     "github.com/ulikunitz/xz/lzma",
     "golang.org/x/text/encoding/unicode",
