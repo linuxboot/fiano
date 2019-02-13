@@ -5,6 +5,8 @@
 package uefi
 
 import (
+	"bytes"
+	"encoding/hex"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/guid"
@@ -34,6 +36,7 @@ var (
 	// Small buffs to reuse
 	emptyNVarBuf       = []byte{}
 	erasedSmallNVarBuf = []byte{0xFF, 0xFF, 0xFF, 0xFF}
+	zeroed16NVarBuf    = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	erased16NVarBuf    = []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 	signatureNVarBuf   = []byte{0x4E, 0x56, 0x41, 0x52}
 	noNextNVarBuf      = []byte{0xFF, 0xFF, 0xFF}
@@ -272,6 +275,76 @@ func TestNVar_NewNVarStore(t *testing.T) {
 			} else if err == nil && len(s.Entries) != test.count {
 				t.Errorf("Wrong number of NVar found, expected %v got %v", test.count, len(s.Entries))
 			}
+		})
+	}
+}
+
+func TestNVar_Assemble(t *testing.T) {
+	var stored1GUIDIndex = uint8(1)
+	var tests = []struct {
+		name      string
+		nvar      NVar
+		buf       []byte
+		checkOnly bool
+		msg       string
+	}{
+		{"Invalid", NVar{}, []byte{}, true, "unable to construct Invalid NVAR"},
+		{"badLinkUpdate", NVar{Type: LinkNVarEntry, NextOffset: 1}, []byte{}, false, "unable to update data in link, use compact first"},
+		{"badHeaderSize", NVar{Type: DataNVarEntry, Header: NVarHeader{Attributes: NVarEntryValid | NVarEntryDataOnly}}, headerOnlyEmptyNVar, true, "NVAR header size mismatch, expected 0 got 10"},
+		{"badSize", NVar{Type: DataNVarEntry, Header: NVarHeader{Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, true, "NVAR size mismatch, expected 10 got 10"},
+		{"goodEmpty", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 10, Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, true, ""},
+		{"goodEmptyUpdate", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 10, Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, false, ""},
+		{"badMissingName", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 16, Attributes: NVarEntryValid | NVarEntryASCIIName}, DataOffset: 16, GUIDIndex: &stored1GUIDIndex}, stored1GUIDASCIINameNVar, true, "NVAR header size mismatch, expected 16 got 12"},
+		{"good1GUIDASCIINameNVar", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 16, Attributes: NVarEntryValid | NVarEntryASCIIName}, Name: "Test", DataOffset: 16, GUIDIndex: &stored1GUIDIndex}, stored1GUIDASCIINameNVar, true, ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			v := test.nvar
+			err := v.Assemble(test.buf[v.DataOffset:], test.checkOnly)
+			if err == nil && test.msg != "" {
+				t.Errorf("Error was not returned, expected %v", test.msg)
+			} else if err != nil && err.Error() != test.msg {
+				t.Errorf("Mismatched Error returned, expected \n%v\n got \n%v\n", test.msg, err.Error())
+			} else if err != nil {
+				// expected error
+				return
+			}
+			if bytes.Compare(test.buf, v.Buf()) != 0 {
+				t.Errorf("Bad assembled variable content, expected \n%v\n got \n%v\n", hex.Dump(test.buf), hex.Dump(v.Buf()))
+			}
+
+		})
+	}
+}
+
+func TestNVarStore_GetGUIDStoreBuf(t *testing.T) {
+	var tests = []struct {
+		name      string
+		GUIDStore []guid.GUID
+		buf       []byte
+		msg       string
+	}{
+		{"empty", []guid.GUID{}, []byte{}, ""},
+		{"1GUID", []guid.GUID{*FFGUID}, erased16NVarBuf, ""},
+		{"2GUID", []guid.GUID{*FFGUID, *ZeroGUID}, append(zeroed16NVarBuf, erased16NVarBuf...), ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var s NVarStore
+			s.GUIDStore = test.GUIDStore
+			buf, err := s.GetGUIDStoreBuf()
+			if err == nil && test.msg != "" {
+				t.Errorf("Error was not returned, expected %v", test.msg)
+			} else if err != nil && err.Error() != test.msg {
+				t.Errorf("Mismatched Error returned, expected \n%v\n got \n%v\n", test.msg, err.Error())
+			} else if err != nil {
+				// expected error
+				return
+			}
+			if bytes.Compare(test.buf, buf) != 0 {
+				t.Errorf("Bad assembled GUID store content, expected \n%v\n got \n%v\n", hex.Dump(test.buf), hex.Dump(buf))
+			}
+
 		})
 	}
 }
