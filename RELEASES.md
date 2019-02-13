@@ -5,6 +5,21 @@ A new release happens every 6 weeks:
 - 1st day on the first month of each quarter
 - 15th day of the second month of each quarter
 
+
+## v5.0.0 (2019-02-12)
+
+- New Fiano logo
+- Forth UTK
+- Support for depex and version sections
+- New visitors
+  - insert, dxecleaner, repack, comment
+- Option to use system's xz command
+- Fixed region parsing for older IFDs
+- Tested with:
+  - Golang 1.11
+  - u-root v3.0.0
+
+
 ## v2.0.0 (2018-10-01)
 
 - utk2 has been merged into utk and the visitor pattern is here to stay.
@@ -22,6 +37,7 @@ A new release happens every 6 weeks:
 - Tested with:
   - Golang 1.11
   - u-root v2.0.0
+
 
 ## v1.0.0 (2018-08-15)
 
