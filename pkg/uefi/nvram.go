@@ -117,6 +117,14 @@ type NVar struct {
 	ExtOffset  int64 `json:",omitempty"`
 }
 
+// String returns the String value of the NVAR: Type and Name if valid
+func (v *NVar) String() string {
+	if v.IsValid() {
+		return fmt.Sprintf("[%s] %v", v.Type, v.Name)
+	}
+	return fmt.Sprintf("[%s]", v.Type)
+}
+
 // Buf returns the buffer.
 // Used mostly for things interacting with the Firmware interface.
 func (v *NVar) Buf() []byte {
@@ -146,10 +154,14 @@ func (v *NVar) ApplyChildren(vr Visitor) error {
 
 // NVarStore represent an NVAR store
 type NVarStore struct {
-	buf []byte
-
 	Entries   []*NVar
 	GUIDStore []guid.GUID `json:",omitempty"`
+
+	//Metadata for extraction and recovery
+	buf             []byte
+	FreeSpaceOffset uint64
+	GUIDStoreOffset uint64
+	Length          uint64
 }
 
 // Buf returns the buffer.
@@ -481,19 +493,20 @@ func NewNVarStore(buf []byte) (*NVarStore, error) {
 	s.buf = make([]byte, len(buf))
 	copy(s.buf, buf)
 
-	end := uint64(len(buf))
+	s.Length = uint64(len(buf))
+	s.GUIDStoreOffset = s.Length
 
-	for offset := uint64(0); offset < end; {
-		v, err := newNVar(s.buf[offset:end], offset, &s)
+	for s.FreeSpaceOffset = uint64(0); s.FreeSpaceOffset < s.GUIDStoreOffset; {
+		v, err := newNVar(s.buf[s.FreeSpaceOffset:s.GUIDStoreOffset], s.FreeSpaceOffset, &s)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing NVAR entry at offset %#x: %v", offset, err)
+			return nil, fmt.Errorf("error parsing NVAR entry at offset %#x: %v", s.FreeSpaceOffset, err)
 		}
 		if v == nil {
 			break
 		}
 		s.Entries = append(s.Entries, v)
-		offset += uint64(v.Header.Size)
-		end = uint64(len(buf)) - uint64(binary.Size(guid.GUID{}))*uint64(len(s.GUIDStore))
+		s.FreeSpaceOffset += uint64(v.Header.Size)
+		s.GUIDStoreOffset = s.Length - uint64(binary.Size(guid.GUID{}))*uint64(len(s.GUIDStore))
 	}
 
 	return &s, nil
