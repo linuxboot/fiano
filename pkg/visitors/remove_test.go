@@ -112,3 +112,49 @@ func TestRemoveExcept(t *testing.T) {
 	}
 
 }
+
+func TestRemoveExceptBlackList(t *testing.T) {
+	// The following blacklist contains corner case:
+	// - start, mid or end of existing names but no full name
+	// - start, mid or end of existing GUID but no full GUID
+	// so it should behave as an empty blacklist, ie remove all
+	var blacklists = []string{
+		"INEXISTING_FILENAME\nINEXISTING_FILENAME2",
+		"Isa\nDisk\nDxe",
+		"D6A2CB7F\n11E3\n9920A733700A",
+	}
+	for _, blacklist := range blacklists {
+		f := parseImage(t)
+
+		blackListRegex, err := parseBlackList("(embedded)", blacklist)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		pred, err := FindFilePredicate(blackListRegex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		remove := &Remove{
+			Predicate:  pred,
+			RemoveDxes: true,
+		}
+		if err := remove.Run(f); err != nil {
+			t.Fatal(err)
+		}
+
+		// We expect no more dxe drivers since we only kept the core.
+		count := &Count{}
+		if err := count.Run(f); err != nil {
+			t.Fatal(err)
+		}
+		dxeCount := count.FileTypeCount["EFI_FV_FILETYPE_DRIVER"]
+		coreCount := count.FileTypeCount["EFI_FV_FILETYPE_DXE_CORE"]
+		if dxeCount != 0 {
+			t.Errorf("expected no more drivers, got %v", dxeCount)
+		}
+		if coreCount != 0 {
+			t.Errorf("expected no more dxecore, got %v", coreCount)
+		}
+	}
+}
