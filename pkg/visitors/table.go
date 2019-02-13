@@ -42,6 +42,10 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		return v.printRow(f, "BIOS", "", "")
 	case *uefi.BIOSPadding:
 		return v.printRow(f, "BIOS Pad", "", "")
+	case *uefi.NVarStore:
+		return v.printRow(f, "NVAR Store", "", "")
+	case *uefi.NVar:
+		return v.printRow(f, "NVAR", f.GUID.String(), f)
 	case *uefi.RawRegion:
 		return v.printRow(f, f.Type().String(), "", "")
 	default:
@@ -65,9 +69,14 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
 	if err := f.ApplyChildren(&v2); err != nil {
 		return err
 	}
-	if fv, ok := f.(*uefi.FirmwareVolume); ok {
+	switch f := f.(type) {
+	case *uefi.FirmwareVolume:
 		// Print free space at the end of the volume
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", fv.FreeSpace)
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.FreeSpace)
+	case *uefi.NVarStore:
+		// Print free space and GUID store
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.GUIDStoreOffset-f.FreeSpaceOffset)
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), f.Length-f.GUIDStoreOffset)
 	}
 	return nil
 }
