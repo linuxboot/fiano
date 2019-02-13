@@ -109,11 +109,11 @@ func FindFileTypePredicate(t uefi.FVFileType) FindPredicate {
 
 // FindFilePredicate is a generic predicate for searching files and UI sections only.
 func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
-	searchRE, err := regexp.Compile("^" + r + "$")
+	searchRE, err := regexp.Compile("^(" + r + ")$")
 	if err != nil {
 		return nil, err
 	}
-	ciRE, err := regexp.Compile("^(?i)" + r + "$")
+	ciRE, err := regexp.Compile("^(?i)(" + r + ")$")
 	if err != nil {
 		return nil, err
 	}
