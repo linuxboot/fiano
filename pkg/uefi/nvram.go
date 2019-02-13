@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 
@@ -112,9 +113,10 @@ type NVar struct {
 	UnknownExtendedHeaderFormat bool              `json:",omitempty"`
 
 	//Metadata for extraction and recovery
-	buf        []byte
-	DataOffset int64
-	ExtOffset  int64 `json:",omitempty"`
+	buf         []byte
+	ExtractPath string
+	DataOffset  int64
+	ExtOffset   int64 `json:",omitempty"`
 }
 
 // String returns the String value of the NVAR: Type and Name if valid
@@ -484,6 +486,81 @@ func newNVar(buf []byte, offset uint64, s *NVarStore) (*NVar, error) {
 	return &v, nil
 }
 
+// Assemble takes in the content and assembles the NVAR binary
+// Warning: when checkOnly is false the resulting NVar must be Assembled again
+// to fix the header content
+func (v *NVar) Assemble(content []byte, checkOnly bool) error {
+	if !v.IsValid() {
+		return errors.New("unable to construct Invalid NVAR")
+	}
+	vData := new(bytes.Buffer)
+	v.Header.Signature = NVarEntrySignature
+	if v.NextOffset != 0 && !checkOnly {
+		return errors.New("unable to update data in link, use compact first")
+	}
+	if v.NextOffset != 0 {
+		v.Header.Next = Write3Size(v.NextOffset - v.Offset)
+	} else {
+		v.Header.Next = [3]uint8{Attributes.ErasePolarity, Attributes.ErasePolarity, Attributes.ErasePolarity}
+	}
+	err := binary.Write(vData, binary.LittleEndian, v.Header)
+	if err != nil {
+		return fmt.Errorf("unable to construct binary header of NVAR: got %v", err)
+	}
+	// GUID
+	if v.Header.Attributes&NVarEntryDataOnly == 0 {
+		if v.Header.Attributes&NVarEntryGUID != 0 {
+			err := binary.Write(vData, binary.LittleEndian, v.GUID)
+			if err != nil {
+				return fmt.Errorf("unable to add GUID to NVAR: got %v", err)
+			}
+		} else {
+			err := binary.Write(vData, binary.LittleEndian, *v.GUIDIndex)
+			if err != nil {
+				return fmt.Errorf("unable to add GUID index to NVAR: got %v", err)
+			}
+		}
+		// Name
+		if v.Header.Attributes&NVarEntryASCIIName != 0 {
+			_, err := vData.Write([]byte(v.Name))
+			if err != nil {
+				return fmt.Errorf("unable to add Name to NVAR: got %v", err)
+			}
+			err = vData.WriteByte(0)
+			if err != nil {
+				return fmt.Errorf("unable to add Name to NVAR: got %v", err)
+			}
+		} else {
+			_, err := vData.Write(unicode.UTF8ToUCS2(v.Name))
+			if err != nil {
+				return fmt.Errorf("unable to add Name to NVAR: got %v", err)
+			}
+		}
+	}
+	//check/update DataOffset
+	if checkOnly {
+		if v.DataOffset != int64(vData.Len()) {
+			return fmt.Errorf("NVAR header size mismatch, expected %v got %v", v.DataOffset, vData.Len())
+		}
+	} else {
+		v.DataOffset = int64(vData.Len())
+	}
+	_, err = vData.Write(content)
+	if err != nil {
+		return fmt.Errorf("unable to add content to NVAR: got %v", err)
+	}
+	//check/update Header.Size
+	if checkOnly {
+		if v.Header.Size != uint16(vData.Len()) {
+			return fmt.Errorf("NVAR size mismatch, expected %v got %v", v.DataOffset, vData.Len())
+		}
+	} else {
+		v.Header.Size = uint16(vData.Len())
+	}
+	v.SetBuf(vData.Bytes())
+	return nil
+}
+
 // NewNVarStore parses a sequence of bytes and returns an NVarStore
 // object, if a valid one is passed, or an error.
 func NewNVarStore(buf []byte) (*NVarStore, error) {
@@ -510,4 +587,16 @@ func NewNVarStore(buf []byte) (*NVarStore, error) {
 	}
 
 	return &s, nil
+}
+
+// GetGUIDStoreBuf returns the binary representation of the GUIDStore
+func (s *NVarStore) GetGUIDStoreBuf() ([]byte, error) {
+	guidStoreWBuf := new(bytes.Buffer)
+	for i := len(s.GUIDStore) - 1; i >= 0; i-- {
+		err := binary.Write(guidStoreWBuf, binary.LittleEndian, s.GUIDStore[i])
+		if err != nil {
+			return nil, fmt.Errorf("unable to write GUID index to store: got %v", err)
+		}
+	}
+	return guidStoreWBuf.Bytes(), nil
 }

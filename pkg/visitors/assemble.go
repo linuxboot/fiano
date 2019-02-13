@@ -11,6 +11,7 @@ import (
 	"sort"
 
 	"github.com/linuxboot/fiano/pkg/compression"
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/unicode"
 )
@@ -172,7 +173,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 	case *uefi.File:
 		fh := &f.Header
 		var fBuf []byte
-		if len(f.Sections) == 0 {
+		if len(f.Sections) == 0 && f.NVarStore == nil {
 			// No children, buffer should already contain data.
 			// we don't support this file type, just return the raw buffer.
 			// Or we've removed the sections and just want to replace the file directly
@@ -198,19 +199,24 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		// to know if we need to use the extended header.
 		fileData := []byte{}
 		dLen := uint64(0)
-		for _, s := range f.Sections {
-			// Align to 4 bytes and extend with 00s
-			// Why is it 00s? I don't know. Everything else has been extended with FFs
-			// but somehow in between sections alignment is done with 0s. What the heck.
-			for count := uefi.Align4(dLen) - dLen; count > 0; count-- {
-				fileData = append(fileData, 0x00)
-			}
-			dLen = uefi.Align4(dLen)
+		if f.NVarStore != nil {
+			fileData = f.NVarStore.Buf()
+			dLen = f.NVarStore.Length
+		} else {
+			for _, s := range f.Sections {
+				// Align to 4 bytes and extend with 00s
+				// Why is it 00s? I don't know. Everything else has been extended with FFs
+				// but somehow in between sections alignment is done with 0s. What the heck.
+				for count := uefi.Align4(dLen) - dLen; count > 0; count-- {
+					fileData = append(fileData, 0x00)
+				}
+				dLen = uefi.Align4(dLen)
 
-			// Append the section
-			sData := s.Buf()
-			dLen += uint64(len(sData))
-			fileData = append(fileData, sData...)
+				// Append the section
+				sData := s.Buf()
+				dLen += uint64(len(sData))
+				fileData = append(fileData, sData...)
+			}
 		}
 
 		f.SetSize(uefi.FileHeaderMinLength+dLen, true)
@@ -320,6 +326,48 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		err = f.GenSecHeader()
 		if f.Header.ExtendedSize > 0xFFFFFF {
 			v.useFFS3 = true
+		}
+
+	case *uefi.NVarStore:
+		nvData := []byte{}
+		nvLen := uint64(0)
+		// NVAR
+		for _, v := range f.Entries {
+			// Append the NVar
+			vData := v.Buf()
+			nvLen += uint64(len(vData))
+			nvData = append(nvData, vData...)
+		}
+
+		// update offsets
+		f.FreeSpaceOffset = nvLen
+		f.GUIDStoreOffset = f.Length - uint64(binary.Size(guid.GUID{}))*uint64(len(f.GUIDStore))
+		// Erase Empty space
+		erased := make([]byte, f.GUIDStoreOffset-f.FreeSpaceOffset)
+		uefi.Erase(erased, uefi.Attributes.ErasePolarity)
+		nvData = append(nvData, erased...)
+
+		// Copy the GUID store
+		var guidStoreBuf []byte
+		guidStoreBuf, err = f.GetGUIDStoreBuf()
+		if err != nil {
+			return err
+		}
+		nvData = append(nvData, guidStoreBuf...)
+
+		f.SetBuf(nvData)
+
+	case *uefi.NVar:
+		// Only rebuild Valid NVAR
+		if f.IsValid() {
+			var content []byte
+			if f.NVarStore == nil {
+				content = f.Buf()[f.DataOffset:]
+			} else {
+				content = f.NVarStore.Buf()
+			}
+
+			err = f.Assemble(content, true)
 		}
 
 	case *uefi.FlashDescriptor:
