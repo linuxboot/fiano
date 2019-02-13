@@ -44,7 +44,7 @@ func createDepExes(deps string) ([]uefi.DepExOp, error) {
 	var err error
 	ops := []uefi.DepExOp{}
 
-	if deps == "TRUE" {
+	if strings.ToUpper(deps) == "TRUE" {
 		// Create just "TRUE" and "END" for now, but this feels unnecessary to me.
 		ops = append(ops, uefi.DepExOp{OpCode: "TRUE"})
 		ops = append(ops, uefi.DepExOp{OpCode: "END"})
