@@ -11,6 +11,7 @@ package uefi
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -77,6 +78,17 @@ func (t NVarEntryType) String() string {
 	return "UNKNOWN"
 }
 
+// NVarExtAttribute represent extended attributes
+type NVarExtAttribute uint8
+
+// Extended attributes values
+const (
+	NVarEntryExtChecksum    NVarExtAttribute = 0x01
+	NVarEntryExtAuthWrite   NVarExtAttribute = 0x10
+	NVarEntryExtTimeBased   NVarExtAttribute = 0x20
+	NVarEntryExtUnknownMask NVarExtAttribute = 0xCE
+)
+
 // NVar represent an NVAR entry
 type NVar struct {
 	Header    NVarHeader
@@ -91,9 +103,18 @@ type NVar struct {
 	Offset     uint64
 	NextOffset uint64
 
+	//Extended Header
+	ExtAttributes               *NVarExtAttribute `json:",omitempty"`
+	Checksum                    *uint8            `json:",omitempty"`
+	ExpectedChecksum            *uint8            `json:",omitempty"`
+	TimeStamp                   *uint64           `json:",omitempty"`
+	Hash                        []byte            `json:",omitempty"`
+	UnknownExtendedHeaderFormat bool              `json:",omitempty"`
+
 	//Metadata for extraction and recovery
 	buf        []byte
 	DataOffset int64
+	ExtOffset  int64 `json:",omitempty"`
 }
 
 // NVarStore represent an NVAR store
@@ -189,6 +210,87 @@ func (v *NVar) parseNext() error {
 		v.Type = LinkNVarEntry
 		v.NextOffset = v.Offset + next
 	}
+	return nil
+}
+
+func (v *NVar) parseExtendedHeader() error {
+	var knownExtDataFormat bool
+	if v.Header.Attributes&NVarEntryExtHeader == 0 {
+		return nil
+	}
+	var extendedHeaderSize uint16
+	r := bytes.NewReader(v.buf)
+	if _, err := r.Seek(-int64(binary.Size(extendedHeaderSize)), io.SeekEnd); err != nil {
+		return err
+	}
+	if err := binary.Read(r, binary.LittleEndian, &extendedHeaderSize); err != nil {
+		return err
+	}
+	// Sanity check extendedHeaderSize < body size
+	bodySize := int64(v.Header.Size) - v.DataOffset
+	if int64(extendedHeaderSize) > bodySize {
+		return fmt.Errorf("extended header size (%#x) is greater than body size (%#x)", extendedHeaderSize, bodySize)
+	}
+	v.ExtOffset = int64(v.Header.Size) - int64(extendedHeaderSize)
+	if _, err := r.Seek(v.ExtOffset, io.SeekStart); err != nil {
+		return err
+	}
+	var extAttributes NVarExtAttribute
+	if err := binary.Read(r, binary.LittleEndian, &extAttributes); err != nil {
+		return err
+	}
+	v.ExtAttributes = &extAttributes
+	// Variable with checksum
+	if extAttributes&NVarEntryExtChecksum != 0 {
+		// Get stored checksum
+		var storedChecksum uint8
+		storedChecksum = v.buf[int64(v.Header.Size)-int64(binary.Size(extendedHeaderSize)+binary.Size(storedChecksum))]
+		v.Checksum = &storedChecksum
+		// Recalculate checksum for the variable
+		calculatedChecksum := uint8(0)
+		// [0-3] _Skip_  entry 'NVAR' signature
+		// [4-5] Include entry size and flags
+		// [6-8] _Skip_  entry next (So linking will not invalidate the sum)
+		// [ 9 ] Include entry attributes
+		// [10-] Include entry data
+		for i := int64(4); i < int64(v.Header.Size); i++ {
+			calculatedChecksum += v.buf[i]
+			if i == 5 {
+				i += 3 // Skip Next
+			}
+		}
+		if calculatedChecksum != 0 {
+			calculatedChecksum = -calculatedChecksum
+			v.ExpectedChecksum = &calculatedChecksum
+		}
+		knownExtDataFormat = true
+	}
+
+	if v.Header.Attributes&NVarEntryAuthWrite == 0 {
+		var timestamp uint64
+		if err := binary.Read(r, binary.LittleEndian, &timestamp); err != nil {
+			switch err {
+			case io.EOF, io.ErrUnexpectedEOF:
+				return fmt.Errorf("extended header size (%#x) is too small for timestamp", extendedHeaderSize)
+			default:
+				return err
+			}
+		}
+		if v.Header.Attributes&NVarEntryDataOnly != 0 {
+			// Full or link variable have hash
+			hashstart, err := r.Seek(0, io.SeekCurrent)
+			if err != nil {
+				return err
+			}
+			if hashstart+sha256.Size > int64(v.Header.Size) {
+				return fmt.Errorf("extended header size (%#x) is too small for hash", extendedHeaderSize)
+			}
+			v.Hash = make([]byte, sha256.Size)
+			copy(v.Hash, v.buf[hashstart:hashstart+sha256.Size])
+		}
+		knownExtDataFormat = true
+	}
+	v.UnknownExtendedHeaderFormat = !knownExtDataFormat
 	return nil
 }
 
@@ -312,6 +414,13 @@ func newNVar(buf []byte, offset uint64, s *NVarStore) (*NVar, error) {
 	// Parse next node information
 	if err := v.parseNext(); err != nil {
 		return nil, err
+	}
+
+	// Entry with extended header
+	if err := v.parseExtendedHeader(); err != nil {
+		v.Name = fmt.Sprintf("Invalid ExtHeader, %v", err)
+		v.Type = InvalidNVarEntry
+		return &v, nil
 	}
 
 	// Entry is data-only (nameless and GUIDless entry or link)
