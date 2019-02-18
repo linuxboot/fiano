@@ -11,6 +11,11 @@ Card](https://goreportcard.com/badge/github.com/linuxboot/fiano)](https://gorepo
 
 ![Fiano](./fiano-logo.svg)
 
+# Contributing
+
+For information about contributing, including how we sign off commits, please see
+CONTRIBUTING.md
+
 ## UTK: Generic UEFI tool kit meant to handle rom images
 
 Example usage:
