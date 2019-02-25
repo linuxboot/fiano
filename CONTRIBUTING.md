@@ -78,7 +78,7 @@ We accept GitHub pull requests.
 
 Fork the project on GitHub, work in your fork and in branches, push
 these to your GitHub fork, and when ready, do a GitHub pull requests
-against https://github.com/u-root/u-root.
+against https://github.com/linuxboot/fiano.
 
 `fiano` uses [dep](https://github.com/golang/dep)
 for its dependency management. Please run `dep ensure`, `dep prune`, and commit Gopkg.toml, Gopkg.lock and vendor/ changes before opening a pull request.
