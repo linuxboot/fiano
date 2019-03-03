@@ -210,7 +210,7 @@ func init() {
 				return true, nil
 			},
 			Predicate: predicate,
-			W:         os.Stdout,
+			W:         Stdout,
 		}, nil
 	}
 

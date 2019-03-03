@@ -23,6 +23,9 @@ var (
 	host    = flag.String("h", "127.0.0.1", "host")
 	port    = flag.String("p", "8080", "port")
 	browser = flag.String("b", "", "open URL in the given brower (ex: firefox)")
+
+	logBuffer   = &bytes.Buffer{}
+	printBuffer = &bytes.Buffer{}
 )
 
 func jsonResponse(w http.ResponseWriter, obj interface{}) {
@@ -41,7 +44,8 @@ func jsonResponse(w http.ResponseWriter, obj interface{}) {
 //     GET / - returns HTML
 //     GET /list - returns flattend json list of nodes
 //     GET /visitors - returns a list of visitors
-//     GET /visitors/NAME/ARG0/ARG1/...
+//     POST /visitors/NAME/ARG0/ARG1/...
+//     GET /log
 func registerHandlers(root uefi.Firmware) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -97,6 +101,8 @@ func registerHandlers(root uefi.Firmware) {
 	})
 
 	http.HandleFunc("/visitors/", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: white list and constrict save directory
+
 		if r.Method != "POST" {
 			http.Error(w, "bad method", 400)
 			return
@@ -129,7 +135,20 @@ func registerHandlers(root uefi.Firmware) {
 		if err := v.Run(root); err != nil {
 			log.Fatal(err)
 		}
+		log.Println("Ran command", cmd, args)
 		jsonResponse(w, []struct{}{})
+	})
+
+	// Endpoint returns logs which have not yet been read.
+	http.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := io.Copy(w, logBuffer); err != nil {
+			http.Error(w, "error copying logs", 400)
+			return
+		}
+		if _, err := io.Copy(w, printBuffer); err != nil {
+			http.Error(w, "error copying logs", 400)
+			return
+		}
 	})
 }
 
@@ -191,5 +210,8 @@ func main() {
 		fmt.Printf("Open http://%s in your web browser", address)
 	}
 
+	visitors.Stdout = printBuffer
+	log.SetOutput(logBuffer) // TODO: tee to stdout
+	log.Print("Welcome to iUTK!")
 	log.Fatal(http.Serve(l, nil))
 }

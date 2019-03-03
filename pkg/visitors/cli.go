@@ -9,10 +9,15 @@ package visitors
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sort"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
+
+// Stdout for CLI commands can be redirected with this variable.
+var Stdout io.Writer = os.Stdout
 
 // VisitorRegistry lists the visitors which have been registered. Use
 // RegisterCLI to register a visitor.

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -69,7 +68,7 @@ func (v *Count) Visit(f uefi.Firmware) error {
 func init() {
 	RegisterCLI("count", "count the number of each firmware type", 0, func(args []string) (uefi.Visitor, error) {
 		return &Count{
-			W: os.Stdout,
+			W: Stdout,
 		}, nil
 	})
 }

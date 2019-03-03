@@ -6,7 +6,6 @@ package visitors
 
 import (
 	"io"
-	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -72,7 +71,7 @@ func init() {
 		}
 		return &Cat{
 			Predicate: pred,
-			Writer:    os.Stdout,
+			Writer:    Stdout,
 		}, nil
 	})
 }

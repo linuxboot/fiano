@@ -37,7 +37,7 @@
         left: 0;
       }
 
-      #sidebar {
+      #node-info-pane {
         background-color: green;
         overflow: auto;
         position: absolute;
@@ -48,7 +48,7 @@
         left: 60%;
       }
 
-      #logs {
+      #log-pane {
         background-color: orange;
         overflow: auto;
         position: absolute;
@@ -68,11 +68,15 @@
 
     <div id=visitors></div>
     <div id=tree></div>
-    <div id=sidebar></div>
-    <div id=logs></div>
+    <div id=node-info-pane></div>
+    <pre id=log-pane></pre>
 
     <script>
       var $ = x => document.getElementById(x);
+
+      // Global state
+      var nodeList = null;
+      var selectedNode = null;
 
       function rawGet(url, callback) {
         var xhr = new XMLHttpRequest();
@@ -116,7 +120,8 @@
               $button.onclick = function(name) {
                 return function () {
                   rawPost('/visitors/' + name, '', function (data) {
-                    alert("success");
+                    updateList();
+                    updateLog();
                   });
                 }
               }(name);
@@ -126,27 +131,48 @@
         });
       }
 
-      function updateTree() {
+      function updateList() {
         rawGet('/list', data => {
-          var list = JSON.parse(data);
-          $('tree').innerHTML = encode(data);
-          list.forEach(node => {
+          var selectedNode = null;
+          nodeList = JSON.parse(data);
+
+          // Create a new table.
+          $('tree').innerHTML = "";
+          var $table = document.createElement('table');
+          $('tree').appendChild($table);
+
+          nodeList.forEach((node, index) => {
+            var indent = "";
+            for (var i = 0; i < node.Level; i++) {
+              indent += "_";
+            }
+
+            var $tr = document.createElement('tr');
+            $tr.onclick = function() {
+              $('node-info-pane').innerHTML = encode(JSON.stringify(nodeList[index]));
+            };
+
+            var $tdType = document.createElement('td');
+            $tdType.appendChild(document.createTextNode(indent + node.Type));
+            $tr.appendChild($tdType);
+            $table.appendChild($tr);
           });
         });
       }
 
-      function updateLogs() {
-        rawGet('/logs', data => {
+      function updateLog() {
+        rawGet('/log', data => {
+          $('log-pane').innerHTML += encode(data);
         });
       }
 
       document.body.onload = function () {
         updateVisitors();
-        updateTree();
-        //updateLogs();
+        updateList();
+        updateLog();
 
         // Hide the usage text.
-        $('usage').style.display = "none";
+        $('usage').style.display = 'none';
       };
     </script>
   </body>

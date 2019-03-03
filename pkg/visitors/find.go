@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"regexp"
 
 	"github.com/linuxboot/fiano/pkg/guid"
@@ -232,7 +231,7 @@ func init() {
 		}
 		return &Find{
 			Predicate: pred,
-			W:         os.Stdout,
+			W:         Stdout,
 		}, nil
 	})
 }

@@ -6,7 +6,7 @@ package visitors
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"text/tabwriter"
 
@@ -15,7 +15,8 @@ import (
 
 // Table prints the GUIDS, types and sizes as a compact table.
 type Table struct {
-	W      *tabwriter.Writer
+	W      io.Writer
+	TW     *tabwriter.Writer
 	indent int
 }
 
@@ -79,12 +80,12 @@ func indent(n int) string {
 }
 
 func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
-	if v.W == nil {
-		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		defer func() { v.W.Flush() }()
-		fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
+	if v.TW == nil {
+		v.TW = tabwriter.NewWriter(v.W, 0, 0, 2, ' ', 0)
+		defer func() { v.TW.Flush() }()
+		fmt.Fprintf(v.TW, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
 	}
-	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, len(f.Buf()))
+	fmt.Fprintf(v.TW, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, len(f.Buf()))
 	v2 := *v
 	v2.indent++
 	if err := f.ApplyChildren(&v2); err != nil {
@@ -92,13 +93,15 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
 	}
 	if fv, ok := f.(*uefi.FirmwareVolume); ok {
 		// Print free space at the end of the volume
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", fv.FreeSpace)
+		fmt.Fprintf(v.TW, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", fv.FreeSpace)
 	}
 	return nil
 }
 
 func init() {
 	RegisterCLI("table", "print out important information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
-		return &Table{}, nil
+		return &Table{
+			W: Stdout,
+		}, nil
 	})
 }

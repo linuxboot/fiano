@@ -7,7 +7,6 @@ package visitors
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -31,6 +30,6 @@ func (v *Comment) Visit(f uefi.Firmware) error {
 
 func init() {
 	RegisterCLI("comment", "Print one arg", 1, func(args []string) (uefi.Visitor, error) {
-		return &Comment{W: os.Stdout, s: args[0]}, nil
+		return &Comment{W: Stdout, s: args[0]}, nil
 	})
 }
