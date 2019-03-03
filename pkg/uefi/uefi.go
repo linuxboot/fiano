@@ -9,6 +9,7 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -113,6 +114,13 @@ var firmwareTypes = map[string]func() Firmware{
 	"*uefi.MERegion":        func() Firmware { return &MERegion{} },
 	"*uefi.RawRegion":       func() Firmware { return &RawRegion{} },
 	"*uefi.Section":         func() Firmware { return &Section{} },
+}
+
+func init() {
+	for _, f := range firmwareTypes {
+		gob.Register(f())
+	}
+	gob.Register(&SectionGUIDDefined{}) // TODO: remove with bug #TODO
 }
 
 // MarshalFirmware marshals the firmware element to JSON, including the type information at the top.

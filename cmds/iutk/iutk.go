@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -64,9 +66,23 @@ func registerHandlers(root uefi.Firmware) {
 			return
 		}
 
-		// TODO: flatten is destructive
+		// Clone via encode/decode to get around the destructive nature of
+		// flatten.
+		var clone uefi.Firmware
+		var buf bytes.Buffer
+		if err := gob.NewEncoder(&buf).Encode(&root); err != nil {
+			http.Error(w, fmt.Sprintf("error encoding: %v", err), 400)
+			return
+		}
+		if err := gob.NewDecoder(&buf).Decode(&clone); err != nil {
+			http.Error(w, fmt.Sprintf("error decoding: %v", err), 400)
+			return
+		}
+
+		// Flatten the tree otherwise JavaSCript would be unable to tell which
+		// objects are uefi.Firmware.
 		flatten := visitors.Flatten{}
-		if err := flatten.Run(root); err != nil {
+		if err := flatten.Run(clone); err != nil {
 			log.Fatal(err)
 		}
 		jsonResponse(w, flatten.List)
