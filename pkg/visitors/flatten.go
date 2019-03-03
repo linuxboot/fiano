@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
+	"strings"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -78,7 +78,7 @@ func (v *Flatten) Visit(f uefi.Firmware) error {
 	v.parent = len(v.List)
 	v.List = append(v.List, FlattenedFirmware{
 		Parent: parent,
-		Type:   fmt.Sprintf("%T", f),
+		Type:   strings.TrimPrefix(fmt.Sprintf("%T", f), "*uefi."),
 		Level:  v.level,
 		Value:  f,
 	})
@@ -94,7 +94,7 @@ func (v *Flatten) Visit(f uefi.Firmware) error {
 func init() {
 	RegisterCLI("flatten", "prints a JSON list of nodes", 0, func(args []string) (uefi.Visitor, error) {
 		return &Flatten{
-			W: os.Stdout,
+			W: Stdout,
 		}, nil
 	})
 }

@@ -246,7 +246,7 @@ func init() {
 		}
 		return &Find{
 			Predicate: pred,
-			W:         os.Stdout,
+			W:         Stdout,
 		}, nil
 	})
 	RegisterCLI("find_nvar", "find an NVAR by Name", 1, func(args []string) (uefi.Visitor, error) {

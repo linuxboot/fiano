@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -37,7 +36,7 @@ func (v *JSON) Visit(f uefi.Firmware) error {
 func init() {
 	RegisterCLI("json", "produce JSON for the full firmware volume", 0, func(args []string) (uefi.Visitor, error) {
 		return &JSON{
-			W: os.Stdout,
+			W: Stdout,
 		}, nil
 	})
 }

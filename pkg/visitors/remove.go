@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -126,7 +125,7 @@ func init() {
 		return &Remove{
 			Predicate: pred,
 			Pad:       false,
-			W:         os.Stdout,
+			W:         Stdout,
 		}, nil
 	})
 	RegisterCLI("remove_pad", "remove a file from the volume and replace it with a pad file of the same size", 1, func(args []string) (uefi.Visitor, error) {
@@ -137,7 +136,7 @@ func init() {
 		return &Remove{
 			Predicate: pred,
 			Pad:       true,
-			W:         os.Stdout,
+			W:         Stdout,
 		}, nil
 	})
 	RegisterCLI("remove_dxes_except", "remove all files from the volume except those in the specified file", 1, func(args []string) (uefi.Visitor, error) {
