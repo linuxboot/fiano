@@ -25,6 +25,7 @@ func (v *Table) Run(f uefi.Firmware) error {
 	return f.Apply(v)
 }
 
+// ToString returns a string summary of a uefi.Firmware.
 // TODO: move to uefi
 // TODO: dedup
 func ToString(f uefi.Firmware) string {
