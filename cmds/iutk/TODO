@@ -1,0 +1,16 @@
+- Table
+  - Print names
+  - Print sizes
+  - Open/collapse buttons
+- Required integration for visitors:
+  - download file
+  - replace pe32
+  - inserts
+  - remove
+  - find
+  - save
+- Pretty print json in sidebar
+  - Editable
+  - Save and cancel buttons
+- Clear button for logs
+- Nicer CSS
