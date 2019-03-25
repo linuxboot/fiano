@@ -35,6 +35,8 @@ var (
 		[]byte{8, uefi.EmptyBodyChecksum, byte(uefi.FVFileTypePad), 0, uefi.FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty pad file header with no data
 	goodFreeFormHeader = append(uefi.FFGUID[:],
 		[]byte{202, uefi.EmptyBodyChecksum, byte(uefi.FVFileTypeFreeForm), 0, uefi.FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty freeform file header with no data
+	nvarStoreHeader = append(uefi.NVAR[:],
+		[]byte{182, uefi.EmptyBodyChecksum, byte(uefi.FVFileTypeRaw), 0, uefi.FileHeaderMinLength, 0x00, 0x00, 0xF8}...) // Empty NVAR file header with no data
 )
 
 var (
@@ -43,6 +45,7 @@ var (
 	emptyPadFile     = emptyPadHeader // Empty pad file with no data
 	badFreeFormFile  []byte           // File with bad checksum. Should construct fine, but not validate
 	goodFreeFormFile []byte           // Good file
+	nvarStoreFile    []byte           // File containing an NVarStore
 )
 
 func init() {
@@ -55,7 +58,20 @@ func init() {
 	badFreeFormFile = make([]byte, len(goodFreeFormFile))
 	copy(badFreeFormFile, goodFreeFormFile)
 	badFreeFormFile[16] = 0 // Zero out checksum
+
+	nvarStoreFile = append(nvarStoreHeader, nvarEntryHeader...)
+	nvarStoreFile = append(nvarStoreFile, byte(0))
+	nvarStoreFile = append(nvarStoreFile, []byte("Test")...)
+	nvarStoreFile = append(nvarStoreFile, byte(0))
+	nvarStoreFile = append(nvarStoreFile, uefi.FFGUID[:]...)
+	nvarStoreFile[20] = byte(uefi.FileHeaderMinLength + len(nvarEntryHeader) + 6 + len(uefi.FFGUID))
+
 }
+
+var (
+	// NVAR examples
+	nvarEntryHeader = []byte{0x4E, 0x56, 0x41, 0x52, 16, 0, 0xFF, 0xFF, 0xFF, byte(uefi.NVarEntryValid | uefi.NVarEntryASCIIName)}
+)
 
 var (
 	// Section examples
@@ -77,6 +93,7 @@ func TestExtractAssembleFile(t *testing.T) {
 		{"emptyPadFile", emptyPadFile, emptyPadFile},
 		{"badFreeFormFile", badFreeFormFile, goodFreeFormFile},
 		{"goodFreeFormFile", goodFreeFormFile, goodFreeFormFile},
+		{"nvarStoreFile", nvarStoreFile, nvarStoreFile},
 	}
 	// Set erasepolarity to FF
 	uefi.Attributes.ErasePolarity = 0xFF
