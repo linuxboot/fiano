@@ -215,7 +215,7 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 		}
 
 		for i, e := range f.Elements {
-			if err := f.Apply(v); err != nil {
+			if err := e.Value.Apply(v); err != nil {
 				return err
 			}
 			f, ok := e.Value.(*uefi.FirmwareVolume)
