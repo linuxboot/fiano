@@ -171,8 +171,6 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		f.SetBuf(fBuf)
 
 	case *uefi.File:
-		fh := &f.Header
-		var fBuf []byte
 		if len(f.Sections) == 0 && f.NVarStore == nil {
 			// No children, buffer should already contain data.
 			// we don't support this file type, just return the raw buffer.
@@ -180,13 +178,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			// We have to make sure the state is correct, so we still need to write out
 			// the file header.
 
-			// Set state to valid based on erase polarity
-			// We really should redo the whole header
-			// TODO: Reconstruct header from JSON
-			fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
-			fBuf = f.Buf()
-			fBuf[0x17] = fh.State
-			f.SetBuf(fBuf)
+			// TODO: Not setting to valid used to cause some failures on some bioses, verify that it no longer fails.
+			// There are some bioses that don't set the valid bits correctly,
+			// fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
 			return nil
 		}
 
@@ -225,8 +219,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			v.useFFS3 = true
 		}
 
-		// Set state to valid based on erase polarity
-		fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
+		// TODO: Not setting to valid used to cause some failures on some bioses, verify that it no longer fails.
+		// There are some bioses that don't set the valid bits correctly,
+		// fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
 
 		if err = f.ChecksumAndAssemble(fileData); err != nil {
 			return err

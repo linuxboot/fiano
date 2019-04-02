@@ -153,7 +153,7 @@ type FileHeader struct {
 	Type       FVFileType
 	Attributes fileAttr
 	Size       [3]uint8 `json:"-"`
-	State      uint8    `json:"-"`
+	State      uint8
 }
 
 // IsLarge checks if the large file attribute is set.
