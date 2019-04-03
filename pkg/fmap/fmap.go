@@ -19,7 +19,8 @@ import (
 	"strings"
 )
 
-var signature = []byte("__FMAP__")
+// Signature of the fmap structure.
+var Signature = []byte("__FMAP__")
 
 // Flags which can be applied to Area.Flags.
 const (
@@ -128,12 +129,12 @@ func Read(f io.Reader) (*FMap, *Metadata, error) {
 	}
 
 	// Check for too many fmaps.
-	if bytes.Count(data, signature) >= 2 {
+	if bytes.Count(data, Signature) >= 2 {
 		return nil, nil, errors.New("Found multiple signatures")
 	}
 
 	// Check for too few fmaps.
-	start := bytes.Index(data, signature)
+	start := bytes.Index(data, Signature)
 	if start == -1 {
 		return nil, nil, errors.New("Cannot find fmap signature")
 	}
