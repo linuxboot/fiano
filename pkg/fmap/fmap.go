@@ -170,7 +170,18 @@ func Write(f io.WriteSeeker, fmap *FMap, m *Metadata) error {
 	return binary.Write(f, binary.LittleEndian, fmap.Areas)
 }
 
-// ReadArea reads an area from the fmap as a binary stream.
+// IndexOfArea returns the index of an area in the fmap given its name. If no
+// names match, -1 is returned.
+func (f *FMap) IndexOfArea(name string) int {
+	for i := 0; i < len(f.Areas); i++ {
+		if f.Areas[i].Name.String() == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// ReadArea reads an area from the flash image as a binary stream.
 func (f *FMap) ReadArea(r io.ReadSeeker, i int) (io.Reader, error) {
 	if i < 0 || int(f.NAreas) <= i {
 		return nil, errors.New("Area index out of range")
