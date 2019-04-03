@@ -23,7 +23,7 @@ var fakeFlash = bytes.Join([][]byte{
 	bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 94387),
 
 	// Signature
-	[]byte("__FMAP__"),
+	Signature,
 	// VerMajor, VerMinor
 	{1, 0},
 	// Base
