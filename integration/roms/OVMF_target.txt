@@ -73,4 +73,3 @@ TOOL_CHAIN_TAG        = GCC5
 #                                     when generating Makefiles. If not specified, the file:
 #                                     WORKSPACE/Conf/build_rule.txt will be used
 BUILD_RULE_CONF = Conf/build_rule.txt
-
