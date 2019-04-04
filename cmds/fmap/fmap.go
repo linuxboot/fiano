@@ -6,7 +6,7 @@
 //
 // Synopsis:
 //     fmap checksum [md5|sha1|sha256] FILE
-//     fmap extract i FILE
+//     fmap extract [index|name] FILE
 //     fmap jget JSONFILE FILE
 //     fmap jput JSONFILE FILE
 //     fmap summary FILE
@@ -15,7 +15,7 @@
 //
 // Description:
 //     checksum: Print a checksum using the given hash function.
-//     extract:  Print the i-th area of the flash.
+//     extract:  Print the i-th area or area name from the flash.
 //     jget:     Write json representation of the fmap to JSONFILE.
 //     jput:     Replace current fmap with json representation in JSONFILE.
 //     summary:  Print a human readable summary.
@@ -62,7 +62,7 @@ type cmdArgs struct {
 	args []string
 	f    *fmap.FMap     // optional
 	m    *fmap.Metadata // optional
-	r    io.ReadSeeker
+	r    *os.File
 }
 
 var hashFuncs = map[string](func() hash.Hash){
@@ -98,13 +98,16 @@ func checksum(a cmdArgs) error {
 func extract(a cmdArgs) error {
 	i, err := strconv.Atoi(a.args[0])
 	if err != nil {
-		return err
+		i = a.f.IndexOfArea(a.args[0])
+		if i == -1 {
+			return fmt.Errorf("area %q not found", a.args[0])
+		}
 	}
-	areaReader, err := a.f.ReadArea(a.r, i)
+	area, err := a.f.ReadArea(a.r, i)
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(os.Stdout, areaReader)
+	_, err = os.Stdout.Write(area)
 	return err
 }
 
