@@ -19,7 +19,8 @@ import (
 	"strings"
 )
 
-var signature = []byte("__FMAP__")
+// Signature of the fmap structure.
+var Signature = []byte("__FMAP__")
 
 // Flags which can be applied to Area.Flags.
 const (
@@ -128,12 +129,12 @@ func Read(f io.Reader) (*FMap, *Metadata, error) {
 	}
 
 	// Check for too many fmaps.
-	if bytes.Count(data, signature) >= 2 {
+	if bytes.Count(data, Signature) >= 2 {
 		return nil, nil, errors.New("Found multiple signatures")
 	}
 
 	// Check for too few fmaps.
-	start := bytes.Index(data, signature)
+	start := bytes.Index(data, Signature)
 	if start == -1 {
 		return nil, nil, errors.New("Cannot find fmap signature")
 	}
@@ -170,7 +171,18 @@ func Write(f io.WriteSeeker, fmap *FMap, m *Metadata) error {
 	return binary.Write(f, binary.LittleEndian, fmap.Areas)
 }
 
-// ReadArea reads an area from the fmap as a binary stream.
+// IndexOfArea returns the index of an area in the fmap given its name. If no
+// names match, -1 is returned.
+func (f *FMap) IndexOfArea(name string) int {
+	for i := 0; i < len(f.Areas); i++ {
+		if f.Areas[i].Name.String() == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// ReadArea reads an area from the flash image as a binary stream.
 func (f *FMap) ReadArea(r io.ReadSeeker, i int) (io.Reader, error) {
 	if i < 0 || int(f.NAreas) <= i {
 		return nil, errors.New("Area index out of range")

@@ -23,7 +23,7 @@ var fakeFlash = bytes.Join([][]byte{
 	bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 94387),
 
 	// Signature
-	[]byte("__FMAP__"),
+	Signature,
 	// VerMajor, VerMinor
 	{1, 0},
 	// Base
@@ -146,6 +146,30 @@ func TestTruncatedFmap(t *testing.T) {
 	got := err.Error()
 	if expected != got {
 		t.Errorf("expected: %s; got: %s", expected, got)
+	}
+}
+
+func TestIndexOfArea(t *testing.T) {
+	r := bytes.NewReader(fakeFlash)
+	fmap, _, err := Read(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name  string
+		index int
+	}{
+		{strings.TrimRight(string(area0Name), "\x00"), 0},
+		{strings.TrimRight(string(area1Name), "\x00"), 1},
+		{"not an area name", -1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			index := fmap.IndexOfArea(tt.name)
+			if index != tt.index {
+				t.Errorf("expected index: %d, got index: %d", tt.index, index)
+			}
+		})
 	}
 }
 
