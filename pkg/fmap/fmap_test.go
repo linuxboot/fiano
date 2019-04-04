@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
@@ -193,17 +192,92 @@ func TestReadArea(t *testing.T) {
 	}
 	fakeFlash := bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 0x70)
 	r := bytes.NewReader(fakeFlash)
-	area, err := fmap.ReadArea(r, 1)
+	got, err := fmap.ReadArea(r, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	expected := fakeFlash[0x10:0x30]
-	got, err := ioutil.ReadAll(area)
+	if !bytes.Equal(expected, got) {
+		t.Errorf("expected: %v; got: %v", expected, got)
+	}
+}
+
+func TestReadAreaByName(t *testing.T) {
+	fmap := FMap{
+		Header: Header{
+			NAreas: 3,
+		},
+		Areas: []Area{
+			{
+				Offset: 0x0,
+				Size:   0x10,
+			}, {
+				Offset: 0x10,
+				Size:   0x20,
+			}, {
+				Offset: 0x30,
+				Size:   0x40,
+			},
+		},
+	}
+	copy(fmap.Areas[0].Name.Value[:], []byte("Area 1\x00"))
+	copy(fmap.Areas[1].Name.Value[:], []byte("Area 2\x00"))
+	copy(fmap.Areas[2].Name.Value[:], []byte("Area 3\x00"))
+	fakeFlash := bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 0x70)
+	r := bytes.NewReader(fakeFlash)
+	got, err := fmap.ReadAreaByName(r, "Area 3")
 	if err != nil {
 		t.Fatal(err)
 	}
+	expected := fakeFlash[0x30:0x70]
 	if !bytes.Equal(expected, got) {
 		t.Errorf("expected: %v; got: %v", expected, got)
+	}
+}
+
+type testBuffer struct {
+	buf []byte
+}
+
+func (b *testBuffer) WriteAt(p []byte, off int64) (n int, err error) {
+	if off+int64(len(p)) > int64(len(b.buf)) {
+		return 0, fmt.Errorf("out of bounds: %d > %d",
+			off+int64(len(p)), int64(len(b.buf)))
+	}
+	copy(b.buf[off:], p)
+	return len(p), nil
+}
+
+func TestWriteAreaByName(t *testing.T) {
+	fmap := FMap{
+		Header: Header{
+			NAreas: 3,
+		},
+		Areas: []Area{
+			{
+				Offset: 0x0,
+				Size:   0x10,
+			}, {
+				Offset: 0x10,
+				Size:   0x20,
+			}, {
+				Offset: 0x30,
+				Size:   0x40,
+			},
+		},
+	}
+	copy(fmap.Areas[0].Name.Value[:], []byte("Area 1\x00"))
+	copy(fmap.Areas[1].Name.Value[:], []byte("Area 2\x00"))
+	copy(fmap.Areas[2].Name.Value[:], []byte("Area 3\x00"))
+	fakeFlash := bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 0x70)
+	w := &testBuffer{fakeFlash}
+	data := []byte("AHHHHH!!!!!!!")
+	if err := fmap.WriteAreaByName(w, "Area 2", data); err != nil {
+		t.Fatal(err)
+	}
+	got := fakeFlash[fmap.Areas[1].Offset : fmap.Areas[1].Offset+uint32(len(data))]
+	if !bytes.Equal(data, got) {
+		t.Errorf("expected: %v; got: %v", data, got)
 	}
 }
 
