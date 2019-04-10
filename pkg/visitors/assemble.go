@@ -116,7 +116,12 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			fileOffset = alignedOffset + fileLen
 		}
 
+		// Check if we're out of space.
 		newFVLen := uint64(len(f.Buf()))
+		if f.Length < newFVLen && !f.Resizable {
+			return fmt.Errorf("out of space in firmware volume. space available: %v bytes, new size: %v, reduce size by %v bytes", f.Length, newFVLen, newFVLen-f.Length)
+		}
+
 		if f.Length < newFVLen {
 			// We've expanded the FV, resize
 			if f.Blocks[0].Size == 0 {
@@ -137,6 +142,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			f.SetBuf(append(f.Buf(), emptyBuf...))
 		}
 
+		f.FreeSpace = f.Length - uefi.Align8(newFVLen)
 		fBuf = f.Buf()
 
 		// Write the length to the correct spot

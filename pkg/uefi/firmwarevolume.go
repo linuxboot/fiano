@@ -7,8 +7,8 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"log"
 
 	"github.com/linuxboot/fiano/pkg/guid"
 )
@@ -148,11 +148,6 @@ func fillFFs(b []byte) {
 func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
 	// fv.Length should contain the minimum fv size.
 	// If Resizable is not set, this is the exact FV size.
-	fvLen := fv.Length
-	if !fv.Resizable && alignedOffset > fv.Length {
-		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x",
-			fvLen, alignedOffset)
-	}
 	bufLen := uint64(len(fv.buf))
 	if bufLen > alignedOffset {
 		return fmt.Errorf("aligned offset is in the middle of the FV, offset was %#x, fv buffer was %#x",
@@ -167,17 +162,10 @@ func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
 	// Check size
 	fLen := uint64(len(fBuf))
 	if fLen == 0 {
-		log.Fatal("FUCK")
-	}
-	if fLen+alignedOffset > fvLen && !fv.Resizable {
-		// TODO: Actually loop through and calculate the full size so we know how much to reduce by.
-		// For now we just return early
-		return fmt.Errorf("insufficient space in %#x bytes FV, files too big, offset was %#x, length was %#x",
-			fvLen, alignedOffset, len(fBuf))
+		return errors.New("trying to insert empty file")
 	}
 	// Overwrite old data in the firmware volume.
 	fv.buf = append(fv.buf, fBuf...)
-	fv.FreeSpace = Align8(fv.Length - uint64(len(fv.buf)))
 	return nil
 }
 
