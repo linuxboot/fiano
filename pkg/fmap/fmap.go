@@ -6,7 +6,6 @@
 package fmap
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
@@ -182,19 +181,51 @@ func (f *FMap) IndexOfArea(name string) int {
 	return -1
 }
 
-// ReadArea reads an area from the flash image as a binary stream.
-func (f *FMap) ReadArea(r io.ReadSeeker, i int) (io.Reader, error) {
+// ReadArea reads an area from the flash image as a byte array given its index.
+func (f *FMap) ReadArea(r io.ReaderAt, i int) ([]byte, error) {
 	if i < 0 || int(f.NAreas) <= i {
-		return nil, errors.New("Area index out of range")
+		return nil, fmt.Errorf("Area index %d out of range", i)
 	}
-	if _, err := r.Seek(int64(f.Areas[i].Offset), io.SeekStart); err != nil {
-		return nil, err
+	buf := make([]byte, f.Areas[i].Size)
+	_, err := r.ReadAt(buf, int64(f.Areas[i].Offset))
+	return buf, err
+}
+
+// ReadAreaByName is the same as ReadArea but uses the area's name.
+func (f *FMap) ReadAreaByName(r io.ReaderAt, name string) ([]byte, error) {
+	i := f.IndexOfArea(name)
+	if i == -1 {
+		return nil, fmt.Errorf("Fmap area %q not found", name)
 	}
-	return io.LimitReader(r, int64(f.Areas[i].Size)), nil
+	return f.ReadArea(r, i)
+}
+
+// WriteArea writes a byte array to an area on the flash image given its index.
+// If the data is too large for the fmap area, the write is not performed and
+// an error returned. If the data is too small, the remainder is left untouched.
+func (f *FMap) WriteArea(r io.WriterAt, i int, data []byte) error {
+	if i < 0 || int(f.NAreas) <= i {
+		return fmt.Errorf("Area index %d out of range", i)
+	}
+	if uint32(len(data)) > f.Areas[i].Size {
+		return fmt.Errorf("Data too large for fmap area: %#x > %#x",
+			len(data), f.Areas[i].Size)
+	}
+	_, err := r.WriteAt(data, int64(f.Areas[i].Offset))
+	return err
+}
+
+// WriteAreaByName is the same as WriteArea but uses the area's name.
+func (f *FMap) WriteAreaByName(r io.WriterAt, name string, data []byte) error {
+	i := f.IndexOfArea(name)
+	if i == -1 {
+		return fmt.Errorf("Fmap area %q not found", name)
+	}
+	return f.WriteArea(r, i, data)
 }
 
 // Checksum performs a hash of the static areas.
-func (f *FMap) Checksum(r io.ReadSeeker, h hash.Hash) ([]byte, error) {
+func (f *FMap) Checksum(r io.ReaderAt, h hash.Hash) ([]byte, error) {
 	for i, v := range f.Areas {
 		if v.Flags&FmapAreaStatic == 0 {
 			continue
@@ -203,7 +234,7 @@ func (f *FMap) Checksum(r io.ReadSeeker, h hash.Hash) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		_, err = bufio.NewReader(areaReader).WriteTo(h)
+		_, err = bytes.NewReader(areaReader).WriteTo(h)
 		if err != nil {
 			return nil, err
 		}
