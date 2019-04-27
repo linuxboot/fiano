@@ -20,7 +20,7 @@ workflows:
 jobs:
   clean-code:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     steps:
       - checkout
@@ -50,7 +50,7 @@ jobs:
       - run:
           name: vet
           command: |
-            go tool vet cmds pkg
+            go vet ./...
       - run:
           name: gofmt
           command: test -z "$(gofmt -s -l cmds pkg)"
@@ -62,7 +62,7 @@ jobs:
           command: ineffassign .
   test:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
       - CGO_ENABLED: 0
@@ -76,7 +76,7 @@ jobs:
           command: go test -cover ./...
   race:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
       - CGO_ENABLED: 1
@@ -87,7 +87,7 @@ jobs:
           command: go test -race ./...
   coverage:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
       - CGO_ENABLED: 0
@@ -111,7 +111,7 @@ jobs:
           command: bash <(curl -s https://codecov.io/bash)
   check_licenses:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
       - CGO_ENABLED: 0

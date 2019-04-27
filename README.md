@@ -76,7 +76,7 @@ Example usage:
 
 ## Installation
 
-    # Golang version 1.11 is required:
+    # Golang version 1.12 is required:
     go version
 
     # For UTK:

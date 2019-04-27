@@ -18,7 +18,7 @@ fi
 
 gofmt -w -s $FILES
 echo $FILES | xargs -n 1 golint -set_exit_status
-go tool vet pkg/* cmds/*
+go vet ./...
 
 # Check it builds
 
