@@ -138,7 +138,7 @@ func TestRegressionJson(t *testing.T) {
 			}
 
 			buf := &bytes.Buffer{}
-			json := &visitors.JSON{buf}
+			json := &visitors.JSON{W: buf}
 			if err := json.Run(parsedRoot); err != nil {
 				t.Fatal(err)
 			}
