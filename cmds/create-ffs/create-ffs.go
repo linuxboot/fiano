@@ -26,18 +26,15 @@ var (
 	filetype   = flag.String("type", "DRIVER", "UEFI filetype")
 	version    = flag.String("version", "1.0", "File version")
 	guidString = flag.String("guid", "", "File GUID")
-	depex      = flag.String("depex", "", "Space-separated protocol guid dependencies or TRUE")
+	depex      = flag.String("depex", "", "Space or comma separated protocol guid dependencies or TRUE")
 	compress   = flag.Bool("compress", false, "Wrap section data in a compressed section")
 	auto       = flag.Bool("auto", false, "Attempt to determine section types from file extensions")
 
-	fType  uefi.FVFileType
-	fGUID  *guid.GUID
-	depOps []uefi.DepExOp
 	printf = func(string, ...interface{}) {}
 )
 
 const (
-	usageString = "Usage: create-ffs [flags] file.efi [...]"
+	usageString = "Usage: create-ffs [flags] file.efi"
 )
 
 func createDepExes(deps string) ([]uefi.DepExOp, error) {
@@ -51,9 +48,13 @@ func createDepExes(deps string) ([]uefi.DepExOp, error) {
 		return ops, nil
 	}
 
-	// we expect a space-separated list of GUIDs
-	guids := strings.Split(deps, " ")
-	numGUIDS := len(guids)
+	// we expect a space or comma separated list of GUIDs, split by both.
+	guidSpace := strings.Split(deps, " ")
+	guids := []string{}
+	for _, g := range guidSpace {
+		guids = append(guids, strings.Split(g, ",")...)
+	}
+
 	for _, guidStr := range guids {
 		var g *guid.GUID
 
@@ -65,7 +66,7 @@ func createDepExes(deps string) ([]uefi.DepExOp, error) {
 	}
 
 	// Append an "AND" for n-1 pushes.
-	for i := 1; i < numGUIDS; i++ {
+	for i := 1; i < len(guids); i++ {
 		ops = append(ops, uefi.DepExOp{OpCode: "AND"})
 	}
 
@@ -73,9 +74,8 @@ func createDepExes(deps string) ([]uefi.DepExOp, error) {
 	return ops, nil
 }
 
-func parseFlags() error {
+func parseFlags() (fType uefi.FVFileType, fGUID *guid.GUID, depOps []uefi.DepExOp, err error) {
 	var ok bool
-	var err error
 
 	if *debug {
 		printf = log.Printf
@@ -88,14 +88,15 @@ func parseFlags() error {
 		for k := range uefi.NamesToFileType {
 			validTypes = append(validTypes, k)
 		}
-		return fmt.Errorf("unable to get EFI File type, got %v, expected values in\n{%v}",
+		err = fmt.Errorf("unable to get EFI File type, got %v, expected values in\n{%v}",
 			*filetype, strings.Join(validTypes, ", "))
+		return
 	}
 
 	if *guidString != "" {
 		fGUID, err = guid.Parse(*guidString)
 		if err != nil {
-			return err
+			return
 		}
 	} else if *name != "" {
 		// We sha1 the name to get a reproducible GUID.
@@ -103,21 +104,23 @@ func parseFlags() error {
 		sum := sha1.Sum([]byte(*name))
 		copy(fGUID[:], sum[:guid.Size])
 	} else {
-		return errors.New("no GUID or name provided, please provide at least one")
+		err = errors.New("no GUID or name provided, please provide at least one")
+		return
 	}
 
 	if *outfile == "" {
-		return errors.New("we don't currently support dumping to stdout, please specify an output file")
+		err = errors.New("we don't currently support dumping to stdout, please specify an output file")
+		return
 	}
 
 	if *depex != "" {
 		depOps, err = createDepExes(*depex)
 		if err != nil {
-			return fmt.Errorf("can't parse depex guids, got %v", err)
+			err = fmt.Errorf("can't parse depex guids, got %v", err)
 		}
 	}
 
-	return nil
+	return
 }
 
 func usage() {
@@ -127,17 +130,21 @@ func usage() {
 }
 
 func main() {
+	var fType uefi.FVFileType
+	var fGUID *guid.GUID
+	var depOps []uefi.DepExOp
+	var err error
+
 	flag.Parse()
-	if err := parseFlags(); err != nil {
+	if fType, fGUID, depOps, err = parseFlags(); err != nil {
 		log.Fatal(err)
 	}
 
-	args := flag.Args()
-	if alen := len(args); alen < 1 {
+	if flag.NArg() != 1 {
 		usage()
 	}
 
-	secData, err := ioutil.ReadFile(args[0])
+	secData, err := ioutil.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -157,6 +164,8 @@ func main() {
 	file := &uefi.File{}
 	file.Header.Type = fType
 	file.Header.GUID = *fGUID
+	file.Header.State = 0xF8
+	file.Header.Attributes = 0x40
 
 	mainSection := &uefi.Section{}
 	mainSection.SetType(secType)
