@@ -1,0 +1,184 @@
+{
+    "FType": "*uefi.BIOSRegion",
+    "FirmwareElement": {
+        "Elements": [
+            {
+                "Type": "*uefi.FirmwareVolume",
+                "Value": {
+                    "FileSystemGUID": {
+                        "GUID": "8C8CE578-8A3D-4F1C-9935-896185C32DD3"
+                    },
+                    "Length": 65536,
+                    "Signature": 1213613663,
+                    "Attributes": 261887,
+                    "HeaderLen": 72,
+                    "Checksum": 63179,
+                    "ExtHeaderOffset": 0,
+                    "Revision": 2,
+                    "Blocks": [
+                        {
+                            "Count": 1,
+                            "Size": 65536
+                        }
+                    ],
+                    "FVName": {
+                        "GUID": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "ExtHeaderSize": 0,
+                    "Files": [
+                        {
+                            "Header": {
+                                "GUID": {
+                                    "GUID": "CEF5B9A3-476D-497F-9FDC-E98143E0422C"
+                                },
+                                "Type": 1,
+                                "Attributes": 0,
+                                "State": 248
+                            },
+                            "Type": "EFI_FV_FILETYPE_RAW",
+                            "NVarStore": {
+                                "Entries": [
+                                    {
+                                        "Header": {
+                                            "Size": 98,
+                                            "Attributes": 131
+                                        },
+                                        "GUID": {
+                                            "GUID": "7E577E57-0123-4567-89AB-CDEF0000B10C"
+                                        },
+                                        "GUIDIndex": 0,
+                                        "Name": "Group1",
+                                        "NVarStore": {
+                                            "Entries": [
+                                                {
+                                                    "Header": {
+                                                        "Size": 21,
+                                                        "Attributes": 131
+                                                    },
+                                                    "GUID": {
+                                                        "GUID": "7E577E57-0123-4567-89AB-CDEF00000000"
+                                                    },
+                                                    "GUIDIndex": 0,
+                                                    "Name": "Test0",
+                                                    "Type": 4,
+                                                    "Offset": 0,
+                                                    "NextOffset": 0,
+                                                    "ExtractPath": "test",
+                                                    "DataOffset": 17
+                                                },
+                                                {
+                                                    "Header": {
+                                                        "Size": 21,
+                                                        "Attributes": 131
+                                                    },
+                                                    "GUID": {
+                                                        "GUID": "7E577E57-0123-4567-89AB-CDEF00000001"
+                                                    },
+                                                    "GUIDIndex": 1,
+                                                    "Name": "Test1",
+                                                    "Type": 4,
+                                                    "Offset": 21,
+                                                    "NextOffset": 0,
+                                                    "ExtractPath": "test",
+                                                    "DataOffset": 17
+                                                }
+                                            ],
+                                            "GUIDStore": [
+                                                {
+                                                    "GUID": "7E577E57-0123-4567-89AB-CDEF00000000"
+                                                },
+                                                {
+                                                    "GUID": "7E577E57-0123-4567-89AB-CDEF00000001"
+                                                }
+                                            ],
+                                            "FreeSpaceOffset": 42,
+                                            "GUIDStoreOffset": 48,
+                                            "Length": 80
+                                        },
+                                        "Type": 4,
+                                        "Offset": 0,
+                                        "NextOffset": 0,
+                                        "ExtractPath": "",
+                                        "DataOffset": 18
+                                    },
+                                    {
+                                        "Header": {
+                                            "Size": 21,
+                                            "Attributes": 131
+                                        },
+                                        "GUID": {
+                                            "GUID": "7E577E57-0123-4567-89AB-CDEF00000000"
+                                        },
+                                        "GUIDIndex": 1,
+                                        "Name": "Test0",
+                                        "Type": 2,
+                                        "Offset": 98,
+                                        "NextOffset": 140,
+                                        "ExtractPath": "test",
+                                        "DataOffset": 17
+                                    },
+                                    {
+                                        "Header": {
+                                            "Size": 21,
+                                            "Attributes": 131
+                                        },
+                                        "GUID": {
+                                            "GUID": "7E577E57-0123-4567-89AB-CDEF00000001"
+                                        },
+                                        "GUIDIndex": 2,
+                                        "Name": "Test1",
+                                        "Type": 4,
+                                        "Offset": 119,
+                                        "NextOffset": 0,
+                                        "ExtractPath": "test",
+                                        "DataOffset": 17
+                                    },
+                                    {
+                                        "Header": {
+                                            "Size": 14,
+                                            "Attributes": 136
+                                        },
+                                        "GUID": {
+                                            "GUID": "7E577E57-0123-4567-89AB-CDEF00000000"
+                                        },
+                                        "GUIDIndex": 1,
+                                        "Name": "Test0",
+                                        "Type": 4,
+                                        "Offset": 140,
+                                        "NextOffset": 0,
+                                        "ExtractPath": "test",
+                                        "DataOffset": 10
+                                    }
+                                ],
+                                "GUIDStore": [
+                                    {
+                                        "GUID": "7E577E57-0123-4567-89AB-CDEF0000B10C"
+                                    },
+                                    {
+                                        "GUID": "7E577E57-0123-4567-89AB-CDEF00000000"
+                                    },
+                                    {
+                                        "GUID": "7E577E57-0123-4567-89AB-CDEF00000001"
+                                    }
+                                ],
+                                "FreeSpaceOffset": 154,
+                                "GUIDStoreOffset": 65392,
+                                "Length": 65440
+                            },
+                            "ExtractPath": "",
+                            "DataOffset": 24
+                        }
+                    ],
+                    "DataOffset": 72,
+                    "FVOffset": 0,
+                    "ExtractPath": "fvh.bin",
+                    "Resizable": false
+                }
+            }
+        ],
+        "ExtractPath": "",
+        "Length": 65536,
+        "FRegion": null,
+        "RegionType": 0
+    }
+}
