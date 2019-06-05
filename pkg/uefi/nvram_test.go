@@ -291,7 +291,7 @@ func TestNVar_Assemble(t *testing.T) {
 		{"Invalid", NVar{}, []byte{}, true, "unable to construct Invalid NVAR"},
 		{"badLinkUpdate", NVar{Type: LinkNVarEntry, NextOffset: 1}, []byte{}, false, "unable to update data in link, use compact first"},
 		{"badHeaderSize", NVar{Type: DataNVarEntry, Header: NVarHeader{Attributes: NVarEntryValid | NVarEntryDataOnly}}, headerOnlyEmptyNVar, true, "NVAR header size mismatch, expected 0 got 10"},
-		{"badSize", NVar{Type: DataNVarEntry, Header: NVarHeader{Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, true, "NVAR size mismatch, expected 10 got 10"},
+		{"badSize", NVar{Type: DataNVarEntry, Header: NVarHeader{Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, true, "NVAR size mismatch, expected 0 got 10"},
 		{"goodEmpty", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 10, Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, true, ""},
 		{"goodEmptyUpdate", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 10, Attributes: NVarEntryValid | NVarEntryDataOnly}, DataOffset: 10}, headerOnlyEmptyNVar, false, ""},
 		{"badMissingName", NVar{Type: DataNVarEntry, Header: NVarHeader{Size: 16, Attributes: NVarEntryValid | NVarEntryASCIIName}, DataOffset: 16, GUIDIndex: &stored1GUIDIndex}, stored1GUIDASCIINameNVar, true, "NVAR header size mismatch, expected 16 got 12"},

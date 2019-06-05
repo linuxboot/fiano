@@ -552,7 +552,7 @@ func (v *NVar) Assemble(content []byte, checkOnly bool) error {
 	//check/update Header.Size
 	if checkOnly {
 		if v.Header.Size != uint16(vData.Len()) {
-			return fmt.Errorf("NVAR size mismatch, expected %v got %v", v.DataOffset, vData.Len())
+			return fmt.Errorf("NVAR size mismatch, expected %v got %v", v.Header.Size, vData.Len())
 		}
 	} else {
 		v.Header.Size = uint16(vData.Len())
