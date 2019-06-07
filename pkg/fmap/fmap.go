@@ -86,6 +86,22 @@ type Metadata struct {
 	Start uint64
 }
 
+func headerValid(h *Header) bool {
+	if h.VerMajor != 1 {
+		return false
+	}
+	// Check if some sensible value is used for the full flash size
+	if h.Size == 0 {
+		return false
+	}
+
+	// Name is specified to be null terminated single-word string without spaces
+	if bytes.Index(h.Name.Value[:], []byte("\x00")) == -1 {
+		return false
+	}
+	return true
+}
+
 // FlagNames returns human readable representation of the flags.
 func FlagNames(flags uint16) string {
 	names := []string{}
@@ -132,36 +148,54 @@ func Read(f io.Reader) (*FMap, *Metadata, error) {
 		return nil, nil, err
 	}
 
-	// Check for too many fmaps.
-	if bytes.Count(data, Signature) >= 2 {
-		return nil, nil, errMultipleFound
-	}
-
-	// Check for too few fmaps.
-	start := bytes.Index(data, Signature)
-	if start == -1 {
-		return nil, nil, errSigNotFound
-	}
-
-	// Reader anchored to the start of the fmap
-	r := bytes.NewReader(data[start:])
-
-	// Read fields.
+	// Loop over __FMAP__ occurrences until a valid header is found
+	start := 0
+	validFmaps := 0
 	var fmap FMap
-	if err := readField(r, &fmap.Header); err != nil {
-		return nil, nil, err
-	}
-	fmap.Areas = make([]Area, fmap.NAreas)
-	if err := readField(r, &fmap.Areas); err != nil {
-		return nil, nil, err
-	}
+	var fmapMetadata Metadata
+	for {
+		if start >= len(data) {
+			break
+		}
 
-	// Return useful metadata
-	fmapMetadata := Metadata{
-		Start: uint64(start),
-	}
+		next := bytes.Index(data[start:], Signature)
+		if next == -1 {
+			break
+		}
+		start += next
 
-	return &fmap, &fmapMetadata, nil
+		// Reader anchored to the start of the fmap
+		r := bytes.NewReader(data[start:])
+
+		// Read fields.
+		var testFmap FMap
+		if err := readField(r, &testFmap.Header); err != nil {
+			return nil, nil, err
+		}
+		if !headerValid(&testFmap.Header) {
+			start += len(Signature)
+			continue
+		}
+		fmap = testFmap
+		validFmaps++
+
+		fmap.Areas = make([]Area, fmap.NAreas)
+		err := readField(r, &fmap.Areas)
+		if err != nil {
+			return nil, nil, err
+		}
+		// Return useful metadata
+		fmapMetadata = Metadata{
+			Start: uint64(start),
+		}
+		start += len(Signature)
+	}
+	if validFmaps >= 2 {
+		return nil, nil, errMultipleFound
+	} else if validFmaps == 1 {
+		return &fmap, &fmapMetadata, nil
+	}
+	return nil, nil, errSigNotFound
 }
 
 // Write overwrites the fmap in the flash file.
