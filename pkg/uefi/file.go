@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 
 	"github.com/linuxboot/fiano/pkg/guid"
 )
@@ -424,8 +425,9 @@ func NewFile(buf []byte) (*File, error) {
 	if f.Header.Type == FVFileTypeRaw && f.Header.GUID == *NVAR {
 		ns, err := NewNVarStore(f.buf[f.DataOffset:])
 		if err != nil {
-			return nil, fmt.Errorf("error parsing NVAR store in file %v: %v", f.Header.GUID, err)
+			log.Printf("error parsing NVAR store in file %v: %v", f.Header.GUID, err)
 		}
+		// Note that ns is nil if there was an error, so this assign is fine either way.
 		f.NVarStore = ns
 	}
 
