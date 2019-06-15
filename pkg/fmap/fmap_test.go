@@ -119,33 +119,28 @@ func TestFieldNames(t *testing.T) {
 func TestNoSignature(t *testing.T) {
 	fakeFlash := bytes.Repeat([]byte{0x53, 0x11, 0x34, 0x22}, 94387)
 	r := bytes.NewReader(fakeFlash)
-	_, _, err := Read(r)
-	expected := "Cannot find fmap signature"
-	got := err.Error()
-	if expected != got {
-		t.Errorf("expected: %s; got: %s", expected, got)
+	_, _, got := Read(r)
+	if want := errSigNotFound; got != want {
+		t.Errorf("Read(%v) = %v, want %v", r, got, want)
 	}
 }
 
 func TestTwoSignatures(t *testing.T) {
 	fakeFlash := bytes.Repeat(fakeFlash, 2)
 	r := bytes.NewReader(fakeFlash)
-	_, _, err := Read(r)
-	expected := "Found multiple signatures"
-	got := err.Error()
-	if expected != got {
-		t.Errorf("expected: %s; got: %s", expected, got)
+	_, _, got := Read(r)
+	if want := errMultipleFound; got != want {
+		t.Errorf("Read(%v) = %v, want %v", r, got, want)
 	}
 }
 
 func TestTruncatedFmap(t *testing.T) {
 	r := bytes.NewReader(fakeFlash[:len(fakeFlash)-2])
-	_, _, err := Read(r)
-	expected := "Unexpected EOF while parsing fmap"
-	got := err.Error()
-	if expected != got {
-		t.Errorf("expected: %s; got: %s", expected, got)
+	_, _, got := Read(r)
+	if want := errEOF; got != want {
+		t.Errorf("Read(%v) = %v, want %v", r, got, want)
 	}
+
 }
 
 func TestIndexOfArea(t *testing.T) {

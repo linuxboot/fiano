@@ -110,13 +110,18 @@ func FlagNames(flags uint16) string {
 	return strings.Join(names, "|")
 }
 
+var errEOF = errors.New("unexpected EOF while parsing fmap")
+
 func readField(r io.Reader, data interface{}) error {
 	// The endianness might depend on your machine or it might not.
 	if err := binary.Read(r, binary.LittleEndian, data); err != nil {
-		return errors.New("Unexpected EOF while parsing fmap")
+		return errEOF
 	}
 	return nil
 }
+
+var errSigNotFound = errors.New("cannot find FMAP signature")
+var errMultipleFound = errors.New("found multiple fmap")
 
 // Read an FMap into the data structure.
 func Read(f io.Reader) (*FMap, *Metadata, error) {
@@ -129,13 +134,13 @@ func Read(f io.Reader) (*FMap, *Metadata, error) {
 
 	// Check for too many fmaps.
 	if bytes.Count(data, Signature) >= 2 {
-		return nil, nil, errors.New("Found multiple signatures")
+		return nil, nil, errMultipleFound
 	}
 
 	// Check for too few fmaps.
 	start := bytes.Index(data, Signature)
 	if start == -1 {
-		return nil, nil, errors.New("Cannot find fmap signature")
+		return nil, nil, errSigNotFound
 	}
 
 	// Reader anchored to the start of the fmap
