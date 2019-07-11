@@ -10,11 +10,12 @@ package compression
 
 import (
 	"flag"
+	"os/exec"
 
 	"github.com/linuxboot/fiano/pkg/guid"
 )
 
-var xzPath = flag.String("xzPath", "", "Path to system xz command used for lzma encoding. If unset, an internal lzma implementation is used.")
+var xzPath = flag.String("xzPath", "xz", "Path to system xz command used for lzma encoding. If unset, an internal lzma implementation is used.")
 
 // Compressor defines a single compression scheme (such as LZMA).
 type Compressor interface {
@@ -34,20 +35,22 @@ var (
 
 // CompressorFromGUID returns a Compressor for the corresponding GUIDed Section.
 func CompressorFromGUID(guid *guid.GUID) Compressor {
+	// Default to system xz command for lzma encoding; if not found, use an
+	// internal lzma implementation.
+	var lzma Compressor
+	if _, err := exec.LookPath(*xzPath); err == nil {
+		lzma = &SystemLZMA{*xzPath}
+	} else {
+		lzma = &LZMA{}
+	}
 	switch *guid {
 	case LZMAGUID:
-		if *xzPath != "" {
-			return &SystemLZMA{*xzPath}
-		}
-		return &LZMA{}
+		return lzma
 	case LZMAX86GUID:
-		if *xzPath != "" {
-			// Alternatively, the -f86 argument could be passed
-			// into xz. It does not make much difference because
-			// the x86 filter is not the bottleneck.
-			return &LZMAX86{&SystemLZMA{*xzPath}}
-		}
-		return &LZMAX86{&LZMA{}}
+		// Alternatively, the -f86 argument could be passed
+		// into xz. It does not make much difference because
+		// the x86 filter is not the bottleneck.
+		return &LZMAX86{lzma}
 	}
 	return nil
 }

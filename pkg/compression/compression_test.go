@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
+
+	"github.com/linuxboot/fiano/pkg/guid"
 )
 
 var tests = []struct {
@@ -89,5 +91,71 @@ func TestDecode(t *testing.T) {
 				t.Fatalf("decompressed image did not match, (got: %d bytes, want: %d bytes)", len(got), len(want))
 			}
 		})
+	}
+}
+
+func TestCompressorFromGUID(t *testing.T) {
+	var compressors = []struct {
+		name            string
+		guid            *guid.GUID
+		expected        Compressor
+		encodedFilename string
+		decodedFilename string
+	}{
+		{
+			name:            "system xz",
+			guid:            &LZMAGUID,
+			expected:        &SystemLZMA{"xz"},
+			encodedFilename: "testdata/random.bin.lzma",
+			decodedFilename: "testdata/random.bin",
+		},
+		{
+			name:            "lzma",
+			guid:            &LZMAX86GUID,
+			expected:        &LZMAX86{&SystemLZMA{"xz"}},
+			encodedFilename: "testdata/random.bin.lzma86",
+			decodedFilename: "testdata/random.bin",
+		},
+	}
+	for _, tt := range compressors {
+		t.Run(tt.name, func(t *testing.T) {
+			compressor := CompressorFromGUID(tt.guid)
+			if compressor.Name() != tt.expected.Name() {
+				t.Fatalf("compressor from guid %v did not match (got: %s, want: %s)", tt.guid, compressor.Name(), tt.expected.Name())
+			}
+			// Read test data.
+			want, err := ioutil.ReadFile(tt.decodedFilename)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Compare encodings
+			encoded, err := compressor.Encode(want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expectedEncoded, terr := tt.expected.Encode(want)
+			if terr != nil {
+				t.Fatal(terr)
+			}
+			if !reflect.DeepEqual(encoded, expectedEncoded) {
+				t.Fatalf("compressor from guid %v encoding did not match (got: %s, want: %s)", tt.guid, encoded, expectedEncoded)
+			}
+			// Compare decodings
+			got, err := compressor.Decode(encoded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expectedGot, terr := tt.expected.Decode(encoded)
+			if terr != nil {
+				t.Fatal(terr)
+			}
+			if !reflect.DeepEqual(got, expectedGot) {
+				t.Fatalf("compressor from guid %v decoding did not match (got: %s, want: %s)", tt.guid, got, expectedGot)
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("decompressed image did not match, (got: %d bytes, want: %d bytes)", len(got), len(want))
+			}
+		})
+
 	}
 }
