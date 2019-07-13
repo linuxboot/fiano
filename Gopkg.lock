@@ -9,8 +9,8 @@
     "pkg/testutil",
   ]
   pruneopts = "UT"
-  revision = "240c641ceb065925ebecd1a406f64161f71afaa9"
-  version = "v3.0.0"
+  revision = "8b001e68c2bf8d45ccfe2818f324acbea9321c5b"
+  version = "v4.0.0"
 
 [[projects]]
   digest = "1:74424672efb1cc0a95c80db0787e1a791ff562fa990facbd1530296f4f9ca7a7"
