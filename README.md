@@ -62,6 +62,13 @@ utk winterfell.rom extract winterfell/
 utk winterfell/ save winterfell2.rom
 ```
 
+### DXE Cleaner
+
+Delete unnecessary DXEs from your firmware. Free up space, speed up boot times
+and decrease the attack surface area! See the demo:
+
+[![asciicast](https://asciinema.org/a/233950.svg)](https://asciinema.org/a/233950)
+
 ## FMAP: Parses flash maps.
 
 Example usage:
