@@ -15,8 +15,13 @@ import (
 
 // Table prints the GUIDS, types and sizes as a compact table.
 type Table struct {
-	W      *tabwriter.Writer
-	indent int
+	W         *tabwriter.Writer
+	Layout    bool
+	TopLevel  bool
+	indent    int
+	offset    uint64
+	curOffset uint64
+	depth     int
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -26,30 +31,42 @@ func (v *Table) Run(f uefi.Firmware) error {
 
 // Visit applies the Table visitor to any Firmware type.
 func (v *Table) Visit(f uefi.Firmware) error {
+	var offset uint64
 	switch f := f.(type) {
 	case *uefi.FlashImage:
-		return v.printRow(f, "Image", "", "")
+		v.depth = v.indent + 1
+		return v.printRow(f, "Image", "", "", 0, 0)
 	case *uefi.FirmwareVolume:
-		return v.printRow(f, "FV", f.FileSystemGUID.String(), "")
+		return v.printRow(f, "FV", f.FileSystemGUID.String(), "", v.offset+f.FVOffset, v.offset+f.FVOffset+f.DataOffset)
 	case *uefi.File:
 		// TODO: make name part of the file node
-		return v.printRow(f, "File", f.Header.GUID.String(), f.Header.Type)
+		return v.printRow(f, "File", f.Header.GUID.String(), f.Header.Type, v.curOffset, v.curOffset+f.DataOffset)
 	case *uefi.Section:
-		return v.printRow(f, "Sec", f.String(), f.Type)
+		// Reset offset to O for (compressed) section content
+		return v.printRow(f, "Sec", f.String(), f.Type, v.curOffset, 0)
 	case *uefi.FlashDescriptor:
-		return v.printRow(f, "IFD", "", "")
+		v.depth = v.indent + 1
+		return v.printRow(f, "IFD", "", "", 0, 0)
 	case *uefi.BIOSRegion:
-		return v.printRow(f, "BIOS", "", "")
+		v.depth = v.indent + 1
+		if f.FRegion != nil {
+			offset = uint64(f.FRegion.BaseOffset())
+		}
+		return v.printRow(f, "BIOS", "", "", offset, offset)
 	case *uefi.BIOSPadding:
-		return v.printRow(f, "BIOS Pad", "", "")
+		return v.printRow(f, "BIOS Pad", "", "", v.offset+f.Offset, 0)
 	case *uefi.NVarStore:
-		return v.printRow(f, "NVAR Store", "", "")
+		return v.printRow(f, "NVAR Store", "", "", v.curOffset, v.curOffset)
 	case *uefi.NVar:
-		return v.printRow(f, "NVAR", f.GUID.String(), f)
+		return v.printRow(f, "NVAR", f.GUID.String(), f, v.curOffset, v.curOffset+uint64(f.DataOffset))
 	case *uefi.RawRegion:
-		return v.printRow(f, f.Type().String(), "", "")
+		v.depth = v.indent + 1
+		if f.FRegion != nil {
+			offset = uint64(f.FRegion.BaseOffset())
+		}
+		return v.printRow(f, f.Type().String(), "", "", offset, offset)
 	default:
-		return v.printRow(f, fmt.Sprintf("%T", f), "", "")
+		return v.printRow(f, fmt.Sprintf("%T", f), "", "", 0, 0)
 	}
 }
 
@@ -57,26 +74,54 @@ func indent(n int) string {
 	return strings.Repeat(" ", n)
 }
 
-func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
+func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}, offset, dataOffset uint64) error {
 	if v.W == nil {
 		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		defer func() { v.W.Flush() }()
-		fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
+		if v.Layout {
+			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tOffset\tSize\n", indent(v.indent))
+		} else {
+			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
+		}
 	}
-	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, len(f.Buf()))
+	length := uint64(len(f.Buf()))
+	if v.Layout {
+		fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v.indent), node, name, offset, length)
+	} else {
+		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, length)
+	}
 	v2 := *v
 	v2.indent++
-	if err := f.ApplyChildren(&v2); err != nil {
-		return err
+	v2.offset = dataOffset
+	v2.curOffset = v2.offset
+	if !v.TopLevel || v.indent < v.depth {
+
+		if err := f.ApplyChildren(&v2); err != nil {
+			return err
+		}
 	}
+	v.curOffset += length
 	switch f := f.(type) {
 	case *uefi.FirmwareVolume:
 		// Print free space at the end of the volume
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.FreeSpace)
+		if v.Layout {
+			fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v2.indent), "Free", "", offset+length-f.FreeSpace, f.FreeSpace)
+		} else {
+			fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.FreeSpace)
+		}
 	case *uefi.NVarStore:
 		// Print free space and GUID store
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.GUIDStoreOffset-f.FreeSpaceOffset)
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), f.Length-f.GUIDStoreOffset)
+		if v.Layout {
+			fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v2.indent), "Free", "", offset+f.FreeSpaceOffset, f.GUIDStoreOffset-f.FreeSpaceOffset)
+			fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v2.indent), "GUIDStore", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
+		} else {
+			fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "Free", "", "", f.GUIDStoreOffset-f.FreeSpaceOffset)
+			fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v2.indent), "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), f.Length-f.GUIDStoreOffset)
+		}
+	case *uefi.File:
+		// Align
+		// TODO: do we need the complex align logic from assemble?
+		v.curOffset = uefi.Align8(v.curOffset)
 	}
 	return nil
 }
@@ -84,5 +129,11 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}) error {
 func init() {
 	RegisterCLI("table", "print out important information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
 		return &Table{}, nil
+	})
+	RegisterCLI("layout-table", "print out offset and size information of top level firmware volumes in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
+		return &Table{Layout: true, TopLevel: true}, nil
+	})
+	RegisterCLI("layout-table-full", "print out offset and size information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
+		return &Table{Layout: true}, nil
 	})
 }
