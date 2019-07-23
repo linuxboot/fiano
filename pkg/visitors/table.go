@@ -59,6 +59,11 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		return v.printFirmware(f, "NVAR Store", "", "", v.curOffset, v.curOffset)
 	case *uefi.NVar:
 		return v.printFirmware(f, "NVAR", f.GUID.String(), f, v.curOffset, v.curOffset+uint64(f.DataOffset))
+	case *uefi.MERegion:
+		if f.FRegion != nil {
+			offset = uint64(f.FRegion.BaseOffset())
+		}
+		return v.printFirmware(f, "ME", "", "", offset, offset)
 	case *uefi.RawRegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())

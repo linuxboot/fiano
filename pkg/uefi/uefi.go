@@ -110,6 +110,7 @@ var firmwareTypes = map[string]func() Firmware{
 	"*uefi.FirmwareVolume":  func() Firmware { return &FirmwareVolume{} },
 	"*uefi.FlashDescriptor": func() Firmware { return &FlashDescriptor{} },
 	"*uefi.FlashImage":      func() Firmware { return &FlashImage{} },
+	"*uefi.MERegion":        func() Firmware { return &MERegion{} },
 	"*uefi.RawRegion":       func() Firmware { return &RawRegion{} },
 	"*uefi.Section":         func() Firmware { return &Section{} },
 }
