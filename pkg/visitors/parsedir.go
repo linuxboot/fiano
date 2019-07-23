@@ -77,6 +77,9 @@ func (v *ParseDir) Visit(f uefi.Firmware) error {
 	case *uefi.BIOSRegion:
 		fBuf, err = v.readBuf(f.ExtractPath)
 
+	case *uefi.MERegion:
+		fBuf, err = v.readBuf(f.ExtractPath)
+
 	case *uefi.RawRegion:
 		fBuf, err = v.readBuf(f.ExtractPath)
 
