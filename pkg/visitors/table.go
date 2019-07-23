@@ -85,7 +85,15 @@ func (v *Table) printRow(f uefi.Firmware, node, name, typez interface{}, offset,
 		}
 	}
 	length := uint64(len(f.Buf()))
+	if typez == "" {
+		if uefi.IsErased(f.Buf(), uefi.Attributes.ErasePolarity) {
+			typez = "(empty)"
+		}
+	}
 	if v.Layout {
+		if name == "" {
+			name = typez
+		}
 		fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v.indent), node, name, offset, length)
 	} else {
 		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, length)
