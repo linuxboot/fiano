@@ -64,6 +64,8 @@ func (v *Table) Visit(f uefi.Firmware) error {
 			offset = uint64(f.FRegion.BaseOffset())
 		}
 		return v.printFirmware(f, "ME", "", "", offset, offset)
+	case *uefi.MEFPT:
+		return v.printFirmware(f, "$FPT", "", "", v.offset, 0)
 	case *uefi.RawRegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
@@ -124,6 +126,11 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		v2.printRow(&v2, "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
 	case *uefi.MERegion:
 		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, length-f.FreeSpaceOffset)
+	case *uefi.MEFPT:
+		// MERegion is not entered, simply print the $FPT content here
+		for _, p := range f.Entries {
+			v2.printRow(&v2, p.Name, "", "", offset+uint64(p.Offset), uint64(p.Length))
+		}
 	case *uefi.File:
 		// Align
 		v.curOffset = uefi.Align8(v.curOffset)

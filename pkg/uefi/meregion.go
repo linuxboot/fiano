@@ -227,5 +227,12 @@ func (rr *MERegion) Apply(v Visitor) error {
 
 // ApplyChildren calls the visitor on each child node of MERegion.
 func (rr *MERegion) ApplyChildren(v Visitor) error {
+	if rr.FPT == nil {
+		return nil
+	}
+	if err := rr.FPT.Apply(v); err != nil {
+		return err
+	}
+
 	return nil
 }
