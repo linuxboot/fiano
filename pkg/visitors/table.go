@@ -17,11 +17,10 @@ import (
 type Table struct {
 	W         *tabwriter.Writer
 	Layout    bool
-	TopLevel  bool
+	Depth     int
 	indent    int
 	offset    uint64
 	curOffset uint64
-	depth     int
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -34,7 +33,9 @@ func (v *Table) Visit(f uefi.Firmware) error {
 	var offset uint64
 	switch f := f.(type) {
 	case *uefi.FlashImage:
-		v.depth = v.indent + 1
+		if v.Depth > 0 { // Depth <= 0 means all
+			v.Depth++
+		}
 		return v.printFirmware(f, "Image", "", "", 0, 0)
 	case *uefi.FirmwareVolume:
 		return v.printFirmware(f, "FV", f.FileSystemGUID.String(), "", v.offset+f.FVOffset, v.offset+f.FVOffset+f.DataOffset)
@@ -45,10 +46,8 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		// Reset offset to O for (compressed) section content
 		return v.printFirmware(f, "Sec", f.String(), f.Type, v.curOffset, 0)
 	case *uefi.FlashDescriptor:
-		v.depth = v.indent + 1
 		return v.printFirmware(f, "IFD", "", "", 0, 0)
 	case *uefi.BIOSRegion:
-		v.depth = v.indent + 1
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
 		}
@@ -60,7 +59,6 @@ func (v *Table) Visit(f uefi.Firmware) error {
 	case *uefi.NVar:
 		return v.printFirmware(f, "NVAR", f.GUID.String(), f, v.curOffset, v.curOffset+uint64(f.DataOffset))
 	case *uefi.RawRegion:
-		v.depth = v.indent + 1
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
 		}
@@ -96,7 +94,7 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 	v2.indent++
 	v2.offset = dataOffset
 	v2.curOffset = v2.offset
-	if !v.TopLevel || v.indent < v.depth {
+	if v.Depth <= 0 || v.indent < v.Depth {
 
 		if err := f.ApplyChildren(&v2); err != nil {
 			return err
@@ -113,7 +111,6 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		v2.printRow("GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
 	case *uefi.File:
 		// Align
-		// TODO: do we need the complex align logic from assemble?
 		v.curOffset = uefi.Align8(v.curOffset)
 	}
 	return nil
@@ -135,7 +132,7 @@ func init() {
 		return &Table{}, nil
 	})
 	RegisterCLI("layout-table", "print out offset and size information of top level firmware volumes in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
-		return &Table{Layout: true, TopLevel: true}, nil
+		return &Table{Layout: true, Depth: 1}, nil
 	})
 	RegisterCLI("layout-table-full", "print out offset and size information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
 		return &Table{Layout: true}, nil
