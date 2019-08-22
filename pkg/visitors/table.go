@@ -21,6 +21,7 @@ type Table struct {
 	indent    int
 	offset    uint64
 	curOffset uint64
+	printRow  func(v *Table, node, name, typez interface{}, offset, length uint64)
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -73,42 +74,49 @@ func indent(n int) string {
 }
 
 func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, offset, dataOffset uint64) error {
+	// Init: Print title and select printRow func
 	if v.W == nil {
 		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		defer func() { v.W.Flush() }()
 		if v.Layout {
 			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tOffset\tSize\n", indent(v.indent))
+			v.printRow = printRowLayout
 		} else {
 			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
+			v.printRow = printRowStd
 		}
 	}
+
+	// Prepare data and print
 	length := uint64(len(f.Buf()))
 	if typez == "" {
 		if uefi.IsErased(f.Buf(), uefi.Attributes.ErasePolarity) {
 			typez = "(empty)"
 		}
 	}
-	v.printRow(node, name, typez, offset, length)
+	v.printRow(v, node, name, typez, offset, length)
 
+	// Compute offset and visit children
 	v2 := *v
 	v2.indent++
 	v2.offset = dataOffset
 	v2.curOffset = v2.offset
 	if v.Depth <= 0 || v.indent < v.Depth {
-
 		if err := f.ApplyChildren(&v2); err != nil {
 			return err
 		}
 	}
 	v.curOffset += length
+
+	// Print footer
 	switch f := f.(type) {
 	case *uefi.FirmwareVolume:
 		// Print free space at the end of the volume
-		v2.printRow("Free", "", "", offset+length-f.FreeSpace, f.FreeSpace)
+		v2.printRow(&v2, "Free", "", "", offset+length-f.FreeSpace, f.FreeSpace)
 	case *uefi.NVarStore:
 		// Print free space and GUID store
-		v2.printRow("Free", "", "", offset+f.FreeSpaceOffset, f.GUIDStoreOffset-f.FreeSpaceOffset)
-		v2.printRow("GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
+		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, f.GUIDStoreOffset-f.FreeSpaceOffset)
+		v2.printRow(&v2, "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
 	case *uefi.File:
 		// Align
 		v.curOffset = uefi.Align8(v.curOffset)
@@ -116,15 +124,15 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 	return nil
 }
 
-func (v *Table) printRow(node, name, typez interface{}, offset, length uint64) {
-	if v.Layout {
-		if name == "" {
-			name = typez
-		}
-		fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v.indent), node, name, offset, length)
-	} else {
-		fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, length)
+func printRowLayout(v *Table, node, name, typez interface{}, offset, length uint64) {
+	if name == "" {
+		name = typez
 	}
+	fmt.Fprintf(v.W, "%s%v\t%v\t%#08x\t%#08x\n", indent(v.indent), node, name, offset, length)
+}
+
+func printRowStd(v *Table, node, name, typez interface{}, offset, length uint64) {
+	fmt.Fprintf(v.W, "%s%v\t%v\t%v\t%#8x\n", indent(v.indent), node, name, typez, length)
 }
 
 func init() {
