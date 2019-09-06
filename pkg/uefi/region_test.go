@@ -40,8 +40,20 @@ var regionTestcases = [...]struct {
 	},
 	{
 		in:    FlashRegion{0x0004, 0xFFFF},
+		valid: false,
+		base:  0x00004000,
+		end:   0x10000000,
+	},
+	{
+		in:    FlashRegion{0x0004, 0xFFFE},
 		valid: true,
 		base:  0x00004000,
+		end:   0x0FFFF000,
+	},
+	{
+		in:    FlashRegion{0xFFFF, 0xFFFF},
+		valid: false,
+		base:  0x0FFFF000,
 		end:   0x10000000,
 	},
 }

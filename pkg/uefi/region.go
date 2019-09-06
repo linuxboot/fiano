@@ -77,7 +77,9 @@ type FlashRegion struct {
 
 // Valid checks to see if a region is valid
 func (r *FlashRegion) Valid() bool {
-	return r.Limit > 0 && r.Limit >= r.Base
+	// The ODROID bios seems to be different from all other bioses, and seems to not report
+	// invalid regions correctly. They report a limit and base of 0xFFFF instead of a limit of 0
+	return r.Limit > 0 && r.Limit >= r.Base && r.Limit != 0xFFFF && r.Base != 0xFFFF
 }
 
 func (r *FlashRegion) String() string {
