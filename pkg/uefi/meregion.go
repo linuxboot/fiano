@@ -167,6 +167,8 @@ type MERegion struct {
 	FRegion *FlashRegion
 	// Region Type as per the IFD
 	RegionType FlashRegionType
+	// Computed free space after parsing the partition table
+	FreeSpaceOffset uint64
 }
 
 // SetFlashRegion sets the flash region.
@@ -190,6 +192,14 @@ func NewMERegion(buf []byte, r *FlashRegion, rt FlashRegionType) (Region, error)
 		return rr, nil
 	}
 	rr.FPT = fp
+	// Compute FreeSpaceOffset
+	for _, p := range fp.Entries {
+		endOffset := uint64(p.Offset) + uint64(p.Length)
+		if endOffset > rr.FreeSpaceOffset {
+			rr.FreeSpaceOffset = endOffset
+		}
+	}
+
 	return rr, nil
 }
 
