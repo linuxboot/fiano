@@ -122,6 +122,8 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		// Print free space and GUID store
 		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, f.GUIDStoreOffset-f.FreeSpaceOffset)
 		v2.printRow(&v2, "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
+	case *uefi.MERegion:
+		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, length-f.FreeSpaceOffset)
 	case *uefi.File:
 		// Align
 		v.curOffset = uefi.Align8(v.curOffset)
