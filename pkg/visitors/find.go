@@ -148,7 +148,7 @@ func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
 	return func(f uefi.Firmware) bool {
 		switch f := f.(type) {
 		case *uefi.FirmwareVolume:
-			return searchRE.MatchString(f.FVName.String())
+			return ciRE.MatchString(f.FVName.String())
 		case *uefi.File:
 			return ciRE.MatchString(f.Header.GUID.String())
 		case *uefi.Section:
