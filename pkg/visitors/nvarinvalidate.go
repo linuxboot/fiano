@@ -80,7 +80,6 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("JVDG: %v\n", blackListRegex)
 		blackListPredicate, err := FindNVarPredicate(blackListRegex)
 		if err != nil {
 			return nil, err
