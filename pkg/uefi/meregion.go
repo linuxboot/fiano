@@ -1,4 +1,4 @@
-// Copyright 2018 the LinuxBoot Authors. All rights reserved
+// Copyright 2019 the LinuxBoot Authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -18,14 +18,14 @@ import (
 // ME partition informations from http://me.bios.io/ME_blob_format
 
 // MEFTPSignature is the sequence of bytes that an ME Flash Partition
-// Table is expected to start with.
+// Table is expected to start with ie "$FPT".
 var (
 	MEFTPSignature = []byte{0x24, 0x46, 0x50, 0x54}
 )
 
 const (
-	// MEFTPSignatureLength represents the size of the ME FTP signature
-	MEFTPSignatureLength = 4
+	// MEPartitionDescriptorMinLength is the min size of the descriptor
+	MEPartitionDescriptorMinLength = 28
 	// MEPartitionTableEntryLength is the size of a partition table entry
 	MEPartitionTableEntryLength = 32
 )
@@ -37,59 +37,53 @@ type MEFPT struct {
 
 	PartitionCount    uint32
 	PartitionMapStart int
-	Entries           []MePartitionEntry
-	//Metadata for extraction and recovery
+	Entries           []MEPartitionEntry
+	// Metadata for extraction and recovery
 	ExtractPath string
 }
 
-// MePartitionEntry is an entry in FTP
-type MePartitionEntry struct {
-	Name     MeName
+// MEPartitionEntry is an entry in FTP
+type MEPartitionEntry struct {
+	Name     MEName
 	Owner    [4]byte
 	Offset   uint32
 	Length   uint32
 	Reserved [4]uint32
 }
 
-// MeName represent 4 bytes with JSON string support
-// OK this is probably overkill!
-type MeName [4]byte
+// MEName represent 4 bytes with JSON string support
+type MEName [4]byte
 
-// MarshalText converts MeName to a byte range (for JSON)
-func (n MeName) MarshalText() ([]byte, error) {
-	e := len(n)
-	for e > 0 && n[e-1] == 0 {
-		e--
-	}
-	return n[:e], nil
+// MarshalText converts MEName to a byte range (for JSON)
+func (n MEName) MarshalText() ([]byte, error) {
+	return bytes.TrimRight(n[:], "\x00"), nil
 }
 
-// UnmarshalText converts a byte range to MeName (for JSON)
-func (n *MeName) UnmarshalText(b []byte) error {
-	for i := range n[:] {
-		var v byte
-		if i < len(b) {
-			v = b[i]
-		}
-		n[i] = v
+// UnmarshalText converts a byte range to MEName (for JSON)
+func (n *MEName) UnmarshalText(b []byte) error {
+	var m MEName
+	copy(m[:], b)
+	*n = m
+	if len(b) > len(m) {
+		return fmt.Errorf("Can’t unmarshal %q to MEName, %d > %d", b, len(b), len(m))
 	}
 	return nil
 }
 
-func (n MeName) String() string {
+func (n MEName) String() string {
 	b, _ := n.MarshalText()
 	return string(b)
 }
 
-// FindMESignature searches for an Intel ME FTP signature
-func FindMESignature(buf []byte) (int, error) {
-	if bytes.Equal(buf[16:16+MEFTPSignatureLength], MEFTPSignature) {
+// FindMEDescriptor searches for an Intel ME FTP signature
+func FindMEDescriptor(buf []byte) (int, error) {
+	if bytes.Equal(buf[16:16+len(MEFTPSignature)], MEFTPSignature) {
 		// 16 + 4 since the descriptor starts after the signature
-		return 20, nil
+		return 16 + len(MEFTPSignature), nil
 	}
-	if bytes.Equal(buf[:MEFTPSignatureLength], MEFTPSignature) {
+	if bytes.Equal(buf[:len(MEFTPSignature)], MEFTPSignature) {
 		// + 4 since the descriptor starts after the signature
-		return MEFTPSignatureLength, nil
+		return len(MEFTPSignature), nil
 	}
 	return -1, fmt.Errorf("ME Flash Partition Table signature not found: first 20 bytes are:\n%s",
 		hex.Dump(buf[:20]))
@@ -119,14 +113,14 @@ func (fp *MEFPT) ApplyChildren(v Visitor) error {
 
 // NewMEFPT tries to create a MEFPT
 func NewMEFPT(buf []byte) (*MEFPT, error) {
-	o, err := FindMESignature(buf)
+	o, err := FindMEDescriptor(buf)
 	if err != nil {
 		return nil, err
 	}
-	if len(buf) < o+28 {
-		return nil, fmt.Errorf("ME section (%#x) too small for ME Flash Partition Table (%#x)", len(buf), o+28)
+	if len(buf) < o+MEPartitionDescriptorMinLength {
+		return nil, fmt.Errorf("ME section (%#x) too small for ME Flash Partition Table (%#x)", len(buf), o+MEPartitionDescriptorMinLength)
 	}
-	fp := &MEFPT{PartitionMapStart: o + 28}
+	fp := &MEFPT{PartitionMapStart: o + MEPartitionDescriptorMinLength}
 	r := bytes.NewReader(buf[o:])
 	if err := binary.Read(r, binary.LittleEndian, &fp.PartitionCount); err != nil {
 		return nil, err
@@ -145,15 +139,9 @@ func NewMEFPT(buf []byte) (*MEFPT, error) {
 }
 
 func (fp *MEFPT) parsePartitions() error {
+	fp.Entries = make([]MEPartitionEntry, fp.PartitionCount)
 	r := bytes.NewReader(fp.buf[fp.PartitionMapStart:])
-	for i := 0; i < int(fp.PartitionCount); i++ {
-		var entry MePartitionEntry
-		if err := binary.Read(r, binary.LittleEndian, &entry); err != nil {
-			return err
-		}
-		fp.Entries = append(fp.Entries, entry)
-	}
-	return nil
+	return binary.Read(r, binary.LittleEndian, fp.Entries)
 }
 
 // MERegion implements Region for a raw chunk of bytes in the firmware image.
@@ -230,9 +218,5 @@ func (rr *MERegion) ApplyChildren(v Visitor) error {
 	if rr.FPT == nil {
 		return nil
 	}
-	if err := rr.FPT.Apply(v); err != nil {
-		return err
-	}
-
-	return nil
+	return rr.FPT.Apply(v)
 }
