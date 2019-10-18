@@ -20,8 +20,6 @@ var (
 const (
 	// FlashDescriptorLength represents the size of the descriptor region.
 	FlashDescriptorLength = 0x1000
-	// FlashSignatureLength represents the size of the flash signature
-	FlashSignatureLength = 4
 )
 
 // FlashDescriptor is the main structure that represents an Intel Flash Descriptor.
@@ -41,13 +39,13 @@ type FlashDescriptor struct {
 
 // FindSignature searches for an Intel flash signature.
 func FindSignature(buf []byte) (int, error) {
-	if bytes.Equal(buf[16:16+FlashSignatureLength], FlashSignature) {
+	if bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
 	}
-	if bytes.Equal(buf[:FlashSignatureLength], FlashSignature) {
+	if bytes.Equal(buf[:len(FlashSignature)], FlashSignature) {
 		// + 4 since the descriptor starts after the signature
-		return FlashSignatureLength, nil
+		return len(FlashSignature), nil
 	}
 	return -1, fmt.Errorf("Flash signature not found: first 20 bytes are:\n%s",
 		hex.Dump(buf[:20]))
