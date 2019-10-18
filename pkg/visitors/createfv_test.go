@@ -7,8 +7,56 @@ package visitors
 import (
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
+
+type testLayout struct {
+	Type   string
+	offset uint64
+	length uint64
+}
+
+func checkBRLayout(t *testing.T, br *uefi.BIOSRegion, layout []testLayout) {
+	// basic check
+	if len(br.Elements) != len(layout) {
+		t.Fatalf("wrong number of elements in BIOSRegion, got %d want %d", len(br.Elements), len(layout))
+	}
+
+	var nextoffset uint64
+	// check the final layout
+	for i, e := range br.Elements {
+		var offset, length uint64
+		switch f := e.Value.(type) {
+		case *uefi.FirmwareVolume:
+			offset = f.FVOffset
+			length = f.Length
+		case *uefi.BIOSPadding:
+			offset = f.Offset
+			length = uint64(len(f.Buf()))
+		default:
+			t.Fatalf("Unexpected Element at %d: %s", i, e.Type)
+		}
+		if e.Type != layout[i].Type {
+			t.Errorf("Wrong Element Type at %d, got %s, want %s", i, e.Type, layout[i].Type)
+		}
+		if offset != layout[i].offset {
+			t.Errorf("Wrong Element offset at %d, got %#x, want %#x", i, offset, layout[i].offset)
+		}
+		if length != layout[i].length {
+			t.Errorf("Wrong Element length at %d, got %#x, want %#x", i, length, layout[i].length)
+		}
+		// sanity check
+		if layout[i].offset != nextoffset {
+			t.Errorf("Next offset inconsistency got %#x, want %#x", layout[i].offset, nextoffset)
+		}
+		nextoffset = layout[i].offset + layout[i].length
+	}
+	if br.Length != nextoffset {
+		t.Errorf("Next offset inconsistency got %#x, want %#x", br.Length, nextoffset)
+	}
+
+}
 
 func TestInsertFVinBP(t *testing.T) {
 	// Create an empty BIOSRegion
@@ -70,50 +118,43 @@ func TestInsertFVinBP(t *testing.T) {
 		t.Fatalf("wrong number of elements in BIOSRegion, got %d want 4", len(br.Elements))
 	}
 
-	var want = []struct {
-		Type   string
-		offset uint64
-		length uint64
-	}{
+	var want = []testLayout{
 		{"*uefi.FirmwareVolume", 0, 0x1000},
 		{"*uefi.BIOSPadding", 0x1000, 0x6000},
 		{"*uefi.FirmwareVolume", 0x7000, 0x1000},
 		{"*uefi.FirmwareVolume", 0x8000, 0x1000},
 		{"*uefi.BIOSPadding", 0x9000, 0x7000},
 	}
+	checkBRLayout(t, br, want)
+}
 
-	var nextoffset uint64
-	// check the final layout
-	for i, e := range br.Elements {
-		var offset, length uint64
-		switch f := e.Value.(type) {
-		case *uefi.FirmwareVolume:
-			offset = f.FVOffset
-			length = f.Length
-		case *uefi.BIOSPadding:
-			offset = f.Offset
-			length = uint64(len(f.Buf()))
-		default:
-			t.Fatalf("Unexpected Element at %d: %s", i, e.Type)
-		}
-		if e.Type != want[i].Type {
-			t.Errorf("Wrong Element Type at %d, got %s, want %s", i, e.Type, want[i].Type)
-		}
-		if offset != want[i].offset {
-			t.Errorf("Wrong Element offset at %d, got %#x, want %#x", i, offset, want[i].offset)
-		}
-		if length != want[i].length {
-			t.Errorf("Wrong Element length at %d, got %#x, want %#x", i, length, want[i].length)
-		}
-		// sanity check
-		if offset != nextoffset {
-			t.Errorf("Next offset inconsistency got %#x, want %#x", offset, nextoffset)
-		}
-		nextoffset = offset + length
+func TestCreateFV(t *testing.T) {
+	// Set erasepolarity to FF
+	uefi.Attributes.ErasePolarity = 0xFF
+	// Create an empty BIOSRegion
+	buf := make([]byte, 0x10000)
+	uefi.Erase(buf, uefi.Attributes.ErasePolarity)
+	r, err := uefi.NewBIOSRegion(buf, nil, uefi.RegionTypeBIOS)
+	if err != nil {
+		t.Fatal(err)
 	}
-	offset := uint64(len(buf))
-	if offset != nextoffset {
-		t.Errorf("Next offset inconsistency got %#x, want %#x", offset, nextoffset)
+	// Create the visitor
+	v := &CreateFV{
+		AbsOffset: 0x8000,
+		Size:      0x1000,
+		Name:      *guid.MustParse("DECAFBAD-0000-0000-0000-000000000000"),
 	}
+
+	if err := v.Run(r); err != nil {
+		t.Fatalf("Failed to create firmware volume, got %v", err)
+	}
+
+	br := r.(*uefi.BIOSRegion)
+	want := []testLayout{
+		{"*uefi.BIOSPadding", 0x0000, 0x8000},
+		{"*uefi.FirmwareVolume", 0x8000, 0x1000},
+		{"*uefi.BIOSPadding", 0x9000, 0x7000},
+	}
+	checkBRLayout(t, br, want)
 
 }
