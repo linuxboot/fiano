@@ -98,7 +98,7 @@ func (r *FlashRegion) EndOffset() uint32 {
 
 var regionConstructors = map[FlashRegionType]func(buf []byte, r *FlashRegion, rt FlashRegionType) (Region, error){
 	RegionTypeBIOS:      NewBIOSRegion,
-	RegionTypeME:        NewRawRegion,
+	RegionTypeME:        NewMERegion,
 	RegionTypeGBE:       NewRawRegion,
 	RegionTypePD:        NewRawRegion,
 	RegionTypeDevExp1:   NewRawRegion,

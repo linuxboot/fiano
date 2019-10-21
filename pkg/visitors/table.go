@@ -59,6 +59,13 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		return v.printFirmware(f, "NVAR Store", "", "", v.curOffset, v.curOffset)
 	case *uefi.NVar:
 		return v.printFirmware(f, "NVAR", f.GUID.String(), f, v.curOffset, v.curOffset+uint64(f.DataOffset))
+	case *uefi.MERegion:
+		if f.FRegion != nil {
+			offset = uint64(f.FRegion.BaseOffset())
+		}
+		return v.printFirmware(f, "ME", "", "", offset, offset)
+	case *uefi.MEFPT:
+		return v.printFirmware(f, "$FPT", "", "", v.offset, 0)
 	case *uefi.RawRegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
@@ -117,6 +124,13 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		// Print free space and GUID store
 		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, f.GUIDStoreOffset-f.FreeSpaceOffset)
 		v2.printRow(&v2, "GUIDStore", "", fmt.Sprintf("%d GUID", len(f.GUIDStore)), offset+f.GUIDStoreOffset, f.Length-f.GUIDStoreOffset)
+	case *uefi.MERegion:
+		v2.printRow(&v2, "Free", "", "", offset+f.FreeSpaceOffset, length-f.FreeSpaceOffset)
+	case *uefi.MEFPT:
+		// MERegion is not entered, simply print the $FPT content here
+		for _, p := range f.Entries {
+			v2.printRow(&v2, p.Name, "", "", offset+uint64(p.Offset), uint64(p.Length))
+		}
 	case *uefi.File:
 		// Align
 		v.curOffset = uefi.Align8(v.curOffset)
