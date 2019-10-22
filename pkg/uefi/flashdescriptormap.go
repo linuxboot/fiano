@@ -14,6 +14,9 @@ const (
 	// FlashDescriptorMapMaxBase is the maximum base address for a flash descriptor
 	// region
 	FlashDescriptorMapMaxBase = 0xe0
+
+	// FlashDescriptorMapSize is the size in byte of the FlashDescriptorMap
+	FlashDescriptorMapSize = 16
 )
 
 // FlashDescriptorMap represent an Intel flash descriptor. This object provides
