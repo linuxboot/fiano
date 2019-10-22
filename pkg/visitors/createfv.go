@@ -37,7 +37,7 @@ func (v *CreateFV) Run(f uefi.Firmware) error {
 	return nil
 }
 
-// Visit applies the Remove visitor to any Firmware type.
+// Visit applies the CreateFV visitor to any Firmware type.
 func (v *CreateFV) Visit(f uefi.Firmware) error {
 	if v.found {
 		return nil
@@ -68,6 +68,8 @@ func (v *CreateFV) Visit(f uefi.Firmware) error {
 				bp = f
 				bpOffset := offset + f.Offset
 				bpEnd := bpOffset + uint64(len(f.Buf()))
+				// Warning: This won't work if for whatever reason we have two biospads that are contiguous
+				// TODO: join contiguous before !
 				if v.AbsOffset >= bpOffset && v.AbsOffset+v.Size <= bpEnd {
 
 					idx = i
@@ -109,8 +111,9 @@ func insertFVinBP(br *uefi.BIOSRegion, offset uint64, bp *uefi.BIOSPadding, idx 
 	newElements = append(newElements, uefi.MakeTyped(fv))
 
 	// keep part of the BIOS Pad after the new fv if needed
-	if offset-bp.Offset+fv.Length < uint64(len(bpBuf)) {
-		tbp, err := uefi.NewBIOSPadding(bpBuf[offset-bp.Offset+fv.Length:], offset+fv.Length)
+	tbpStart := offset - bp.Offset + fv.Length
+	if tbpStart < uint64(len(bpBuf)) {
+		tbp, err := uefi.NewBIOSPadding(bpBuf[tbpStart:], offset+fv.Length)
 		if err != nil {
 			return err
 		}
@@ -145,7 +148,7 @@ func createEmptyFirmwareVolume(fvOffset, size uint64, name *guid.GUID) (*uefi.Fi
 	fv.Length = size
 
 	if name != nil {
-		// TODO: should the extended header offset be computed ?
+		// TODO: compute the extended header offset (especially if more than 2 Blocks, this offset will be wrong)
 		fv.ExtHeaderOffset = 0x60
 		fv.FVName = *name
 		fv.ExtHeaderSize = uefi.FirmwareVolumeExtHeaderMinSize
@@ -184,6 +187,11 @@ func createEmptyFirmwareVolume(fvOffset, size uint64, name *guid.GUID) (*uefi.Fi
 			return nil, fmt.Errorf("unable to construct binary extended header of new firmware volume: got %v", err)
 		}
 
+		// The extended header in encapsulated in a PadFile just after the header.
+		// The UEFI PI Specification is not clear on that point, however the implementation in tianocore GenFv tools is clear:
+		// At [1] `GenerateFvImage` gives the extended header as an argument to `AddPadFile` implemented at [2].
+		// [1]: https://github.com/tianocore/edk2/blob/master/BaseTools/Source/C/GenFv/GenFvInternalLib.c#L2772
+		// [2]: https://github.com/tianocore/edk2/blob/master/BaseTools/Source/C/GenFv/GenFvInternalLib.c#L563
 		extHeaderFile, err := uefi.CreatePadFile(uint64(uefi.FileHeaderMinLength + fv.ExtHeaderSize))
 		if err != nil {
 			return nil, fmt.Errorf("Building ExtHeader %v", err)
