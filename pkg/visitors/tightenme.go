@@ -101,10 +101,6 @@ func (v *TightenME) process() error {
 		return fmt.Errorf("Could not create BIOS Padding: %v", err)
 	}
 	v.br.Elements = append([]*uefi.TypedFirmware{uefi.MakeTyped(bp)}, v.br.Elements...)
-	// Update IFD
-	// I thought regions had references to the IFD... but it seams not so:
-	v.fd.Region.FlashRegions[uefi.RegionTypeBIOS] = *v.br.FRegion
-	v.fd.Region.FlashRegions[uefi.RegionTypeME] = *v.mer.FRegion
 	// Assemble will regenerate IFD so regions will be updated in the image
 
 	return nil
