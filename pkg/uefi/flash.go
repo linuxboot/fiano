@@ -242,8 +242,8 @@ func NewFlashImage(buf []byte) (*FlashImage, error) {
 		return nil, err
 	}
 
-	// FlashRegions
-	frs := f.IFD.Region.FlashRegions
+	// FlashRegions is an array, make a slice to keep reference to it's content
+	frs := f.IFD.Region.FlashRegions[:]
 
 	// BIOS region has to be valid
 	if !frs[RegionTypeBIOS].Valid() {

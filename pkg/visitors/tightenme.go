@@ -5,8 +5,6 @@
 package visitors
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 
@@ -103,21 +101,7 @@ func (v *TightenME) process() error {
 		return fmt.Errorf("Could not create BIOS Padding: %v", err)
 	}
 	v.br.Elements = append([]*uefi.TypedFirmware{uefi.MakeTyped(bp)}, v.br.Elements...)
-	// Update IFD
-	// I thought regions had references to the IFD... but it seams not so:
-	v.fd.Region.FlashRegions[uefi.RegionTypeBIOS] = *v.br.FRegion
-	v.fd.Region.FlashRegions[uefi.RegionTypeME] = *v.mer.FRegion
-	// Assemble is not regenerating IFD so update regions here
-	// TODO: remove this and fix Assemble
-	regions := new(bytes.Buffer)
-	err = binary.Write(regions, binary.LittleEndian, v.fd.Region)
-	if err != nil {
-		return fmt.Errorf("unable to construct binary region of IFD: got %v", err)
-	}
-
-	buf = v.fd.Buf()
-	copy(buf[v.fd.RegionStart:v.fd.RegionStart+uint(uefi.FlashRegionSectionSize)], regions.Bytes())
-	v.fd.SetBuf(buf)
+	// Assemble will regenerate IFD so regions will be updated in the image
 
 	return nil
 }

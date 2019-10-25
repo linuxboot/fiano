@@ -5,6 +5,7 @@
 package visitors
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -372,7 +373,36 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 	case *uefi.FlashDescriptor:
-		err = f.ParseFlashDescriptor()
+		// We only parse Descriptor, Region and Master, so regenerate only that and keep the rest of the buffer.
+		// We assume the location in the Flash Descriptor sector have not changed.
+		// TODO: verify the integrity of the Start offsets
+		fBuf := f.Buf()
+		// Regenerate DescriptorMap
+		desc := new(bytes.Buffer)
+		err = binary.Write(desc, binary.LittleEndian, f.DescriptorMap)
+		if err != nil {
+			return fmt.Errorf("unable to construct binary DescriptorMap of IFD: got %v", err)
+		}
+		copy(fBuf[f.DescriptorMapStart:f.DescriptorMapStart+uint(uefi.FlashDescriptorMapSize)], desc.Bytes())
+		// Regenerate Region
+		region := new(bytes.Buffer)
+		err = binary.Write(region, binary.LittleEndian, f.Region)
+		if err != nil {
+			return fmt.Errorf("unable to construct binary Region of IFD: got %v", err)
+		}
+		copy(fBuf[f.RegionStart:f.RegionStart+uint(uefi.FlashRegionSectionSize)], region.Bytes())
+		// Regenerate Master
+		master := new(bytes.Buffer)
+		err = binary.Write(master, binary.LittleEndian, f.Master)
+		if err != nil {
+			return fmt.Errorf("unable to construct binary Master of IFD: got %v", err)
+		}
+		copy(fBuf[f.MasterStart:f.MasterStart+uint(uefi.FlashMasterSectionSize)], master.Bytes())
+
+		// Set the buffer
+		f.SetBuf(fBuf)
+
+		return nil
 
 	case *uefi.BIOSRegion:
 		fBuf := make([]byte, f.Length)
