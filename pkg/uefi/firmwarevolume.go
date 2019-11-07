@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/linuxboot/fiano/pkg/guid"
 )
@@ -251,6 +252,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 	// Start from the end of the fv header.
 	// Test if the fv type is supported.
 	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok {
+		log.Printf("warning unsupported fv type %v,%v not parsing it", fv.FileSystemGUID.String(), fv.fvType)
 		return &fv, nil
 	}
 	lh := fv.Length - FileHeaderMinLength
