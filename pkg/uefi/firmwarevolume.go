@@ -139,6 +139,14 @@ func (fv *FirmwareVolume) GetErasePolarity() uint8 {
 	return 0
 }
 
+// String creates a string representation for the firmware volume.
+func (fv FirmwareVolume) String() string {
+	if fv.ExtHeaderOffset != 0 {
+		return fv.FVName.String()
+	}
+	return fv.FileSystemGUID.String()
+}
+
 func fillFFs(b []byte) {
 	for i := range b {
 		b[i] = 0xFF
