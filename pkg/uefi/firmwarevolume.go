@@ -96,7 +96,7 @@ type FirmwareVolume struct {
 
 	// Variables not in the binary for us to keep track of stuff/print
 	DataOffset  uint64
-	fvType      string
+	FVType      string `json:"-"`
 	buf         []byte
 	FVOffset    uint64 // Byte offset from start of BIOS region.
 	ExtractPath string
@@ -239,7 +239,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 	// TODO: handle alignment field in header.
 	fv.DataOffset = Align8(fv.DataOffset)
 
-	fv.fvType = FVGUIDs[fv.FileSystemGUID]
+	fv.FVType = FVGUIDs[fv.FileSystemGUID]
 	fv.FVOffset = fvOffset
 
 	// copy out the buffer.
@@ -252,7 +252,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 	// Start from the end of the fv header.
 	// Test if the fv type is supported.
 	if _, ok := supportedFVs[fv.FileSystemGUID]; !ok {
-		log.Printf("warning unsupported fv type %v,%v not parsing it", fv.FileSystemGUID.String(), fv.fvType)
+		log.Printf("warning unsupported fv type %v,%v not parsing it", fv.FileSystemGUID.String(), fv.FVType)
 		return &fv, nil
 	}
 	lh := fv.Length - FileHeaderMinLength
