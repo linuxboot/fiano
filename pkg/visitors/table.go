@@ -39,7 +39,7 @@ func (v *Table) Visit(f uefi.Firmware) error {
 		}
 		return v.printFirmware(f, "Image", "", "", 0, 0)
 	case *uefi.FirmwareVolume:
-		return v.printFirmware(f, "FV", f.FileSystemGUID.String(), f.FVType, v.offset+f.FVOffset, v.offset+f.FVOffset+f.DataOffset)
+		return v.printFirmware(f, "FV", f.String(), f.FVType, v.offset+f.FVOffset, v.offset+f.FVOffset+f.DataOffset)
 	case *uefi.File:
 		// TODO: make name part of the file node
 		return v.printFirmware(f, "File", f.Header.GUID.String(), f.Header.Type, v.curOffset, v.curOffset+f.DataOffset)
