@@ -21,6 +21,10 @@ var guidRegex = regexp.MustCompile(
 	"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
 )
 
+var partialguidRegex = regexp.MustCompile(
+	"[-a-fA-F0-9]{1,36}$",
+)
+
 // Mapper converts a GUID to a string.
 type Mapper interface {
 	Map(guid.GUID) []byte
@@ -80,21 +84,51 @@ func New(m Mapper) *Transformer {
 	}
 }
 
+func (t *Transformer) bufferMap(match []byte) []byte {
+	// The regex only matches valid GUIDs, so this must parse.
+	g, err := guid.Parse(string(match))
+	if err != nil {
+		return match
+	}
+	return t.mapper.Map(*g)
+}
+
 // Transform implements transform.Transformer.Transform().
 func (t *Transformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	transformed := guidRegex.ReplaceAllFunc(src, func(match []byte) []byte {
-		// The regex only matches valid GUIDs, so this must parse.
-		g, err := guid.Parse(string(match))
-		if err != nil {
-			return src
+	if atEOF {
+		// we have the end of file, try to process all at once
+		transformed := guidRegex.ReplaceAllFunc(src, t.bufferMap)
+		if len(transformed) > len(dst) {
+			// we were too optimistic, dst is too short
+			d, s, e := t.Transform(dst, src, false)
+			if e != transform.ErrShortSrc {
+				return d, s, e
+			}
+			return d, s, transform.ErrShortDst
 		}
-		return t.mapper.Map(*g)
-	})
-	if len(transformed) > len(dst) {
-		return 0, 0, transform.ErrShortDst
+		copy(dst, transformed)
+		return len(transformed), len(src), nil
 	}
-	copy(dst, transformed)
-	return len(transformed), len(src), nil
+	loc := guidRegex.FindIndex(src)
+	if loc == nil {
+		// check if the end potentially contain the beginning of a GUID
+		loc := partialguidRegex.FindIndex(src)
+		if loc == nil {
+			copy(dst, src)
+			return len(src), len(src), nil
+		}
+		copy(dst, src[0:loc[0]])
+		return loc[0], loc[0], transform.ErrShortSrc
+	}
+	copy(dst, src[0:loc[0]])
+	mappedGUID := t.bufferMap(src[loc[0]:loc[1]])
+	if loc[0]+len(mappedGUID) > len(dst) {
+		// mapped buffer does not fit, only send the plain part
+		return loc[0], loc[0], transform.ErrShortDst
+	}
+
+	copy(dst[loc[0]:], mappedGUID)
+	return loc[0] + len(mappedGUID), loc[1], transform.ErrShortSrc
 }
 
 // Reset implements transform.Transformer.Reset().
