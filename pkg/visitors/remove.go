@@ -100,13 +100,13 @@ func (v *Remove) Visit(f uefi.Firmware) error {
 					} else {
 						f.Files = append(f.Files[:i], f.Files[i+1:]...)
 					}
-					v.printf("Remove: %d files now", len(f.Files))
+					v.printf("Remove: %d files now\n", len(f.Files))
 
 					// Creates a stack of undoes in case there are multiple FVs.
 					prev := v.Undo
 					v.Undo = func() {
 						f.Files = originalList
-						v.printf("Undo: %d files now", len(f.Files))
+						v.printf("Undo: %d files now\n", len(f.Files))
 						v.Undo = prev
 					}
 				}
