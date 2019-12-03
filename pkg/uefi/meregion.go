@@ -48,7 +48,8 @@ type MEPartitionEntry struct {
 	Owner    [4]byte
 	Offset   uint32
 	Length   uint32
-	Reserved [4]uint32
+	Reserved [3]uint32
+	Flags    uint32
 }
 
 // MEName represent 4 bytes with JSON string support
@@ -73,6 +74,22 @@ func (n *MEName) UnmarshalText(b []byte) error {
 func (n MEName) String() string {
 	b, _ := n.MarshalText()
 	return string(b)
+}
+
+// OffsetIsValid returns true if the entry has a valid offset
+func (e MEPartitionEntry) OffsetIsValid() bool {
+	return e.Offset != 0 && e.Offset != 0xffffffff
+}
+
+var mePartitionEntryTypeNames = map[byte]string{0: "Code", 1: "Data", 2: "NVRAM", 3: "Generic", 4: "EFFS", 5: "ROM"}
+
+// Type returns the type of the entry
+func (e MEPartitionEntry) Type() string {
+	t := byte(e.Flags & 0x7f)
+	if s, ok := mePartitionEntryTypeNames[t]; ok {
+		return s
+	}
+	return fmt.Sprintf("Unknown (%d)", t)
 }
 
 // FindMEDescriptor searches for an Intel ME FTP signature
@@ -182,9 +199,11 @@ func NewMERegion(buf []byte, r *FlashRegion, rt FlashRegionType) (Region, error)
 	rr.FPT = fp
 	// Compute FreeSpaceOffset
 	for _, p := range fp.Entries {
-		endOffset := uint64(p.Offset) + uint64(p.Length)
-		if endOffset > rr.FreeSpaceOffset {
-			rr.FreeSpaceOffset = endOffset
+		if p.OffsetIsValid() {
+			endOffset := uint64(p.Offset) + uint64(p.Length)
+			if endOffset > rr.FreeSpaceOffset {
+				rr.FreeSpaceOffset = endOffset
+			}
 		}
 	}
 

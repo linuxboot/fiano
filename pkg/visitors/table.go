@@ -86,7 +86,7 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		v.W = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		defer func() { v.W.Flush() }()
 		if v.Layout {
-			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tOffset\tSize\n", indent(v.indent))
+			fmt.Fprintf(v.W, "%sNode\tGUID/Name/Type\tOffset\tSize\n", indent(v.indent))
 			v.printRow = printRowLayout
 		} else {
 			fmt.Fprintf(v.W, "%sNode\tGUID/Name\tType\tSize\n", indent(v.indent))
@@ -129,7 +129,11 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 	case *uefi.MEFPT:
 		// MERegion is not entered, simply print the $FPT content here
 		for _, p := range f.Entries {
-			v2.printRow(&v2, p.Name, "", "", offset+uint64(p.Offset), uint64(p.Length))
+			var po uint64
+			if p.OffsetIsValid() {
+				po = offset + uint64(p.Offset)
+			}
+			v2.printRow(&v2, p.Name, "", p.Type(), po, uint64(p.Length))
 		}
 	case *uefi.File:
 		// Align
