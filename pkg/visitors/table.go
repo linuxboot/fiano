@@ -5,17 +5,20 @@
 package visitors
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/linuxboot/fiano/pkg/knownguids"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 // Table prints the GUIDS, types and sizes as a compact table.
 type Table struct {
 	W         *tabwriter.Writer
+	Scan      bool
 	Layout    bool
 	Depth     int
 	indent    int
@@ -102,12 +105,20 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 		}
 	}
 	v.printRow(v, node, name, typez, offset, length)
-
-	// Compute offset and visit children
 	v2 := *v
 	v2.indent++
 	v2.offset = dataOffset
 	v2.curOffset = v2.offset
+
+	if s, ok := f.(*uefi.Section); ok && v.Scan {
+		for g := range knownguids.GUIDs {
+			if bytes.Contains(s.Buf(), g[:]) {
+				fmt.Fprintf(v.W, "%s\t\t%s\n", indent(v.indent), g.String())
+			}
+		}
+	}
+
+	// Compute offset and visit children
 	if v.Depth <= 0 || v.indent < v.Depth {
 		if err := f.ApplyChildren(&v2); err != nil {
 			return err
@@ -162,5 +173,8 @@ func init() {
 	})
 	RegisterCLI("layout-table-full", "print out offset and size information in a pretty table", 0, func(args []string) (uefi.Visitor, error) {
 		return &Table{Layout: true}, nil
+	})
+	RegisterCLI("scan", "scan the table for GUIDs and print those found", 0, func(args []string) (uefi.Visitor, error) {
+		return &Table{Scan: true}, nil
 	})
 }
