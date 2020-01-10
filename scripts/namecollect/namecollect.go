@@ -7,6 +7,7 @@
 package main
 
 import (
+	"flag"
 	"go/build"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,9 @@ import (
 
 const knownGUIDsFile = "src/github.com/linuxboot/fiano/pkg/knownguids/guids.go"
 
-var knownGUIDsTemplate = `// Copyright {{.Year}} the LinuxBoot Authors. All rights reserved
+var (
+	debug              = flag.Bool("d", false, "debug prints")
+	knownGUIDsTemplate = `// Copyright {{.Year}} the LinuxBoot Authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -43,13 +46,18 @@ var GUIDs = map[guid.GUID]string {
 	{{- end}}
 }
 `
+)
 
 func getGUIDsFile() string {
 	gopath := build.Default.GOPATH
 	if gopath == "" {
 		gopath = os.ExpandEnv("$HOME/go")
 	}
-	return filepath.Join(gopath, knownGUIDsFile)
+	o := filepath.Join(gopath, knownGUIDsFile)
+	if *debug {
+		log.Printf("Writing to %s", o)
+	}
+	return o
 }
 
 func downloadEdk2() (tmpDir string, err error) {
@@ -79,6 +87,9 @@ func findGUIDs(dir string) (map[guid.GUID]string, error) {
 			return nil
 		}
 		if info.Mode().IsRegular() && strings.HasSuffix(path, ".inf") {
+			if *debug {
+				log.Printf("Check %s", path)
+			}
 			contents, err := ioutil.ReadFile(path)
 			if err != nil {
 				log.Printf("skipping %q due to error: %v", path, err)
@@ -102,8 +113,8 @@ func findGUIDs(dir string) (map[guid.GUID]string, error) {
 			}
 			name := strings.TrimSpace(string(baseNames[0][1]))
 			if prevName, ok := guids[*g]; ok && prevName != name {
+				name = prevName + "/" + name
 				log.Printf("warning %v has two names %q and %q", *g, prevName, name)
-				return nil
 			}
 			guids[*g] = name
 		}
@@ -113,6 +124,7 @@ func findGUIDs(dir string) (map[guid.GUID]string, error) {
 }
 
 func main() {
+	flag.Parse()
 	tmpl, err := template.New("knownguids").Parse(knownGUIDsTemplate)
 	if err != nil {
 		log.Fatal(err)
@@ -136,9 +148,14 @@ func main() {
 
 	previousGUIDs := knownguids.GUIDs
 	for guid, n := range previousGUIDs {
+		_, ok := newGUIDs[guid]
+		if !ok {
+			log.Printf("warning %v[%v] was in the old but not the new", n, guid)
+			newGUIDs[guid] = n
+		}
 		if newGUIDs[guid] != n {
-			log.Printf("warning %v name changed from %q to %q",
-				guid, n, newGUIDs[guid])
+			log.Printf("warning %v name changed from %q to %q", guid, n, newGUIDs[guid])
+			newGUIDs[guid] = n + "/" + newGUIDs[guid]
 		}
 	}
 
