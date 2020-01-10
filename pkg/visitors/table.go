@@ -83,6 +83,17 @@ func indent(n int) string {
 	return strings.Repeat(" ", n)
 }
 
+func scanGUID(v *Table, b []byte) {
+	for g := range knownguids.GUIDs {
+		if bytes.Contains(b, g[:]) {
+			fmt.Fprintf(v.W, "%s\t(RAW)\t%s\n", indent(v.indent), g.String())
+		}
+		if strings.Contains(string(b), g.String()) {
+			fmt.Fprintf(v.W, "%s\t(STRING)\t%s\n", indent(v.indent), g.String())
+		}
+	}
+}
+
 func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, offset, dataOffset uint64) error {
 	// Init: Print title and select printRow func
 	if v.W == nil {
@@ -110,10 +121,21 @@ func (v *Table) printFirmware(f uefi.Firmware, node, name, typez interface{}, of
 	v2.offset = dataOffset
 	v2.curOffset = v2.offset
 
-	if s, ok := f.(*uefi.Section); ok && v.Scan {
-		for g := range knownguids.GUIDs {
-			if bytes.Contains(s.Buf(), g[:]) {
-				fmt.Fprintf(v.W, "%s\t\t%s\n", indent(v.indent), g.String())
+	if v.Scan {
+		switch s := f.(type) {
+		case *uefi.Section:
+			switch s.Header.Type {
+			case uefi.SectionTypeFirmwareVolumeImage:
+			case uefi.SectionTypeDXEDepEx, uefi.SectionTypePEIDepEx, uefi.SectionMMDepEx:
+				fmt.Fprintf(v.W, "%s\t%v\n", indent(v.indent), s.DepEx)
+			default:
+				scanGUID(&v2, s.Buf())
+			}
+		case *uefi.NVar:
+			scanGUID(&v2, s.Buf())
+		case *uefi.File:
+			if s.Header.Type == uefi.FVFileTypeRaw {
+				scanGUID(&v2, s.Buf())
 			}
 		}
 	}
