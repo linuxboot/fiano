@@ -116,10 +116,6 @@ func FindFileTypePredicate(t uefi.FVFileType) FindPredicate {
 
 // FindFilePredicate is a generic predicate for searching files and UI sections only.
 func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
-	searchRE, err := regexp.Compile("^(" + r + ")$")
-	if err != nil {
-		return nil, err
-	}
 	ciRE, err := regexp.Compile("^(?i)(" + r + ")$")
 	if err != nil {
 		return nil, err
@@ -129,7 +125,7 @@ func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 		case *uefi.File:
 			return ciRE.MatchString(f.Header.GUID.String())
 		case *uefi.Section:
-			return searchRE.MatchString(f.Name)
+			return ciRE.MatchString(f.Name)
 		}
 		return false
 	}, nil
@@ -137,10 +133,6 @@ func FindFilePredicate(r string) (func(f uefi.Firmware) bool, error) {
 
 // FindFileFVPredicate is a generic predicate for searching FVs, files and UI sections.
 func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
-	searchRE, err := regexp.Compile("^" + r + "$")
-	if err != nil {
-		return nil, err
-	}
 	ciRE, err := regexp.Compile("^(?i)" + r + "$")
 	if err != nil {
 		return nil, err
@@ -152,7 +144,7 @@ func FindFileFVPredicate(r string) (func(f uefi.Firmware) bool, error) {
 		case *uefi.File:
 			return ciRE.MatchString(f.Header.GUID.String())
 		case *uefi.Section:
-			return searchRE.MatchString(f.Name)
+			return ciRE.MatchString(f.Name)
 		}
 		return false
 	}, nil
