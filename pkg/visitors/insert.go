@@ -32,8 +32,14 @@ const (
 	InsertAfter
 	// InsertBefore inserts before the specified file.
 	InsertBefore
-	// InsertDXE inserts into the Dxe Firmware Volume.
+	// InsertDXE inserts into the Dxe Firmware Volume. This works by searching
+	// for the DxeCore first to identify the Dxe Firmware Volume.
 	InsertDXE
+
+	// ReplaceFFS replaces the found file with the new FFS. This is used
+	// as a shortcut for remove and insert combined, but also when we want to make
+	// sure that the starting offset of the new file is the same as the old.
+	ReplaceFFS
 	// TODO: Add InsertIn
 )
 
@@ -43,6 +49,7 @@ var insertTypeNames = map[InsertType]string{
 	InsertAfter:  "insert_after",
 	InsertBefore: "insert_before",
 	InsertDXE:    "insert_dxe",
+	ReplaceFFS:   "replace_ffs",
 }
 
 // String creates a string representation for the insert type.
@@ -119,6 +126,8 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 					f.Files = append(f.Files[:i+1], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
 				case InsertBefore:
 					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i:]...)...)
+				case ReplaceFFS:
+					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
 				}
 				return nil
 			}
@@ -175,4 +184,6 @@ func init() {
 		"insert a file after another file", 2, genInsertCLI(InsertAfter))
 	RegisterCLI(insertTypeNames[InsertBefore],
 		"insert a file before another file", 2, genInsertCLI(InsertBefore))
+	RegisterCLI(insertTypeNames[ReplaceFFS],
+		"replace a file with another file", 2, genInsertCLI(ReplaceFFS))
 }
