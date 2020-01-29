@@ -232,9 +232,18 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 		return nil, err
 	}
 
+	// Boundary checks (to return an error instead of panicking)
+	if fv.Length > uint64(len(data)) {
+		return nil, fmt.Errorf("invalid FV length (is greater than the data length): %d > %d",
+			fv.Length, len(data))
+	}
+
 	// Parse the extended header and figure out the start of data
 	fv.DataOffset = uint64(fv.HeaderLen)
-	if fv.ExtHeaderOffset != 0 && uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
+	if fv.ExtHeaderOffset != 0 &&
+		fv.Length >= FirmwareVolumeExtHeaderMinSize &&
+		uint64(fv.ExtHeaderOffset) < fv.Length-FirmwareVolumeExtHeaderMinSize {
+
 		// jump to ext header offset.
 		r := bytes.NewReader(data[fv.ExtHeaderOffset:])
 		if err := binary.Read(r, binary.LittleEndian, &fv.FirmwareVolumeExtHeader); err != nil {
