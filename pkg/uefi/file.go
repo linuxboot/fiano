@@ -416,10 +416,8 @@ func NewFile(buf []byte) (*File, error) {
 		return nil, fmt.Errorf("File size too big! File with GUID: %v has length %v, but is only %v bytes big",
 			f.Header.GUID, f.Header.ExtendedSize, buflen)
 	}
-	// Copy out the buffer.
-	newBuf := buf[:f.Header.ExtendedSize]
-	f.buf = make([]byte, f.Header.ExtendedSize)
-	copy(f.buf, newBuf)
+
+	f.buf = buf[:f.Header.ExtendedSize]
 
 	// Special case for NVAR Store stored in raw file
 	if f.Header.Type == FVFileTypeRaw && f.Header.GUID == *NVAR {

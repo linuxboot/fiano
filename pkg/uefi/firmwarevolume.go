@@ -259,10 +259,7 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 	fv.FVType = FVGUIDs[fv.FileSystemGUID]
 	fv.FVOffset = fvOffset
 
-	// copy out the buffer.
-	newBuf := data[:fv.Length]
-	fv.buf = make([]byte, fv.Length)
-	copy(fv.buf, newBuf)
+	fv.buf = data[:fv.Length]
 
 	// Parse the files.
 	// TODO: handle fv data alignment.

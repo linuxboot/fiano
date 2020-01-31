@@ -84,9 +84,7 @@ func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error
 		RegionType: RegionTypeBIOS}
 	var absOffset uint64
 
-	// Copy the buffer
-	br.buf = make([]byte, len(buf))
-	copy(br.buf, buf)
+	br.buf = buf
 
 	for {
 		offset := FindFirmwareVolumeOffset(buf)
