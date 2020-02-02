@@ -1,9 +1,8 @@
 language: go
 
 go:
-  - "1.11.x"
   - "1.12.x"
-  - "master"
+  - tip
 
 dist: xenial
 sudo: required
@@ -12,6 +11,8 @@ services:
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - go: tip
 
 env:
   - GO111MODULE=on GO_TESTPROXY_DEBUG=true

@@ -1,17 +1,11 @@
-//+build wasm
-
 package js
 
 import (
+	"strings"
 	"sync"
-	"syscall/js"
 )
 
 var (
-	global    = js.Global()
-	null      = js.Null()
-	undefined = js.Undefined()
-
 	object = global.Get("Object")
 	array  = global.Get("Array")
 )
@@ -44,20 +38,24 @@ func Call(name string, args ...interface{}) Value {
 
 // Class searches for a class in global scope.
 // It caches results, so the lookup should be faster than calling Get.
-func Class(class string) Value {
+func Class(class string, path ...string) Value {
 	switch class {
 	case "Object":
 		return Value{object}
 	case "Array":
 		return Value{array}
 	}
+	key := class
+	if len(path) != 0 {
+		key += "." + strings.Join(path, ".")
+	}
 	mu.RLock()
-	v := classes[class]
+	v := classes[key]
 	mu.RUnlock()
 	if v.isZero() {
-		v = Get(class)
+		v = Get(class, path...)
 		mu.Lock()
-		classes[class] = v
+		classes[key] = v
 		mu.Unlock()
 	}
 	return v
@@ -69,28 +67,9 @@ func New(class string, args ...interface{}) Value {
 	return v.New(args...)
 }
 
-// Ref is an alias for syscall/js.Value.
-type Ref = js.Value
-
-// Error is an alias for syscall/js.Error.
-type Error = js.Error
-
 // NewError creates a new Go error from JS error value.
 func NewError(e Wrapper) error {
 	return Error{Value: e.JSValue()}
-}
-
-// Type is a type name of a JS value, as returned by "typeof".
-type Type = js.Type
-
-const (
-	TypeObject   = js.TypeObject
-	TypeFunction = js.TypeFunction
-)
-
-// Type is an analog for JS "typeof" operator.
-func (v Value) Type() Type {
-	return v.Ref.Type()
 }
 
 // Object returns an Object JS class.
@@ -115,15 +94,13 @@ func NewArray() Value {
 
 func toJS(o interface{}) interface{} {
 	switch v := o.(type) {
-	case Wrapper:
-		o = unwrap(v)
 	case []Value:
 		refs := make([]interface{}, 0, len(v))
 		for _, ref := range v {
 			refs = append(refs, ref.JSValue())
 		}
 		o = refs
-	case []js.Value:
+	case []Ref:
 		refs := make([]interface{}, 0, len(v))
 		for _, ref := range v {
 			refs = append(refs, ref)
@@ -144,13 +121,6 @@ type Value struct {
 
 func (v Value) isZero() bool {
 	return v == (Value{})
-}
-
-// JSRef returns a JS object reference as defined by syscall/js.
-//
-// Deprecated: use JSValue
-func (v Value) JSRef() Ref {
-	return v.JSValue()
 }
 
 // JSValue implements Wrapper interface.
@@ -258,10 +228,6 @@ func (v Value) Slice() []Value {
 		vals = append(vals, v.Index(i))
 	}
 	return vals
-}
-
-func valueOf(o interface{}) Ref {
-	return js.ValueOf(toJS(o))
 }
 
 // ValueOf returns x as a JavaScript value:

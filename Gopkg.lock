@@ -2,15 +2,15 @@
 
 
 [[projects]]
-  digest = "1:91110597064d8cf96813cfad76a4209a3036651e014743dd5cc92d6dacceea69"
+  branch = "master"
+  digest = "1:4462fcbc026fb0c0c2a02c48cc66bcc4f6531eb17fa578c2cd0bec4b3725884f"
   name = "github.com/dennwc/dom"
   packages = [
     ".",
     "js",
   ]
   pruneopts = "UT"
-  revision = "8ccb4f24fd8d2d0a40bc58aa0c4069dc8120dd52"
-  version = "v0.3.0"
+  revision = "5d591340e88528f64984e6e92f49356c6bbbf6a4"
 
 [[projects]]
   digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
