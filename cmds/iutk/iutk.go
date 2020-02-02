@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall/js"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/visitors"
@@ -161,8 +162,49 @@ func main() {
 	fmt.Println("Initializing iUTK...")
 
 	p1 := dom.Doc.CreateElement("p")
-	p1.SetTextContent("HELLO UTK")
+	p1.SetTextContent("Welcom to iUTK. Please open a file.")
 	dom.Body.AppendChild(p1)
+
+	input := dom.NewInput("input")
+	input.SetType("file")
+	input.OnChange(func(e dom.Event) {
+		// You can program JavaScript in any language :)
+		// Get the JS File object from the <input> tag's files attribute.
+		files := e.JSValue().Get("target").Get("files")
+		if files.Type() != js.TypeObject || files.Length() == 0 {
+			log.Print("No files specified")
+			return
+		}
+		file := files.Index(0)
+		log.Printf("Loading file %q...", file.Get("name").String())
+
+		// Read the contents of the file asynchronously.
+		reader := js.Global().Get("FileReader").New()
+		var onload, onerror js.Func
+		onload = js.FuncOf(func(_ js.Value, _ []js.Value) interface {} {
+			var arrayBuffer = reader.Get("result")
+			var uint8Array = js.Global().Get("Uint8Array").New(arrayBuffer)
+			data := make([]byte, uint8Array.Get("length").Int())
+			n := js.CopyBytesToGo(data, uint8Array)
+			log.Printf("File loaded, %d bytes", n)
+			onload.Release()
+			onerror.Release()
+			return nil
+		})
+		onerror = js.FuncOf(func(this js.Value, args []js.Value) interface {} {
+			log.Print("Error: failed to load file")
+			onload.Release()
+			onerror.Release()
+			return nil
+		})
+		reader.Set("onload", onload)
+		reader.Set("onerror", onerror)
+		reader.Call("readAsArrayBuffer", file)
+	})
+	dom.Body.AppendChild(input)
+
+	dom.Loop()
+
 
 	flag.Parse()
 
