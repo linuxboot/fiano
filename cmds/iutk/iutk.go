@@ -8,17 +8,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
-	"flag"
+	"html"
+	"regexp"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
-	"os"
-	"os/exec"
-	"strings"
 	"syscall/js"
+	"strings"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/visitors"
@@ -26,140 +21,123 @@ import (
 )
 
 var (
-	host    = flag.String("h", "127.0.0.1", "host")
-	port    = flag.String("p", "8080", "port")
-	browser = flag.String("b", "", "open URL in the given brower (ex: firefox)")
-
 	logBuffer   = &bytes.Buffer{}
-	printBuffer = &bytes.Buffer{}
 )
 
-func jsonResponse(w http.ResponseWriter, obj interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	out, err := json.MarshalIndent(obj, "", "    ")
+func load(image []byte) {
+	visitors.Stdout = logBuffer
+	log.SetOutput(logBuffer) // TODO: tee to stdout
+
+	// Parse the image.
+	root, err := uefi.Parse(image)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
-	if _, err := w.Write(out); err != nil {
-		log.Fatal(err)
+
+	updateLog := func() {
+		logPane := dom.Doc.GetElementById("log-pane")
+		logPane.SetInnerHTML(html.EscapeString(string(logBuffer.Bytes())))
 	}
-}
 
-// HTTP Enpoints:
-//
-//     GET / - returns HTML
-//     GET /list - returns flattend json list of nodes
-//     GET /visitors - returns a list of visitors
-//     POST /visitors/NAME/ARG0/ARG1/...
-//     GET /log
-func registerHandlers(root uefi.Firmware) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			http.Error(w, "bad method", 400)
-			return
-		}
-
-		f, err := os.Open("index.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-		if _, err := io.Copy(w, f); err != nil {
-			log.Fatal(err)
-		}
-	})
-
-	// Endpoint contains json-encoded output of flatten visitor.
-	http.HandleFunc("/list", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			http.Error(w, "bad method", 400)
-			return
-		}
-
+	updateList := func() {
 		// Clone via encode/decode to get around the destructive nature of
 		// flatten.
 		var clone uefi.Firmware
 		var buf bytes.Buffer
 		if err := gob.NewEncoder(&buf).Encode(&root); err != nil {
-			http.Error(w, fmt.Sprintf("error encoding: %v", err), 400)
+			log.Printf("error encoding: %v", err)
 			return
 		}
 		if err := gob.NewDecoder(&buf).Decode(&clone); err != nil {
-			http.Error(w, fmt.Sprintf("error decoding: %v", err), 400)
+			log.Printf("error decoding: %v", err)
 			return
 		}
 
-		// Flatten the tree otherwise JavaSCript would be unable to tell which
+		// Flatten the tree otherwise JavaScript would be unable to tell which
 		// objects are uefi.Firmware.
 		flatten := visitors.Flatten{}
 		if err := flatten.Run(clone); err != nil {
 			log.Fatal(err)
 		}
-		jsonResponse(w, flatten.List)
-	})
 
-	http.HandleFunc("/visitors", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			http.Error(w, "bad method", 400)
-			return
-		}
-		jsonResponse(w, visitors.VisitorRegistry)
-	})
+		// Create a new table.
+		tree := dom.Doc.GetElementById("tree")
+		tree.SetInnerHTML("")
+		table := dom.Doc.CreateElement("table")
+		tree.AppendChild(table)
 
-	http.HandleFunc("/visitors/", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: white list and constrict save directory
+		for i, node := range flatten.List {
+			i := i // for closure capture
+			indent := strings.Repeat("_", node.Level)
 
-		if r.Method != "POST" {
-			http.Error(w, "bad method", 400)
-			return
-		}
+			tr := dom.Doc.CreateElement("tr")
+			tr.OnClick(func (_ *dom.MouseEvent) {
+				json, err := json.MarshalIndent(flatten.List[i], "", "    ")
+				if err != nil {
+					log.Print(err)
+				}
+				dom.Doc.GetElementById("node-info-pane").AsHTMLElement().SetInnerText(string(json))
+			})
 
-		path := []string{}
-		for _, p := range strings.Split(r.URL.Path, "/") {
-			if p != "" {
-				path = append(path, p)
-			}
+			tdType := dom.Doc.CreateElement("td")
+			tdType.AsHTMLElement().SetInnerText(indent + node.Type)
+			tr.AppendChild(tdType)
+			table.AppendChild(tr)
 		}
-		if len(path) < 2 {
-			http.Error(w, "bad path", 400)
-			return
-		}
-		cmd, args := path[1], path[2:]
-		entry, ok := visitors.VisitorRegistry[cmd]
-		if !ok {
-			http.Error(w, "visitor not found", 400)
-			return
-		}
-		if entry.NumArgs != len(args) {
-			http.Error(w, "bad number of arguments", 400)
-			return
-		}
-		v, err := entry.CreateVisitor(args)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := v.Run(root); err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Ran command", cmd, args)
-		jsonResponse(w, []struct{}{})
-	})
+	}
 
-	// Endpoint returns logs which have not yet been read.
-	http.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := io.Copy(w, logBuffer); err != nil {
-			http.Error(w, "error copying logs", 400)
-			return
+	updateVisitors := func() {
+		newWord := regexp.MustCompile(`_|\b`)
+		for name, v := range visitors.VisitorRegistry {
+			name := name // for closure capture
+			text := newWord.ReplaceAllStringFunc(name, func(src string) string  {
+				if src == "_" {
+					return " "
+				}
+				return strings.ToUpper(src)
+			})
+			text = fmt.Sprintf("%s (%d)", text, v.NumArgs)
+
+			button := dom.NewButton(html.EscapeString(text))
+			button.SetAttribute("title", v.Help)
+			button.OnClick(func (_ dom.Event) {
+				entry, ok := visitors.VisitorRegistry[name]
+				if !ok {
+					log.Printf("Error: visitor %q not found", name)
+					return
+				}
+				args := []string{} // TODO: Support multiple args
+				if entry.NumArgs != len(args) {
+					log.Printf("Error: bad number of arguments, expected %d, got %d",
+						entry.NumArgs, len(args))
+					return
+				}
+				v, err := entry.CreateVisitor(args)
+				if err != nil {
+					log.Fatal(err)
+				}
+				if err := v.Run(root); err != nil {
+					log.Fatal(err)
+				}
+				log.Println("Ran command", name, args)
+
+				updateList()
+				updateLog()
+			})
+			dom.Doc.GetElementById("visitors").AppendChild(button)
 		}
-		if _, err := io.Copy(w, printBuffer); err != nil {
-			http.Error(w, "error copying logs", 400)
-			return
-		}
-	})
+	}
+
+	updateVisitors()
+	updateList()
+	updateLog()
+
+	// Make the workspace visible.
+	dom.Doc.GetElementById("workspace").AsHTMLElement().Style().Set("display", "block")
 }
 
 func main() {
-	fmt.Println("Initializing iUTK...")
+	log.Println("Welcome to iUTK!")
 
 	p1 := dom.Doc.CreateElement("p")
 	p1.SetTextContent("Welcom to iUTK. Please open a file.")
@@ -176,25 +154,26 @@ func main() {
 			return
 		}
 		file := files.Index(0)
-		log.Printf("Loading file %q...", file.Get("name").String())
+		log.Printf("Reading file %q...", file.Get("name").String())
 
 		// Read the contents of the file asynchronously.
 		reader := js.Global().Get("FileReader").New()
 		var onload, onerror js.Func
 		onload = js.FuncOf(func(_ js.Value, _ []js.Value) interface {} {
+			onload.Release()
+			onerror.Release()
 			var arrayBuffer = reader.Get("result")
 			var uint8Array = js.Global().Get("Uint8Array").New(arrayBuffer)
 			data := make([]byte, uint8Array.Get("length").Int())
 			n := js.CopyBytesToGo(data, uint8Array)
-			log.Printf("File loaded, %d bytes", n)
-			onload.Release()
-			onerror.Release()
+			log.Printf("File read, %d bytes", n)
+			load(data)
 			return nil
 		})
 		onerror = js.FuncOf(func(this js.Value, args []js.Value) interface {} {
-			log.Print("Error: failed to load file")
 			onload.Release()
 			onerror.Release()
+			log.Print("Error: failed to read file")
 			return nil
 		})
 		reader.Set("onload", onload)
@@ -204,67 +183,4 @@ func main() {
 	dom.Body.AppendChild(input)
 
 	dom.Loop()
-
-
-	flag.Parse()
-
-	if flag.NArg() != 1 {
-		log.Fatal("TODO usage")
-	}
-
-	// Load and parse the image.
-	// TODO: dedup with pkg/utk
-	path := flag.Arg(0)
-	f, err := os.Stat(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var root uefi.Firmware
-	if m := f.Mode(); m.IsDir() {
-		// Call ParseDir
-		pd := visitors.ParseDir{BasePath: path}
-		if root, err = pd.Parse(); err != nil {
-			log.Fatal(err)
-		}
-		// Assemble the tree from the bottom up
-		a := visitors.Assemble{}
-		if err = a.Run(root); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		// Regular file
-		image, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-		root, err = uefi.Parse(image)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	registerHandlers(root)
-
-	address := *host + ":" + *port
-	l, err := net.Listen("tcp", address)
-	if err != nil {
-		log.Fatal("cannot listen on %q: %v", address, err)
-	}
-
-	if *browser != "" {
-		go func() {
-			err := exec.Command(*browser, address).Run()
-			if err != nil {
-				log.Printf("Failed to open browser: %v", err)
-			}
-			fmt.Printf("Open http://%s in your web browser", address)
-		}()
-	} else {
-		fmt.Printf("Open http://%s in your web browser", address)
-	}
-
-	visitors.Stdout = printBuffer
-	log.SetOutput(logBuffer) // TODO: tee to stdout
-	log.Print("Welcome to iUTK!")
-	log.Fatal(http.Serve(l, nil))
 }
