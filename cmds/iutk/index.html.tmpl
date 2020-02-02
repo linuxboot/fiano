@@ -69,6 +69,13 @@
       <pre id=log-pane></pre>
     </div>
 
+    <script>
+      // Grab all the stdout and stderr from utk and convert it to HTML.
+      $logPane = document.getElementById('log-pane');
+      console.log = function (x) {
+        $logPane.innerHTML += x + "\n";
+      };
+    </script>
     <script src="wasm_exec.js"></script>
     <script>
       const go = new Go();

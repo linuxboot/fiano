@@ -20,10 +20,6 @@ import (
 	"github.com/dennwc/dom"
 )
 
-var (
-	logBuffer   = &bytes.Buffer{}
-)
-
 type FirmwareTree struct {
 	nodes []visitors.FlattenedFirmware
 }
@@ -70,7 +66,6 @@ func (t *FirmwareTree) Level(row int) int {
 }
 
 func (t *FirmwareTree) OnClick(row int, _ *dom.MouseEvent) {
-	defer updateLog()
 	json, err := json.MarshalIndent(t.nodes[row].Value, "", "    ")
 	if err != nil {
 		log.Print(err)
@@ -78,15 +73,7 @@ func (t *FirmwareTree) OnClick(row int, _ *dom.MouseEvent) {
 	dom.Doc.GetElementById("node-info-pane").AsHTMLElement().SetInnerText(string(json))
 }
 
-func updateLog() {
-	logPane := dom.Doc.GetElementById("log-pane")
-	logPane.SetInnerHTML(html.EscapeString(string(logBuffer.Bytes())))
-}
-
 func load(image []byte) {
-	visitors.Stdout = logBuffer
-	log.SetOutput(logBuffer) // TODO: tee to stdout
-
 	// Parse the image.
 	root, err := uefi.Parse(image)
 	if err != nil {
@@ -135,7 +122,6 @@ func load(image []byte) {
 			button := dom.NewButton(html.EscapeString(text))
 			button.SetAttribute("title", v.Help)
 			button.OnClick(func (_ dom.Event) {
-				defer updateLog()
 				defer updateList()
 
 				entry, ok := visitors.VisitorRegistry[name]
@@ -164,7 +150,6 @@ func load(image []byte) {
 
 	updateVisitors()
 	updateList()
-	updateLog()
 
 	// Make the workspace visible.
 	dom.Doc.GetElementById("workspace").AsHTMLElement().Style().Set("display", "block")
