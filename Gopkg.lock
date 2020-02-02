@@ -2,6 +2,17 @@
 
 
 [[projects]]
+  digest = "1:91110597064d8cf96813cfad76a4209a3036651e014743dd5cc92d6dacceea69"
+  name = "github.com/dennwc/dom"
+  packages = [
+    ".",
+    "js",
+  ]
+  pruneopts = "UT"
+  revision = "8ccb4f24fd8d2d0a40bc58aa0c4069dc8120dd52"
+  version = "v0.3.0"
+
+[[projects]]
   digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
   name = "github.com/u-root/u-root"
   packages = [
@@ -46,6 +57,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/dennwc/dom",
     "github.com/u-root/u-root/pkg/testutil",
     "github.com/ulikunitz/xz/lzma",
     "golang.org/x/text/encoding/unicode",

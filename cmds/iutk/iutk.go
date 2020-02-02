@@ -21,6 +21,7 @@ import (
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/visitors"
+	"github.com/dennwc/dom"
 )
 
 var (
@@ -157,7 +158,11 @@ func registerHandlers(root uefi.Firmware) {
 }
 
 func main() {
-	fmt.Println("Hello, WebAssembly!")
+	fmt.Println("Initializing iUTK...")
+
+	p1 := dom.Doc.CreateElement("p")
+	p1.SetTextContent("HELLO UTK")
+	dom.Body.AppendChild(p1)
 
 	flag.Parse()
 
