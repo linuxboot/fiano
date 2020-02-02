@@ -14,11 +14,17 @@ import (
 	"log"
 	"syscall/js"
 	"strings"
+	"sort"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/visitors"
 	"github.com/dennwc/dom"
 )
+
+type VisitorInfo struct {
+	name string
+	visitor visitors.VisitorEntry
+}
 
 type FirmwareTree struct {
 	nodes []visitors.FlattenedFirmware
@@ -80,6 +86,21 @@ func load(image []byte) {
 		log.Print(err)
 	}
 
+	// Global state.
+	var flattenTree []visitors.FlattenedFirmware
+	var tree *Tree
+
+	sortedRegistry := []VisitorInfo{}
+	for name, v := range visitors.VisitorRegistry {
+		sortedRegistry = append(sortedRegistry, VisitorInfo{
+			name: name,
+			visitor: v,
+		})
+	}
+	sort.Slice(sortedRegistry, func(i, j int) bool {
+		return sortedRegistry[i].name < sortedRegistry[j].name
+	})
+
 	updateList := func() {
 		// Clone via encode/decode to get around the destructive nature of
 		// flatten.
@@ -100,17 +121,18 @@ func load(image []byte) {
 		if err := flatten.Run(clone); err != nil {
 			log.Fatal(err)
 		}
-
+		flattenTree = flatten.List
 
 		// Create a new table.
-		tree := dom.Doc.GetElementById("tree")
-		NewTree(tree, &FirmwareTree{flatten.List})
+		tree = NewTree(dom.Doc.GetElementById("tree"), &FirmwareTree{flatten.List})
 	}
 
 	updateVisitors := func() {
 		newWord := regexp.MustCompile(`_|\b`)
-		for name, v := range visitors.VisitorRegistry {
-			name := name // for closure capture
+
+		for _, vi := range sortedRegistry {
+			v := vi.visitor
+			name := vi.name // for closure capture
 			text := newWord.ReplaceAllStringFunc(name, func(src string) string  {
 				if src == "_" {
 					return " "
@@ -130,6 +152,23 @@ func load(image []byte) {
 					return
 				}
 				args := []string{} // TODO: Support multiple args
+
+				switch name {
+					case "remove_pad", "remove":
+						if len(tree.highlighted) == 0 {
+							log.Printf("Selected something to remove")
+							return
+						}
+						guids := []string{}
+						for s := range tree.highlighted {
+							f := flattenTree[s]
+							if f, ok := f.Value.(*uefi.File); ok {
+								guids = append(guids, f.Header.GUID.String())
+							}
+						}
+						args = []string{strings.Join(guids, "|")}
+				}
+
 				if entry.NumArgs != len(args) {
 					log.Printf("Error: bad number of arguments, expected %d, got %d",
 						entry.NumArgs, len(args))

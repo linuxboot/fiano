@@ -23,12 +23,14 @@ type Tree struct {
 	parent *dom.Element
 	data TreeData
 	selected *dom.Element
+	highlighted map[int]struct{}
 }
 
 func NewTree(parent *dom.Element, data TreeData) *Tree {
 	t := &Tree {
 		parent: parent,
 		data: data,
+		highlighted: map[int]struct{}{},
 	}
 	t.Recreate()
 	return t
@@ -70,8 +72,10 @@ func (t *Tree) Recreate() {
 				checkbox.SetId(fmt.Sprintf("checkbox%d", i))
 				checkbox.OnChange(func (dom.Event) {
 					if checkbox.JSValue().Get("checked").Bool() {
+						t.highlighted[i] = struct{}{}
 						tr.ClassList().Add("highlighted")
 					} else {
+						delete(t.highlighted, i)
 						tr.ClassList().Remove("highlighted")
 					}
 				})
