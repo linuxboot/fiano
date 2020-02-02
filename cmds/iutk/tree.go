@@ -5,8 +5,8 @@
 package main
 
 import (
-	"strings"
 	"html"
+	"fmt"
 
 	"github.com/dennwc/dom"
 )
@@ -22,7 +22,7 @@ type TreeData interface {
 type Tree struct {
 	parent *dom.Element
 	data TreeData
-	highlighted *dom.Element
+	selected *dom.Element
 }
 
 func NewTree(parent *dom.Element, data TreeData) *Tree {
@@ -46,28 +46,38 @@ func (t *Tree) Recreate() {
 		i := i // for closure capture
 		tr := dom.Doc.CreateElement("tr")
 		tr.OnClick(func (e *dom.MouseEvent) {
-			if t.highlighted != nil {
-				t.highlighted.ClassList().Remove("highlight")
+			if t.selected != nil {
+				t.selected.ClassList().Remove("selected")
 			}
-			t.highlighted = tr
-			t.highlighted.ClassList().Add("highlight")
+			t.selected = tr
+			t.selected.ClassList().Add("selected")
 			t.data.OnClick(i, e)
 		})
 
-		// Checkbox
-		tdCheckbox := dom.Doc.CreateElement("td")
-		checkbox := dom.NewInput("checkbox")
-		tdCheckbox.AppendChild(checkbox)
-		tr.AppendChild(tdCheckbox)
-
-		for j := 0; j < numCols; j++ {
-			indent := ""
-			if j == 0 {
-				indent = strings.Repeat("_", t.data.Level(i))
+		for j := -1; j < numCols; j++ {
+			td := dom.Doc.CreateElement("td")
+			label := dom.Doc.CreateElement("label")
+			if j != -1 {
+				label.SetInnerHTML(html.EscapeString(t.data.Text(i, j)))
 			}
-			tdType := dom.Doc.CreateElement("td")
-			tdType.AsHTMLElement().SetInnerText(html.EscapeString(indent + t.data.Text(i, j)))
-			tr.AppendChild(tdType)
+			label.SetAttribute("for", fmt.Sprintf("checkbox%d", i))
+			td.AppendChild(label)
+			if j == 0 {
+				label.AsHTMLElement().Style().Set("padding-left", fmt.Sprintf("%fem", float32(t.data.Level(i)) / 2))
+			}
+			if j == -1 {
+				checkbox := dom.NewInput("checkbox")
+				checkbox.SetId(fmt.Sprintf("checkbox%d", i))
+				checkbox.OnChange(func (dom.Event) {
+					if checkbox.JSValue().Get("checked").Bool() {
+						tr.ClassList().Add("highlighted")
+					} else {
+						tr.ClassList().Remove("highlighted")
+					}
+				})
+				label.AppendChild(checkbox)
+			}
+			tr.AppendChild(td)
 		}
 		table.AppendChild(tr)
 	}

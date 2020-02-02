@@ -70,7 +70,7 @@ func (t *FirmwareTree) OnClick(row int, _ *dom.MouseEvent) {
 	if err != nil {
 		log.Print(err)
 	}
-	dom.Doc.GetElementById("node-info-pane").AsHTMLElement().SetInnerText(string(json))
+	dom.Doc.GetElementById("node-info-pane").SetInnerHTML(string(json))
 }
 
 func load(image []byte) {
@@ -159,7 +159,7 @@ func main() {
 	log.Println("Welcome to iUTK!")
 
 	p1 := dom.Doc.CreateElement("p")
-	p1.SetTextContent("Welcome to iUTK. Please open a file.")
+	p1.SetTextContent("Welcome to iUTK! Please open a file.")
 	dom.Body.AppendChild(p1)
 
 	input := dom.NewInput("file")

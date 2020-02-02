@@ -21,7 +21,7 @@
         left: 0;
       }
 
-      #visitors > button {
+      #visitors button {
         display: inline-block;
         height: 100%;
       }
@@ -36,7 +36,29 @@
         left: 0;
       }
 
-      #tree .highlight {
+      #tree table {
+        border-collapse: collapse;
+      }
+
+      #tree table, #tree tr {
+        width: 100%;
+      }
+
+      #tree td {
+        /* Allows label to take up 100% height. */
+        height: 1px;
+      }
+
+      #tree label {
+        display: block;
+        height: 100%;
+      }
+
+      #tree .selected {
+        border: 2px solid black;
+      }
+
+      #tree .highlighted {
         background-color: yellow;
       }
 
@@ -65,7 +87,7 @@
     <div id=workspace style=display:none>
       <div id=visitors></div>
       <div id=tree></div>
-      <pre id=node-info-pane></pre>
+      <textarea id=node-info-pane></textarea>
       <pre id=log-pane></pre>
     </div>
 
