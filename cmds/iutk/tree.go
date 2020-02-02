@@ -54,6 +54,12 @@ func (t *Tree) Recreate() {
 			t.data.OnClick(i, e)
 		})
 
+		// Checkbox
+		tdCheckbox := dom.Doc.CreateElement("td")
+		checkbox := dom.NewInput("checkbox")
+		tdCheckbox.AppendChild(checkbox)
+		tr.AppendChild(tdCheckbox)
+
 		for j := 0; j < numCols; j++ {
 			indent := ""
 			if j == 0 {

@@ -162,8 +162,7 @@ func main() {
 	p1.SetTextContent("Welcome to iUTK. Please open a file.")
 	dom.Body.AppendChild(p1)
 
-	input := dom.NewInput("input")
-	input.SetType("file")
+	input := dom.NewInput("file")
 	input.OnChange(func(e dom.Event) {
 		// You can program JavaScript in any language :)
 		// Get the JS File object from the <input> tag's files attribute.
