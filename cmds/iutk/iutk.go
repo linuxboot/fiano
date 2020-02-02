@@ -24,6 +24,65 @@ var (
 	logBuffer   = &bytes.Buffer{}
 )
 
+type FirmwareTree struct {
+	nodes []visitors.FlattenedFirmware
+}
+
+func (t *FirmwareTree) NumRows() int {
+	return len(t.nodes)
+}
+
+func (t *FirmwareTree) NumCols() int {
+	return 3
+}
+
+func (t *FirmwareTree) Text(row int, col int) string {
+	f := t.nodes[row].Value
+	switch col {
+		case 0:
+			return t.nodes[row].Type
+		case 1:
+			switch f := f.(type) {
+			case *uefi.FirmwareVolume:
+				return f.String()
+			case *uefi.File:
+				return f.Header.GUID.String()
+			case *uefi.Section:
+				return f.String()
+			case *uefi.NVar:
+				return f.GUID.String()
+			case *uefi.RawRegion:
+				return f.Type().String()
+			}
+		case 2:
+			switch f := f.(type) {
+			case *uefi.File:
+				return f.Header.Type.String()
+			case *uefi.Section:
+				return f.Type
+			}
+	}
+	return ""
+}
+
+func (t *FirmwareTree) Level(row int) int {
+	return t.nodes[row].Level
+}
+
+func (t *FirmwareTree) OnClick(row int, _ *dom.MouseEvent) {
+	defer updateLog()
+	json, err := json.MarshalIndent(t.nodes[row].Value, "", "    ")
+	if err != nil {
+		log.Print(err)
+	}
+	dom.Doc.GetElementById("node-info-pane").AsHTMLElement().SetInnerText(string(json))
+}
+
+func updateLog() {
+	logPane := dom.Doc.GetElementById("log-pane")
+	logPane.SetInnerHTML(html.EscapeString(string(logBuffer.Bytes())))
+}
+
 func load(image []byte) {
 	visitors.Stdout = logBuffer
 	log.SetOutput(logBuffer) // TODO: tee to stdout
@@ -32,11 +91,6 @@ func load(image []byte) {
 	root, err := uefi.Parse(image)
 	if err != nil {
 		log.Print(err)
-	}
-
-	updateLog := func() {
-		logPane := dom.Doc.GetElementById("log-pane")
-		logPane.SetInnerHTML(html.EscapeString(string(logBuffer.Bytes())))
 	}
 
 	updateList := func() {
@@ -60,30 +114,10 @@ func load(image []byte) {
 			log.Fatal(err)
 		}
 
+
 		// Create a new table.
 		tree := dom.Doc.GetElementById("tree")
-		tree.SetInnerHTML("")
-		table := dom.Doc.CreateElement("table")
-		tree.AppendChild(table)
-
-		for i, node := range flatten.List {
-			i := i // for closure capture
-			indent := strings.Repeat("_", node.Level)
-
-			tr := dom.Doc.CreateElement("tr")
-			tr.OnClick(func (_ *dom.MouseEvent) {
-				json, err := json.MarshalIndent(flatten.List[i], "", "    ")
-				if err != nil {
-					log.Print(err)
-				}
-				dom.Doc.GetElementById("node-info-pane").AsHTMLElement().SetInnerText(string(json))
-			})
-
-			tdType := dom.Doc.CreateElement("td")
-			tdType.AsHTMLElement().SetInnerText(indent + node.Type)
-			tr.AppendChild(tdType)
-			table.AppendChild(tr)
-		}
+		NewTree(tree, &FirmwareTree{flatten.List})
 	}
 
 	updateVisitors := func() {
@@ -101,6 +135,9 @@ func load(image []byte) {
 			button := dom.NewButton(html.EscapeString(text))
 			button.SetAttribute("title", v.Help)
 			button.OnClick(func (_ dom.Event) {
+				defer updateLog()
+				defer updateList()
+
 				entry, ok := visitors.VisitorRegistry[name]
 				if !ok {
 					log.Printf("Error: visitor %q not found", name)
@@ -120,9 +157,6 @@ func load(image []byte) {
 					log.Fatal(err)
 				}
 				log.Println("Ran command", name, args)
-
-				updateList()
-				updateLog()
 			})
 			dom.Doc.GetElementById("visitors").AppendChild(button)
 		}
@@ -140,7 +174,7 @@ func main() {
 	log.Println("Welcome to iUTK!")
 
 	p1 := dom.Doc.CreateElement("p")
-	p1.SetTextContent("Welcom to iUTK. Please open a file.")
+	p1.SetTextContent("Welcome to iUTK. Please open a file.")
 	dom.Body.AppendChild(p1)
 
 	input := dom.NewInput("input")
