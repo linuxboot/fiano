@@ -228,7 +228,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 
 		// TODO: Not setting to valid used to cause some failures on some bioses, verify that it no longer fails.
 		// There are some bioses that don't set the valid bits correctly,
-		// fh.State = 0x07 ^ uefi.Attributes.ErasePolarity
+		// fh.SetState(uefi.FileStateValid)
 
 		if err = f.ChecksumAndAssemble(fileData); err != nil {
 			return err

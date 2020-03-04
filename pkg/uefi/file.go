@@ -147,6 +147,21 @@ type IntegrityCheck struct {
 
 type fileAttr uint8
 
+// FileState (needs to be xored with Attributes.ErasePolarity)
+type FileState uint8
+
+// File State Bits
+const (
+	FileStateHeaderConstruction FileState = 0x01
+	FileStateHeaderValid        FileState = 0x02
+	FileStateDataValid          FileState = 0x04
+	FileStateMarkeForUpdate     FileState = 0x08
+	FileStateDeleted            FileState = 0x10
+	FileStateHeaderInvalid      FileState = 0x20
+
+	FileStateValid FileState = FileStateHeaderConstruction | FileStateHeaderValid | FileStateDataValid
+)
+
 // FileHeader represents an EFI File header.
 type FileHeader struct {
 	GUID       guid.GUID      // This is the GUID of the file.
@@ -154,7 +169,7 @@ type FileHeader struct {
 	Type       FVFileType
 	Attributes fileAttr
 	Size       [3]uint8 `json:"-"`
-	State      uint8
+	State      FileState
 }
 
 // IsLarge checks if the large file attribute is set.
@@ -183,6 +198,11 @@ func (a fileAttr) HasChecksum() bool {
 	return a&0x40 != 0
 }
 
+// SetState sets file state respecting erase polarity
+func (fh *FileHeader) SetState(s FileState) {
+	fh.State = s ^ FileState(Attributes.ErasePolarity)
+}
+
 // HeaderLen returns the length of the file header depending on the file size.
 func (f *File) HeaderLen() uint64 {
 	if f.Header.Attributes.IsLarge() {
@@ -203,7 +223,7 @@ func (f *File) ChecksumHeader() uint8 {
 	// UEFI PI Spec 3.2.3 EFI_FFS_FILE_HEADER
 	sum := Checksum8(f.buf[:headerSize])
 	sum -= fh.Checksum.File
-	sum -= fh.State
+	sum -= uint8(fh.State)
 	return sum
 }
 
@@ -369,7 +389,7 @@ func CreatePadFile(size uint64) (*File, error) {
 		fileData[i] = Attributes.ErasePolarity
 	}
 
-	fh.State = 0x07 ^ Attributes.ErasePolarity
+	fh.SetState(FileStateValid)
 
 	// Everything has been setup. Checksum and create.
 	if err := f.ChecksumAndAssemble(fileData); err != nil {
