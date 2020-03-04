@@ -116,8 +116,7 @@ func createVolumeImageFile(cs *uefi.Section) (*uefi.File, error) {
 	f := &uefi.File{}
 
 	f.Header.Type = uefi.FVFileTypeVolumeImage
-	// set state to valid
-	f.Header.State = 0x07 ^ uefi.Attributes.ErasePolarity
+	f.Header.SetState(uefi.FileStateValid)
 
 	f.Sections = []*uefi.Section{cs}
 
