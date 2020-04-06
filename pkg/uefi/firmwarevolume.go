@@ -189,7 +189,7 @@ func FindFirmwareVolumeOffset(data []byte) int64 {
 		offset int64
 		fvSig  = []byte("_FVH")
 	)
-	for offset = 32; offset < int64(len(data)); offset += 8 {
+	for offset = 32; offset+4 < int64(len(data)); offset += 8 {
 		if bytes.Equal(data[offset:offset+4], fvSig) {
 			return offset - 40 // the actual volume starts 40 bytes before the signature
 		}
