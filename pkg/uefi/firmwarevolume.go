@@ -287,6 +287,9 @@ func NewFirmwareVolume(data []byte, fvOffset uint64, resizable bool) (*FirmwareV
 		}
 		fv.Files = append(fv.Files, file)
 		prevLen = file.Header.ExtendedSize
+		if prevLen == 0 {
+			return nil, fmt.Errorf("invalid length of file at offset %#x", offset)
+		}
 	}
 	return &fv, nil
 }
