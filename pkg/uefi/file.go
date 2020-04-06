@@ -460,6 +460,9 @@ func NewFile(buf []byte) (*File, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.GUID, err)
 		}
+		if s.Header.ExtendedSize == 0 {
+			return nil, fmt.Errorf("invalid length of section of file %v", f.Header.GUID)
+		}
 		offset += uint64(s.Header.ExtendedSize)
 		// Align to 4 bytes for now. The PI Spec doesn't say what alignment it should be
 		// but UEFITool aligns to 4 bytes, and this seems to work on everything I have.
