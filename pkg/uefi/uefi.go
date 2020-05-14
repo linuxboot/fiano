@@ -170,6 +170,18 @@ func UnmarshalFirmware(b []byte) (Firmware, error) {
 // implement any parser itself, but it calls known parsers that implement the
 // Firmware interface.
 func Parse(buf []byte) (Firmware, error) {
+	f, err := parse(buf)
+	if err != nil {
+		return f, err
+	}
+	err = (&PositionUpdater{}).Run(f)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update offsets: %w", err)
+	}
+	return f, nil
+}
+
+func parse(buf []byte) (Firmware, error) {
 	if _, err := FindSignature(buf); err == nil {
 		// Intel rom.
 		return NewFlashImage(buf)

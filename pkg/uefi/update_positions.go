@@ -2,14 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package visitors
+package uefi
 
-import (
-	"github.com/linuxboot/fiano/pkg/uefi"
-)
-
-// positionUpdater updates the position of the varisous firmwares in memory
-type positionUpdater struct {
+// PositionUpdater updates the position of the varisous firmwares in memory
+type PositionUpdater struct {
 	Scan      bool
 	Layout    bool
 	Depth     int
@@ -19,58 +15,58 @@ type positionUpdater struct {
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
-func (v *positionUpdater) Run(f uefi.Firmware) error {
+func (v *PositionUpdater) Run(f Firmware) error {
 	return f.Apply(v)
 }
 
 // Visit applies the Table visitor to any Firmware type.
-func (v *positionUpdater) Visit(f uefi.Firmware) error {
+func (v *PositionUpdater) Visit(f Firmware) error {
 	var offset uint64
 	switch f := f.(type) {
-	case *uefi.FlashImage:
+	case *FlashImage:
 		if v.Depth > 0 { // Depth <= 0 means all
 			v.Depth++
 		}
 		return v.GoDeeper(f, 0)
-	case *uefi.FirmwareVolume:
+	case *FirmwareVolume:
 		f.AbsOffSet = v.offset + f.FVOffset
 		return v.GoDeeper(f, v.offset+f.FVOffset+f.DataOffset)
-	case *uefi.File:
+	case *File:
 		f.AbsOffSet = v.curOffset
 		return v.GoDeeper(f, v.curOffset+f.DataOffset)
-	case *uefi.Section:
+	case *Section:
 		f.AbsOffSet = v.curOffset
 
 		// Reset offset to O for (compressed) section content
 		return v.GoDeeper(f, 0)
-	case *uefi.FlashDescriptor:
+	case *FlashDescriptor:
 		f.AbsOffSet = 0
 		return v.GoDeeper(f, 0)
-	case *uefi.BIOSRegion:
+	case *BIOSRegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
 			f.AbsOffSet = offset
 		}
 		return v.GoDeeper(f, offset)
-	case *uefi.BIOSPadding:
+	case *BIOSPadding:
 		f.AbsOffSet = v.offset + f.Offset
 		return v.GoDeeper(f, 0)
-	case *uefi.NVarStore:
+	case *NVarStore:
 		f.AbsOffSet = v.curOffset
 		return v.GoDeeper(f, v.curOffset)
-	case *uefi.NVar:
+	case *NVar:
 		f.AbsOffSet = v.curOffset
 		return v.GoDeeper(f, v.curOffset+uint64(f.DataOffset))
-	case *uefi.MERegion:
+	case *MERegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
 			f.AbsOffSet = offset
 		}
 		return v.GoDeeper(f, offset)
-	case *uefi.MEFPT:
+	case *MEFPT:
 		f.AbsOffSet = v.offset
 		return v.GoDeeper(f, 0)
-	case *uefi.RawRegion:
+	case *RawRegion:
 		if f.FRegion != nil {
 			offset = uint64(f.FRegion.BaseOffset())
 			f.AbsOffSet = offset
@@ -81,7 +77,7 @@ func (v *positionUpdater) Visit(f uefi.Firmware) error {
 	}
 }
 
-func (v *positionUpdater) GoDeeper(f uefi.Firmware, dataOffset uint64) error {
+func (v *PositionUpdater) GoDeeper(f Firmware, dataOffset uint64) error {
 	// Prepare data and print
 	length := uint64(len(f.Buf()))
 

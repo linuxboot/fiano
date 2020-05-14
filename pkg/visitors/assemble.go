@@ -30,7 +30,11 @@ type Assemble struct {
 
 // Run just applies the visitor.
 func (v *Assemble) Run(f uefi.Firmware) error {
-	return f.Apply(v)
+	err := f.Apply(v)
+	if err != nil {
+		return err
+	}
+	return (&uefi.PositionUpdater{}).Run(f)
 }
 
 // Visit applies the Assemble visitor to any Firmware type.

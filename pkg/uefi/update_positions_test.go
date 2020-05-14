@@ -2,28 +2,40 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package visitors
+package uefi
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/guid"
-	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
 type visitor struct {
 	T *testing.T
 }
 
-func (v *visitor) Run(f uefi.Firmware) error {
+func parseImage(t *testing.T) Firmware {
+	image, err := ioutil.ReadFile("../../integration/roms/OVMF.rom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsedRoot, err := Parse(image)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsedRoot
+}
+
+func (v *visitor) Run(f Firmware) error {
 	return f.Apply(v)
 }
-func (v *visitor) Visit(f uefi.Firmware) error {
+func (v *visitor) Visit(f Firmware) error {
 	var guid *guid.GUID
 	switch f := f.(type) {
-	case *uefi.File:
+	case *File:
 		guid = &f.Header.GUID
-	case *uefi.FirmwareVolume:
+	case *FirmwareVolume:
 		guid = &f.FVName
 	default:
 		return f.ApplyChildren(v)
@@ -46,7 +58,7 @@ func TestUpdatePositions(t *testing.T) {
 
 	f := parseImage(t)
 
-	updater := &positionUpdater{}
+	updater := &PositionUpdater{}
 	if err := updater.Run(f); err != nil {
 		t.Fatal(err)
 	}
