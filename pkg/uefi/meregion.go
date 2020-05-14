@@ -46,6 +46,9 @@ type MEFPT struct {
 	Entries           []MEPartitionEntry
 	// Metadata for extraction and recovery
 	ExtractPath string
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // MEPartitionEntry is an entry in FTP
@@ -133,6 +136,11 @@ func (fp *MEFPT) ApplyChildren(v Visitor) error {
 	return nil
 }
 
+// Position returns the absolution position of the node in the firmware image.
+func (fp *MEFPT) Position() uint64 {
+	return fp.AbsOffSet
+}
+
 // NewMEFPT tries to create a MEFPT
 func NewMEFPT(buf []byte) (*MEFPT, error) {
 	o, err := FindMEDescriptor(buf)
@@ -179,6 +187,9 @@ type MERegion struct {
 	RegionType FlashRegionType
 	// Computed free space after parsing the partition table
 	FreeSpaceOffset uint64
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // SetFlashRegion sets the flash region.
@@ -243,4 +254,9 @@ func (rr *MERegion) ApplyChildren(v Visitor) error {
 		return nil
 	}
 	return rr.FPT.Apply(v)
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (rr *MERegion) Position() uint64 {
+	return rr.AbsOffSet
 }

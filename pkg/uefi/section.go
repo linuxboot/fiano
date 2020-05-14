@@ -211,6 +211,9 @@ type Section struct {
 
 	// Encapsulated firmware
 	Encapsulated []*TypedFirmware `json:",omitempty"`
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // String returns the String value of the section if it makes sense,
@@ -256,6 +259,11 @@ func (s *Section) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (s *Section) Position() uint64 {
+	return s.AbsOffSet
 }
 
 // CreateSection creates a new section from minimal components.

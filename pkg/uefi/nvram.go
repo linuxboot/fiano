@@ -117,6 +117,9 @@ type NVar struct {
 	ExtractPath string
 	DataOffset  int64
 	ExtOffset   int64 `json:",omitempty"`
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // String returns the String value of the NVAR: Type and Name if valid
@@ -154,6 +157,11 @@ func (v *NVar) ApplyChildren(vr Visitor) error {
 	return nil
 }
 
+// Position returns the absolution position of the node in the firmware image.
+func (v *NVar) Position() uint64 {
+	return v.AbsOffSet
+}
+
 // NVarStore represent an NVAR store
 type NVarStore struct {
 	Entries   []*NVar
@@ -164,6 +172,9 @@ type NVarStore struct {
 	FreeSpaceOffset uint64
 	GUIDStoreOffset uint64
 	Length          uint64
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // Buf returns the buffer.
@@ -191,6 +202,11 @@ func (s *NVarStore) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (s *NVarStore) Position() uint64 {
+	return s.AbsOffSet
 }
 
 func (s *NVarStore) getGUIDFromStore(i uint8) guid.GUID {

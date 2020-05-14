@@ -84,6 +84,8 @@ type Firmware interface {
 	// Apply a visitor to all the direct children of the Firmware
 	// (excluding the Firmware itself).
 	ApplyChildren(v Visitor) error
+
+	Position() uint64
 }
 
 // TypedFirmware includes the Firmware interface's type when exporting it to

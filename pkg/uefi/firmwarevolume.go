@@ -102,6 +102,9 @@ type FirmwareVolume struct {
 	ExtractPath string
 	Resizable   bool   // Determines if this FV is resizable.
 	FreeSpace   uint64 `json:"-"`
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // Buf returns the buffer.
@@ -129,6 +132,11 @@ func (fv *FirmwareVolume) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (fv *FirmwareVolume) Position() uint64 {
+	return fv.AbsOffSet
 }
 
 // GetErasePolarity gets the erase polarity

@@ -17,6 +17,9 @@ type BIOSPadding struct {
 
 	// Metadata
 	ExtractPath string
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // NewBIOSPadding parses a sequence of bytes and returns a BIOSPadding
@@ -46,6 +49,11 @@ func (bp *BIOSPadding) ApplyChildren(v Visitor) error {
 	return nil
 }
 
+// Position returns the absolution position of the node in the firmware image.
+func (bp *BIOSPadding) Position() uint64 {
+	return bp.AbsOffSet
+}
+
 // BIOSRegion represents the Bios Region in the firmware.
 // It holds all the FVs as well as padding
 type BIOSRegion struct {
@@ -59,6 +67,9 @@ type BIOSRegion struct {
 	// This is a pointer to the FlashRegion struct laid out in the ifd.
 	FRegion    *FlashRegion
 	RegionType FlashRegionType
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // Type returns the flash region type.
@@ -156,6 +167,11 @@ func (br *BIOSRegion) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (br *BIOSRegion) Position() uint64 {
+	return br.AbsOffSet
 }
 
 // FirstFV finds the first firmware volume in the BIOSRegion.

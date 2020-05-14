@@ -277,6 +277,9 @@ type File struct {
 	buf         []byte
 	ExtractPath string
 	DataOffset  uint64
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // Buf returns the buffer.
@@ -310,6 +313,11 @@ func (f *File) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (f *File) Position() uint64 {
+	return f.AbsOffSet
 }
 
 // SetSize sets the size into the File struct.
