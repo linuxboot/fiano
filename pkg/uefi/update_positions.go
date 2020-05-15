@@ -77,6 +77,7 @@ func (v *PositionUpdater) Visit(f Firmware) error {
 	}
 }
 
+// GoDeeper runs ApplyChildren and tracks the tree depth and indent
 func (v *PositionUpdater) GoDeeper(f Firmware, dataOffset uint64) error {
 	// Prepare data and print
 	length := uint64(len(f.Buf()))
