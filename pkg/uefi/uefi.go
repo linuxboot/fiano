@@ -176,7 +176,7 @@ func Parse(buf []byte) (Firmware, error) {
 	}
 	err = (&PositionUpdater{}).Run(f)
 	if err != nil {
-		return nil, fmt.Errorf("unable to update offsets: %w", err)
+		return nil, fmt.Errorf("unable to update offsets: %s", err)
 	}
 	return f, nil
 }
