@@ -55,6 +55,7 @@ var cmds = map[string]struct {
 	"jput":     {1, false, false, jsonPut},
 	"summary":  {0, true, true, summary},
 	"usage":    {0, true, false, usage},
+	"jusage":   {0, true, false, jusage},
 	"verify":   {0, true, true, verify},
 }
 
@@ -225,6 +226,79 @@ loop:
 	print("Full (0xff): ", numFull)
 	print("Empty (0x00):", numZero)
 	print("Mixed:       ", numBlocks-numFull-numZero)
+	return nil
+}
+
+type rowEntry struct {
+	Entries []string `json:"entries"`
+	Address string   `json:"address"`
+}
+type flashLaout struct {
+	Data   []rowEntry `json:"layout"`
+	Blocks int        `json:"blocks"`
+	Full   int        `json:"full"`
+	Zero   int        `json:"zero"`
+	Used   int        `json:"used"`
+}
+
+// Print machine readable usage stats.
+func jusage(a cmdArgs) error {
+	blockSize := 4 * 1024
+	rowLength := 32
+
+	buffer := make([]byte, blockSize)
+	fullBlock := bytes.Repeat([]byte{0xff}, blockSize)
+	zeroBlock := bytes.Repeat([]byte{0x00}, blockSize)
+
+	if _, err := a.r.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	var numBlocks, numFull, numZero int
+
+	var layout flashLaout
+
+loop:
+	for {
+		var row rowEntry
+		row.Address = fmt.Sprintf("%#08x", numBlocks*blockSize)
+		for col := 0; col < rowLength; col++ {
+			// Read next block.
+			_, err := io.ReadFull(a.r, buffer)
+			if err == io.EOF {
+				break loop
+			} else if err == io.ErrUnexpectedEOF {
+				fmt.Printf("\nWarning: flash is not a multiple of %d", len(buffer))
+				break loop
+			} else if err != nil {
+				return err
+			}
+			numBlocks++
+
+			// Analyze block.
+			if bytes.Equal(buffer, fullBlock) {
+				numFull++
+				row.Entries = append(row.Entries, "full")
+			} else if bytes.Equal(buffer, zeroBlock) {
+				numZero++
+				row.Entries = append(row.Entries, "zero")
+			} else {
+				row.Entries = append(row.Entries, "used")
+			}
+		}
+		layout.Data = append(layout.Data, row)
+	}
+	layout.Blocks = numBlocks
+	layout.Full = numFull
+	layout.Zero = numZero
+	layout.Used = numBlocks - numFull - numZero
+
+	// fmt.Printf("%s\n%s\n", layout.data[0].address, layout.data[0].entries[0])
+	data, err := json.MarshalIndent(layout, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
 	return nil
 }
 
