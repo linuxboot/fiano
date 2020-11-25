@@ -39,6 +39,9 @@ type FlashDescriptor struct {
 
 // FindSignature searches for an Intel flash signature.
 func FindSignature(buf []byte) (int, error) {
+	if len(buf) < 20 {
+		return -1, fmt.Errorf("too small to be firmware")
+	}
 	if bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
@@ -94,7 +97,11 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 
 	// Region
 	fd.RegionStart = uint(fd.DescriptorMap.RegionBase) * 0x10
-	region, err := NewFlashRegionSection(fd.buf[fd.RegionStart : fd.RegionStart+uint(FlashRegionSectionSize)])
+	regionEnd := fd.RegionStart + uint(FlashRegionSectionSize)
+	if buflen := uint(len(fd.buf)); fd.RegionStart >= buflen || regionEnd >= buflen {
+		return fmt.Errorf("flash descriptor region out of bounds: range [%#x:%#x], buflen %#x", fd.RegionStart, regionEnd, buflen)
+	}
+	region, err := NewFlashRegionSection(fd.buf[fd.RegionStart:regionEnd])
 	if err != nil {
 		return err
 	}

@@ -116,6 +116,10 @@ func NewBIOSRegion(buf []byte, r *FlashRegion, _ FlashRegionType) (Region, error
 		if err != nil {
 			return nil, err
 		}
+		if fv.Length == 0 {
+			//avoid infinite loop
+			return nil, errors.New("FV len 0; cannot progress")
+		}
 		absOffset += fv.Length
 		buf = buf[uint64(offset)+fv.Length:]
 		br.Elements = append(br.Elements, MakeTyped(fv))
