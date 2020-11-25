@@ -475,6 +475,9 @@ func NewFile(buf []byte) (*File, error) {
 
 	// Special case for NVAR Store stored in raw file
 	if f.Header.Type == FVFileTypeRaw && f.Header.GUID == *NVAR {
+		if f.DataOffset >= uint64(len(f.buf)) {
+			return nil, fmt.Errorf("data offset %#x exceeds buffer size %#x", f.DataOffset, len(f.buf))
+		}
 		ns, err := NewNVarStore(f.buf[f.DataOffset:])
 		if err != nil {
 			log.Errorf("error parsing NVAR store in file %v: %v", f.Header.GUID, err)

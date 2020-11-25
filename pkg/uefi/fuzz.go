@@ -1,3 +1,4 @@
+//go:build gofuzz
 // +build gofuzz
 
 package uefi
@@ -29,7 +30,7 @@ const (
 	WOW
 )
 
-//	func Parse(buf []byte) (Firmware, error)
+// func Parse(buf []byte) (Firmware, error)
 func Fuzz(b []byte) int {
 	//initialize, since something could have changed the polarity
 	Attributes = ROMAttributes{ErasePolarity: poisonedPolarity}
