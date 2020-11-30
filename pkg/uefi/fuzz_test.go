@@ -40,9 +40,11 @@ func TestFuzzInputs(t *testing.T) {
 	// it is very low value, essentially inflating the coverage numbers.
 	// t.Skip("this test will inflate coverage")
 	// }
-	//restore log behavior at end
-	logOut := log.Writer()
-	defer log.SetOutput(logOut)
+
+	// not available in go < 1.13
+	// //restore log behavior at end
+	// logOut := log.Writer()
+	// defer log.SetOutput(logOut)
 
 	//no logging output for this test, to increase speed
 	log.SetOutput(&nopWriter{})
