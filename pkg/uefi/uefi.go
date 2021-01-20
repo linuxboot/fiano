@@ -14,6 +14,19 @@ import (
 	"reflect"
 )
 
+var (
+	// ReadOnly breaks firmware modification operations, but optimizes
+	// memory and CPU consumption for read-only operations.
+	//
+	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING.
+	ReadOnly = false
+
+	// DisableDecompression disables section decompression.
+	//
+	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING.
+	DisableDecompression = false
+)
+
 // ROMAttributes is used to hold global variables that apply across the whole image.
 // We have to do this to avoid passing too many things down each time.
 type ROMAttributes struct {

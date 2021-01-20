@@ -374,10 +374,15 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		return nil, fmt.Errorf("section size mismatch! Section has size %v, but buffer is %v bytes big",
 			s.Header.ExtendedSize, buflen)
 	}
-	// Copy out the buffer.
-	newBuf := buf[:s.Header.ExtendedSize]
-	s.buf = make([]byte, s.Header.ExtendedSize)
-	copy(s.buf, newBuf)
+
+	if ReadOnly {
+		s.buf = buf[:s.Header.ExtendedSize]
+	} else {
+		// Copy out the buffer.
+		newBuf := buf[:s.Header.ExtendedSize]
+		s.buf = make([]byte, s.Header.ExtendedSize)
+		copy(s.buf, newBuf)
+	}
 
 	// Section type specific data
 	switch s.Header.Type {
@@ -390,7 +395,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 
 		// Determine how to interpret the section based on the GUID.
 		var encapBuf []byte
-		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 {
+		if typeSpec.Attributes&uint16(GUIDEDSectionProcessingRequired) != 0 && !DisableDecompression {
 			if compressor := compression.CompressorFromGUID(&typeSpec.GUID); compressor != nil {
 				typeSpec.Compression = compressor.Name()
 				var err error
