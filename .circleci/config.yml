@@ -59,7 +59,7 @@ jobs:
           command: golint --set_exit_status $(go list ./... | grep -v /vendor/)
       - run:
           name: ineffassign
-          command: ineffassign .
+          command: ineffassign ./...
   test:
     docker:
       - image: circleci/golang:1.12
