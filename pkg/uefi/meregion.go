@@ -102,8 +102,7 @@ func FindMEDescriptor(buf []byte) (int, error) {
 		// + 4 since the descriptor starts after the signature
 		return len(MEFTPSignature), nil
 	}
-	return -1, fmt.Errorf("ME Flash Partition Table signature not found: first 20 bytes are:\n%s",
-		hex.Dump(buf[:20]))
+	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found: first 20 bytes are:\n%s", MEFTPSignature, hex.Dump(buf[:20]))
 }
 
 // Buf returns the buffer.
