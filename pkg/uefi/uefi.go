@@ -18,12 +18,16 @@ var (
 	// ReadOnly breaks firmware modification operations, but optimizes
 	// memory and CPU consumption for read-only operations.
 	//
-	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING.
+	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING. IF YOU
+	// WILL MODIFY A FIRMWARE WITH THIS OPTION BEING ENABLED, THIS FIRMWARE
+	// MIGHT BRICK YOUR DEVICE.
 	ReadOnly = false
 
 	// DisableDecompression disables section decompression.
 	//
-	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING.
+	// DO NOT USE THIS OPTION UNLESS YOU KNOW WHAT ARE YOU DOING. IF YOU
+	// WILL MODIFY A FIRMWARE WITH THIS OPTION BEING ENABLED, THIS FIRMWARE
+	// MIGHT BRICK YOUR DEVICE.
 	DisableDecompression = false
 )
 
