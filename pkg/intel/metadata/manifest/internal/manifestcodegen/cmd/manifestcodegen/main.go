@@ -67,11 +67,13 @@ func processPath(path string, isCheck, enableTracing bool) error {
 				return fmt.Errorf("unable to delete old generated files: %w", err)
 			}
 		}
-
-		// ugly terrible hack to workaround versioning support
-		// TODO: fix the importer to recognize `/v2/` as version, not as path
-		replaceInFiles(path, "converged-security-suite/v2/pkg", "converged-security-suite/pkg")
 	}
+	// ugly terrible hack to workaround versioning support
+	// TODO: fix the importer to recognize `/v2/` as version, not as path
+	replaceInFiles(path, "converged-security-suite/v2/pkg", "converged-security-suite/pkg")
+	defer func() {
+		replaceInFiles(path, "converged-security-suite/pkg", "converged-security-suite/v2/pkg")
+	}()
 
 	// ugly terrible hack to workaround versioning support
 	// TODO: fix the importer to recognize `/v2/` as version, not as path
@@ -99,12 +101,6 @@ func processPath(path string, isCheck, enableTracing bool) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	if !isCheck {
-		// ugly terrible hack to workaround versioning support
-		// TODO: fix the importer to recognize `/v2/` as version, not as path
-		replaceInFiles(path, "converged-security-suite/pkg", "converged-security-suite/v2/pkg")
 	}
 
 	return nil
