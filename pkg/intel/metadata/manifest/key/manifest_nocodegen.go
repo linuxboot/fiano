@@ -12,10 +12,12 @@ import (
 // Print prints the Key Manifest.
 func (m *Manifest) Print() {
 	fmt.Printf("  --Key Manifest--\n")
-	fmt.Printf("\t%v\n", m.StructInfo.PrettyString(1, true))
-	fmt.Printf("\tKeyManifestSignatureOffset: %v\n", m.KeyManifestSignatureOffset)
-	fmt.Printf("\tKMID: %v\n", m.KMID)
-	fmt.Printf("\tPubKeyHashAlg: %v\n", m.PubKeyHashAlg)
+	fmt.Printf("%v\n", m.StructInfo.PrettyString(1, true))
+	fmt.Printf("  KeyManifestSignatureOffset: %v\n", m.KeyManifestSignatureOffset)
+	fmt.Printf("  Revision: %d\n", m.Revision)
+	fmt.Printf("  KMSVN: %v\n", m.KMSVN)
+	fmt.Printf("  KMID: %v\n", m.KMID)
+	fmt.Printf("  PubKeyHashAlg: %v\n\n", m.PubKeyHashAlg)
 	for _, i := range m.Hash {
 		fmt.Printf("%v\n", i.PrettyString(2, true))
 	}
