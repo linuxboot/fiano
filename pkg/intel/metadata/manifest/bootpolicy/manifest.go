@@ -13,8 +13,9 @@ type StructInfo = manifest.StructInfo
 type Manifest struct {
 	// PrettyString: BPMH: Header
 	BPMH `rehashValue:"rehashedBPMH()" json:"bpm_Header"`
-	SE   []SE `json:"bpm_SE"`
-	TXTE *TXT `json:"bpm_TXTE,omitempty"`
+	SE   []SE      `json:"bpm_SE"`
+	TXTE *TXT      `json:"bpm_TXTE,omitempty"`
+	Res  *Reserved `json:"bpm_reserved,omitempty"`
 	// PrettyString: PCDE: Platform Config Data
 	PCDE *PCD `json:"bpm_PCDE,omitempty"`
 	// PrettyString: PME: Platform Manufacturer
