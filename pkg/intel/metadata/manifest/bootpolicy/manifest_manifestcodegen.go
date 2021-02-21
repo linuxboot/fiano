@@ -69,12 +69,14 @@ func (_ Manifest) fieldIndexByStructID(structID string) int {
 		return 1
 	case StructureIDTXT:
 		return 2
-	case StructureIDPCD:
+	case StructureIDReserved:
 		return 3
-	case StructureIDPM:
+	case StructureIDPCD:
 		return 4
-	case StructureIDSignature:
+	case StructureIDPM:
 		return 5
+	case StructureIDSignature:
+		return 6
 	}
 
 	return -1
@@ -91,10 +93,12 @@ func (_ Manifest) fieldNameByIndex(fieldIndex int) string {
 	case 2:
 		return "TXTE"
 	case 3:
-		return "PCDE"
+		return "Res"
 	case 4:
-		return "PME"
+		return "PCDE"
 	case 5:
+		return "PME"
+	case 6:
 		return "PMSE"
 	}
 
@@ -103,9 +107,9 @@ func (_ Manifest) fieldNameByIndex(fieldIndex int) string {
 
 // ReadFrom reads the Manifest from 'r' in format defined in the document #575623.
 func (s *Manifest) ReadFrom(r io.Reader) (int64, error) {
-	var missingFieldsByIndices = [6]bool{
+	var missingFieldsByIndices = [7]bool{
 		0: true,
-		5: true,
+		6: true,
 	}
 	var totalN int64
 	previousFieldIndex := int(-1)
@@ -160,6 +164,16 @@ func (s *Manifest) ReadFrom(r io.Reader) (int64, error) {
 			if err != nil {
 				return totalN, fmt.Errorf("unable to read field TXTE at %d: %w", totalN, err)
 			}
+		case StructureIDReserved:
+			if fieldIndex == previousFieldIndex {
+				return totalN, fmt.Errorf("field 'Res' is not a slice, but multiple elements found")
+			}
+			s.Res = &Reserved{}
+			s.Res.SetStructInfo(structInfo)
+			n, err = s.Res.ReadDataFrom(r)
+			if err != nil {
+				return totalN, fmt.Errorf("unable to read field Res at %d: %w", totalN, err)
+			}
 		case StructureIDPCD:
 			if fieldIndex == previousFieldIndex {
 				return totalN, fmt.Errorf("field 'PCDE' is not a slice, but multiple elements found")
@@ -211,6 +225,9 @@ func (s *Manifest) RehashRecursive() {
 	if s.TXTE != nil {
 		s.TXTE.Rehash()
 	}
+	if s.Res != nil {
+		s.Res.Rehash()
+	}
 	if s.PCDE != nil {
 		s.PCDE.Rehash()
 	}
@@ -258,6 +275,15 @@ func (s *Manifest) WriteTo(w io.Writer) (int64, error) {
 		n, err := s.TXTE.WriteTo(w)
 		if err != nil {
 			return totalN, fmt.Errorf("unable to write field 'TXTE': %w", err)
+		}
+		totalN += int64(n)
+	}
+
+	// Res (ManifestFieldType: element)
+	if s.Res != nil {
+		n, err := s.Res.WriteTo(w)
+		if err != nil {
+			return totalN, fmt.Errorf("unable to write field 'Res': %w", err)
 		}
 		totalN += int64(n)
 	}
@@ -311,6 +337,11 @@ func (s *Manifest) TXTETotalSize() uint64 {
 	return s.TXTE.TotalSize()
 }
 
+// ResSize returns the size in bytes of the value of field Res
+func (s *Manifest) ResTotalSize() uint64 {
+	return s.Res.TotalSize()
+}
+
 // PCDESize returns the size in bytes of the value of field PCDE
 func (s *Manifest) PCDETotalSize() uint64 {
 	return s.PCDE.TotalSize()
@@ -341,9 +372,14 @@ func (s *Manifest) TXTEOffset() uint64 {
 	return s.SEOffset() + s.SETotalSize()
 }
 
+// ResOffset returns the offset in bytes of field Res
+func (s *Manifest) ResOffset() uint64 {
+	return s.TXTEOffset() + s.TXTETotalSize()
+}
+
 // PCDEOffset returns the offset in bytes of field PCDE
 func (s *Manifest) PCDEOffset() uint64 {
-	return s.TXTEOffset() + s.TXTETotalSize()
+	return s.ResOffset() + s.ResTotalSize()
 }
 
 // PMEOffset returns the offset in bytes of field PME
@@ -366,6 +402,7 @@ func (s *Manifest) TotalSize() uint64 {
 	size += s.BPMHTotalSize()
 	size += s.SETotalSize()
 	size += s.TXTETotalSize()
+	size += s.ResTotalSize()
 	size += s.PCDETotalSize()
 	size += s.PMETotalSize()
 	size += s.PMSETotalSize()
@@ -393,6 +430,8 @@ func (s *Manifest) PrettyString(depth uint, withHeader bool) string {
 	}
 	// ManifestFieldType is element
 	lines = append(lines, pretty.SubValue(depth+1, "TXTE", "", s.TXTE))
+	// ManifestFieldType is element
+	lines = append(lines, pretty.SubValue(depth+1, "Res", "", s.Res))
 	// ManifestFieldType is element
 	lines = append(lines, pretty.SubValue(depth+1, "PCDE: Platform Config Data", "", s.PCDE))
 	// ManifestFieldType is element
