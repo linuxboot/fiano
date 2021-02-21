@@ -8,20 +8,19 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"math/big"
 
-	"github.com/google/go-tpm/tpm2"
+	"github.com/tjfoc/gmsm/sm2"
 )
 
 // Key is a public key of an asymmetric crypto keypair.
 type Key struct {
-	KeyAlg  tpm2.Algorithm `json:"key_alg"`
-	Version uint8          `require:"0x10"  json:"key_version"`
-	KeySize BitSize        `json:"key_bitsize"`
-	Data    []byte         `countValue:"keyDataSize()" json:"key_data"`
+	KeyAlg  Algorithm `json:"key_alg"`
+	Version uint8     `require:"0x10"  json:"key_version"`
+	KeySize BitSize   `json:"key_bitsize"`
+	Data    []byte    `countValue:"keyDataSize()" json:"key_data"`
 }
 
 // BitSize is a size in bits.
@@ -51,9 +50,9 @@ func (ks *BitSize) SetInBytes(amountOfBytes uint16) {
 // KeyAlg and KeySize.
 func (k Key) keyDataSize() int64 {
 	switch k.KeyAlg {
-	case tpm2.AlgRSA:
+	case AlgRSA:
 		return int64(k.KeySize.InBytes()) + 4
-	case tpm2.AlgECC:
+	case AlgECC, AlgSM2:
 		return int64(k.KeySize.InBytes()) * 2
 	}
 	return -1
@@ -70,18 +69,23 @@ func (k Key) PubKey() (crypto.PublicKey, error) {
 	}
 
 	switch k.KeyAlg {
-	case tpm2.AlgRSA:
+	case AlgRSA:
 		result := &rsa.PublicKey{
 			N: new(big.Int).SetBytes(reverseBytes(k.Data[4:])),
 			E: int(binaryOrder.Uint32(k.Data)),
 		}
 
 		return result, nil
-	case tpm2.AlgECC:
+	case AlgECC:
 		keySize := k.KeySize.InBytes()
 		x := new(big.Int).SetBytes(reverseBytes(k.Data[:keySize]))
 		y := new(big.Int).SetBytes(reverseBytes(k.Data[keySize:]))
 		return ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, nil
+	case AlgSM2:
+		keySize := k.KeySize.InBytes()
+		x := new(big.Int).SetBytes(reverseBytes(k.Data[:keySize]))
+		y := new(big.Int).SetBytes(reverseBytes(k.Data[keySize:]))
+		return sm2.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, nil
 	}
 
 	return nil, fmt.Errorf("unexpected TPM algorithm: %s", k.KeyAlg)
@@ -101,7 +105,7 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 
 	switch key := key.(type) {
 	case *rsa.PublicKey:
-		k.KeyAlg = tpm2.AlgRSA
+		k.KeyAlg = AlgRSA
 		n := key.N.Bytes()
 		k.KeySize.SetInBytes(uint16(len(n)))
 		k.Data = make([]byte, 4+len(n))
@@ -111,7 +115,25 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 
 	case *ecdsa.PublicKey:
 		var x, y *big.Int
-		k.KeyAlg = tpm2.AlgRSA
+		k.KeyAlg = AlgECC
+		x, y = key.X, key.Y
+		if x == nil || y == nil {
+			return fmt.Errorf("the pubkey '%#+v' is invalid: x == nil || y == nil", key)
+		}
+		k.KeySize.SetInBits(256)
+		xB, yB := x.Bytes(), y.Bytes()
+		if len(xB) != int(k.KeySize.InBytes()) || len(yB) != int(k.KeySize.InBytes()) {
+			return fmt.Errorf("the pubkey '%#+v' is invalid: len(x)<%d> != %d || len(y)<%d> == %d",
+				key, len(xB), int(k.KeySize.InBytes()), len(yB), int(k.KeySize.InBytes()))
+		}
+		k.Data = make([]byte, 2*k.KeySize.InBytes())
+		copy(k.Data[:], reverseBytes(xB))
+		copy(k.Data[len(xB):], reverseBytes(yB))
+		return nil
+
+	case *sm2.PublicKey:
+		var x, y *big.Int
+		k.KeyAlg = AlgSM2
 		x, y = key.X, key.Y
 		if x == nil || y == nil {
 			return fmt.Errorf("the pubkey '%#+v' is invalid: x == nil || y == nil", key)
@@ -131,19 +153,66 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 	return fmt.Errorf("unexpected key type: %T", key)
 }
 
-//PrintMEKey prints the KM public signing key hash to fuse into the Intel ME
-func (k *Key) PrintMEKey() error {
+//PrintBPMPubKey prints the BPM public signing key hash to fuse into the Intel ME
+func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 	buf := new(bytes.Buffer)
 	if len(k.Data) > 1 {
-		if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
-			return nil
+		if k.KeyAlg == AlgRSA {
+			if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
+				return err
+			}
+			h, err := bpmAlg.Hash()
+			if err != nil {
+				return err
+			}
+			hash := h.New()
+			hash.Write(buf.Bytes())
+			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
+		} else if k.KeyAlg == AlgSM2 || k.KeyAlg == AlgECC {
+			if err := binary.Write(buf, binary.LittleEndian, k.Data); err != nil {
+				return err
+			}
+			h, err := bpmAlg.Hash()
+			if err != nil {
+				return err
+			}
+			hash := h.New()
+			hash.Write(buf.Bytes())
+			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
+		} else {
+			fmt.Printf("   Boot Policy Manifest Pubkey Hash: Unknown Algorithm\n")
 		}
-		if err := binary.Write(buf, binary.LittleEndian, k.Data[:4]); err != nil {
-			return nil
+	} else {
+		fmt.Printf("   Boot Policy Pubkey Hash: No km public key set in KM\n")
+	}
+
+	return nil
+}
+
+//PrintKMPubKey prints the KM public signing key hash to fuse into the Intel ME
+func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
+	buf := new(bytes.Buffer)
+	if len(k.Data) > 1 {
+		if k.KeyAlg == AlgRSA {
+			if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
+				return err
+			}
+			if err := binary.Write(buf, binary.LittleEndian, k.Data[:4]); err != nil {
+				return err
+			}
+			if kmAlg != AlgSHA256 {
+				return fmt.Errorf("KM public key hash algorithm must be SHA256")
+			}
+			h, err := kmAlg.Hash()
+			if err != nil {
+				return err
+			}
+			hash := h.New()
+			hash.Write(buf.Bytes())
+			fmt.Printf("   Key Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
+		} else {
+			fmt.Printf("   Key Manifest Pubkey Hash: Unsupported Algorithm\n")
 		}
-		h := sha256.New()
-		h.Write(buf.Bytes())
-		fmt.Printf("   Key Manifest Pubkey Hash: 0x%x\n", h.Sum(nil))
 	} else {
 		fmt.Printf("   Key Manifest Pubkey Hash: No km public key set in KM\n")
 	}

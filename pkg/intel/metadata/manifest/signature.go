@@ -7,8 +7,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-
-	"github.com/google/go-tpm/tpm2"
 )
 
 var (
@@ -18,11 +16,11 @@ var (
 
 // Signature exports the Signature structure
 type Signature struct {
-	SigScheme tpm2.Algorithm `json:"sig_scheme"`
-	Version   uint8          `require:"0x10" json:"sig_version,omitempty"`
-	KeySize   BitSize        `json:"sig_keysize,omitempty"`
-	HashAlg   tpm2.Algorithm `json:"sig_hashAlg"`
-	Data      []byte         `countValue:"KeySize.InBytes()" prettyValue:"dataPrettyValue()" json:"sig_data"`
+	SigScheme Algorithm `json:"sig_scheme"`
+	Version   uint8     `require:"0x10" json:"sig_version,omitempty"`
+	KeySize   BitSize   `json:"sig_keysize,omitempty"`
+	HashAlg   Algorithm `json:"sig_hashAlg"`
+	Data      []byte    `countValue:"KeySize.InBytes()" prettyValue:"dataPrettyValue()" json:"sig_data"`
 }
 
 func (m Signature) dataPrettyValue() interface{} {
@@ -36,13 +34,21 @@ func (m Signature) dataPrettyValue() interface{} {
 // * SignatureSM2
 func (m Signature) SignatureData() (SignatureDataInterface, error) {
 	switch m.SigScheme {
-	case tpm2.AlgRSASSA:
+	case AlgRSA:
 		return SignatureRSAASA(m.Data), nil
-	case tpm2.AlgECDSA:
+	case AlgECDSA:
 		if len(m.Data) != 64 && len(m.Data) != 96 {
 			return nil, fmt.Errorf("invalid length of the signature data: %d (expected 64 or 96)", len(m.Data))
 		}
 		return SignatureECDSA{
+			R: new(big.Int).SetBytes(reverseBytes(m.Data[:len(m.Data)/2])),
+			S: new(big.Int).SetBytes(reverseBytes(m.Data[len(m.Data)/2:])),
+		}, nil
+	case AlgSM2:
+		if len(m.Data) != 64 && len(m.Data) != 96 {
+			return nil, fmt.Errorf("invalid length of the signature data: %d (expected 64 or 96)", len(m.Data))
+		}
+		return SignatureSM2{
 			R: new(big.Int).SetBytes(reverseBytes(m.Data[:len(m.Data)/2])),
 			S: new(big.Int).SetBytes(reverseBytes(m.Data[len(m.Data)/2:])),
 		}, nil
@@ -64,12 +70,16 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface) error {
 
 	switch sig := sig.(type) {
 	case SignatureRSAASA:
-		m.SigScheme = tpm2.AlgRSASSA
-		m.HashAlg = tpm2.AlgSHA256
+		m.SigScheme = AlgRSA
+		m.HashAlg = AlgSHA256
 		m.KeySize.SetInBytes(uint16(len(m.Data)))
 	case SignatureECDSA:
-		m.SigScheme = tpm2.AlgECDSA
-		m.HashAlg = tpm2.AlgSHA256
+		m.SigScheme = AlgECDSA
+		m.HashAlg = AlgSHA256
+		m.KeySize.SetInBits(uint16(sig.R.BitLen()))
+	case SignatureSM2:
+		m.SigScheme = AlgSM2
+		m.HashAlg = AlgSM3_256
 		m.KeySize.SetInBits(uint16(sig.R.BitLen()))
 	default:
 		return fmt.Errorf("unexpected signature type: %T", sig)
@@ -90,6 +100,8 @@ func (m *Signature) SetSignatureData(sig SignatureDataInterface) error {
 		var r, s *big.Int
 		switch sig := sig.(type) {
 		case SignatureECDSA:
+			r, s = sig.R, sig.S
+		case SignatureSM2:
 			r, s = sig.R, sig.S
 		default:
 			return fmt.Errorf("internal error")
@@ -114,7 +126,7 @@ func (m *Signature) SetSignatureData(sig SignatureDataInterface) error {
 //
 // if signAlgo is zero then it is detected automatically, based on the type
 // of the provided private key.
-func (m *Signature) SetSignature(signAlgo tpm2.Algorithm, privKey crypto.Signer, signedData []byte) error {
+func (m *Signature) SetSignature(signAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
 	signData, err := NewSignatureData(signAlgo, privKey, signedData)
 	if err != nil {
 		return fmt.Errorf("unable to construct the signature data: %w", err)

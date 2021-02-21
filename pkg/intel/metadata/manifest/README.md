@@ -1,3 +1,10 @@
+Prequesites:
+Open another terminal and go get the sm2/sm3 crypto library into your gopath.
+The code generator disables go modules.
+```
+GOPATH=your/go/path go get "github.com/tjfoc/gmsm/sm2"
+```
+
 To generalize all the logic related to Boot Policy Manifest and Key Manifest
 we use code generation. Therefore it is enough to create structure declarations
 and run command from this directory:

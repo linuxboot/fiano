@@ -6,8 +6,6 @@ import (
 	"crypto"
 	"fmt"
 
-	"github.com/google/go-tpm/tpm2"
-
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
 )
 
@@ -35,7 +33,7 @@ type Manifest struct {
 
 	// PubKeyHashAlg is the hash algorithm of OEM public key digest programmed
 	// into the FPF.
-	PubKeyHashAlg tpm2.Algorithm `json:"km_PubKeyHashAlg"`
+	PubKeyHashAlg manifest.Algorithm `json:"km_PubKeyHashAlg"`
 
 	// Hash is the slice of KMHASH_STRUCT (KHS) structures (see table 5-3
 	// of the document #575623). Describes BPM pubkey digest (among other).
@@ -46,7 +44,7 @@ type Manifest struct {
 }
 
 func (m *Manifest) SetSignature(
-	algo tpm2.Algorithm,
+	algo manifest.Algorithm,
 	privKey crypto.Signer,
 	signedData []byte,
 ) error {

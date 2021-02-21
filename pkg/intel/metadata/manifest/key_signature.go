@@ -5,8 +5,6 @@ package manifest
 import (
 	"crypto"
 	"fmt"
-
-	"github.com/google/go-tpm/tpm2"
 )
 
 // KeySignature
@@ -38,7 +36,7 @@ func (m *KeySignature) Verify(signedData []byte) error {
 //
 // if signAlgo is zero then it is detected automatically, based on the type
 // of the provided private key.
-func (ks *KeySignature) SetSignature(signAlgo tpm2.Algorithm, privKey crypto.Signer, signedData []byte) error {
+func (ks *KeySignature) SetSignature(signAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
 	err := ks.Key.SetPubKey(privKey.Public())
 	if err != nil {
 		return fmt.Errorf("unable to set public key: %w", err)

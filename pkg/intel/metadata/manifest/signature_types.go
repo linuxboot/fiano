@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/google/go-tpm/tpm2"
+	"github.com/tjfoc/gmsm/sm2"
 )
+
+var SM2UID = []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
 
 // NewSignatureData returns an implementation of SignatureDataInterface,
 // accordingly to signAlgo, privKey and signedData.
@@ -17,7 +19,7 @@ import (
 // if signAlgo is zero then it is detected automatically, based on the type
 // of the provided private key.
 func NewSignatureData(
-	signAlgo tpm2.Algorithm,
+	signAlgo Algorithm,
 	privKey crypto.Signer,
 	signedData []byte,
 ) (SignatureDataInterface, error) {
@@ -25,19 +27,19 @@ func NewSignatureData(
 		// auto-detect the sign algorithm, based on the provided signing key
 		switch privKey.(type) {
 		case *rsa.PrivateKey:
-			signAlgo = tpm2.AlgRSASSA
+			signAlgo = AlgRSASSA
 		case *ecdsa.PrivateKey:
-			signAlgo = tpm2.AlgECDSA
+			signAlgo = AlgECDSA
+		case *sm2.PrivateKey:
+			signAlgo = AlgSM2
 		}
 	}
-
 	switch signAlgo {
-	case tpm2.AlgRSASSA:
+	case AlgRSASSA:
 		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
 		if !ok {
 			return nil, fmt.Errorf("expected private RSA key (type %T), but received %T", rsaPrivateKey, privKey)
 		}
-
 		h := sha256.New()
 		_, _ = h.Write(signedData)
 		bpmHash := h.Sum(nil)
@@ -47,7 +49,7 @@ func NewSignatureData(
 		}
 		return SignatureRSAASA(data), nil
 
-	case tpm2.AlgECDSA:
+	case AlgECDSA:
 		eccPrivateKey, ok := privKey.(*ecdsa.PrivateKey)
 		if !ok {
 			return nil, fmt.Errorf("expected private ECDSA key (type %T), but received %T", eccPrivateKey, privKey)
@@ -57,6 +59,19 @@ func NewSignatureData(
 		data.R, data.S, err = ecdsa.Sign(RandReader, eccPrivateKey, signedData)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with ECDSA the data: %w", err)
+		}
+		return data, nil
+
+	case AlgSM2:
+		eccPrivateKey, ok := privKey.(*sm2.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("expected private SM2 key (type %T), but received %T", eccPrivateKey, privKey)
+		}
+		var data SignatureSM2
+		var err error
+		data.R, data.S, err = sm2.Sm2Sign(eccPrivateKey, signedData, SM2UID, RandReader)
+		if err != nil {
+			return nil, fmt.Errorf("unable to sign with SM2 the data: %w", err)
 		}
 		return data, nil
 	}
