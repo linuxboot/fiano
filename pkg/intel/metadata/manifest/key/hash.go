@@ -43,17 +43,19 @@ const (
 	// UsageBPMSigningPKD is the bit meaning the digest could be used as
 	// SDEV signing pubkey digest.
 	UsageSDEVSigningPKD
+
+	// UsageReserved is a reserved bit
+	UsageReserved
 )
 
 // String implements fmt.Stringer.
 func (u Usage) String() string {
 	var result []string
 	for i := uint(0); i < 64; i++ {
-		f := Usage(0 << i)
+		f := Usage(1 << i)
 		if !u.IsSet(f) {
 			continue
 		}
-
 		var descr string
 		switch f {
 		case UsageBPMSigningPKD:
@@ -64,6 +66,8 @@ func (u Usage) String() string {
 			descr = "ACM_manifest_signing_pubkey_digest"
 		case UsageSDEVSigningPKD:
 			descr = "SDEV_signing_pubkey_digest"
+		case UsageReserved:
+			descr = "Reserved"
 		default:
 			descr = fmt.Sprintf("unexpected_bit_%d", i)
 		}
