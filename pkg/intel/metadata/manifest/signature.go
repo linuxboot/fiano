@@ -29,12 +29,15 @@ func (m Signature) dataPrettyValue() interface{} {
 }
 
 // SignatureData parses field Data and returns the signature as one of these types:
+// * SignatureRSAPSS
 // * SignatureRSAASA
 // * SignatureECDSA
 // * SignatureSM2
 func (m Signature) SignatureData() (SignatureDataInterface, error) {
 	switch m.SigScheme {
-	case AlgRSA:
+	case AlgRSAPSS:
+		return SignatureRSAPSS(m.Data), nil
+	case AlgRSASSA:
 		return SignatureRSAASA(m.Data), nil
 	case AlgECDSA:
 		if len(m.Data) != 64 && len(m.Data) != 96 {
@@ -59,6 +62,7 @@ func (m Signature) SignatureData() (SignatureDataInterface, error) {
 
 // SetSignatureByData sets all the fields of the structure Signature by
 // accepting one of these types as the input argument `sig`:
+// * SignatureRSAPSS
 // * SignatureRSAASA
 // * SignatureECDSA
 // * SignatureSM2
@@ -69,6 +73,10 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface) error {
 	}
 
 	switch sig := sig.(type) {
+	case SignatureRSAPSS:
+		m.SigScheme = AlgRSA
+		m.HashAlg = AlgSHA256
+		m.KeySize.SetInBytes(uint16(len(m.Data)))
 	case SignatureRSAASA:
 		m.SigScheme = AlgRSA
 		m.HashAlg = AlgSHA256
@@ -89,11 +97,14 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface) error {
 
 // SetSignatureData sets the value of the field Data by accepting one of these
 // types as the input argument `sig`:
+// * SignatureRSAPSS
 // * SignatureRSAASA
 // * SignatureECDSA
 // * SignatureSM2
 func (m *Signature) SetSignatureData(sig SignatureDataInterface) error {
 	switch sig := sig.(type) {
+	case SignatureRSAPSS:
+		m.Data = sig
 	case SignatureRSAASA:
 		m.Data = sig
 	case SignatureECDSA, SignatureSM2:

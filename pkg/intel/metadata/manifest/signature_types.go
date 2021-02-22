@@ -35,6 +35,25 @@ func NewSignatureData(
 		}
 	}
 	switch signAlgo {
+	case AlgRSAPSS:
+		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("expected private RSA key (type %T), but received %T", rsaPrivateKey, privKey)
+		}
+		h := sha256.New()
+		_, _ = h.Write(signedData)
+		bpmHash := h.Sum(nil)
+
+		pss := rsa.PSSOptions{
+			SaltLength: rsa.PSSSaltLengthAuto,
+			Hash:       crypto.SHA256,
+		}
+		data, err := rsa.SignPSS(RandReader, rsaPrivateKey, crypto.SHA256, bpmHash, &pss)
+		if err != nil {
+			return nil, fmt.Errorf("unable to sign with RSAPSS the data: %w", err)
+		}
+		return SignatureRSAPSS(data), nil
+
 	case AlgRSASSA:
 		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
 		if !ok {
@@ -86,6 +105,35 @@ type SignatureDataInterface interface {
 	// Verify returns nil if signedData was indeed signed by key pk, and
 	// returns an appropriate error otherwise.
 	Verify(pk crypto.PublicKey, signedData []byte) error
+}
+
+// SignatureRSAPSS is RSAPSS signature bytes.
+type SignatureRSAPSS []byte
+
+// String implements fmt.Stringer
+func (s SignatureRSAPSS) String() string {
+	return fmt.Sprintf("0x%X", []byte(s))
+}
+
+// Verify implements SignatureDataInterface.
+func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, signedData []byte) error {
+	pk, ok := pkIface.(*rsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("expected public key of type %T, but received %T", pk, pkIface)
+	}
+	h := sha256.New()
+	h.Write(signedData)
+	hash := h.Sum(nil)
+
+	pss := rsa.PSSOptions{
+		SaltLength: rsa.PSSSaltLengthAuto,
+		Hash:       crypto.SHA256,
+	}
+	err := rsa.VerifyPSS(pk, crypto.SHA256, hash, s, &pss)
+	if err != nil {
+		return fmt.Errorf("data was not signed by the key: %w", err)
+	}
+	return nil
 }
 
 // SignatureRSAASA is RSAASA signature bytes.

@@ -74,7 +74,6 @@ func (k Key) PubKey() (crypto.PublicKey, error) {
 			N: new(big.Int).SetBytes(reverseBytes(k.Data[4:])),
 			E: int(binaryOrder.Uint32(k.Data)),
 		}
-
 		return result, nil
 	case AlgECC:
 		keySize := k.KeySize.InBytes()
@@ -157,26 +156,21 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 	buf := new(bytes.Buffer)
 	if len(k.Data) > 1 {
+		h, err := bpmAlg.Hash()
+		if err != nil {
+			return err
+		}
+		hash := h.New()
 		if k.KeyAlg == AlgRSA {
 			if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
 				return err
 			}
-			h, err := bpmAlg.Hash()
-			if err != nil {
-				return err
-			}
-			hash := h.New()
 			hash.Write(buf.Bytes())
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 		} else if k.KeyAlg == AlgSM2 || k.KeyAlg == AlgECC {
 			if err := binary.Write(buf, binary.LittleEndian, k.Data); err != nil {
 				return err
 			}
-			h, err := bpmAlg.Hash()
-			if err != nil {
-				return err
-			}
-			hash := h.New()
 			hash.Write(buf.Bytes())
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 		} else {
