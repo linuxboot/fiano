@@ -12,7 +12,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/internal/manifestcodegen/pkg/analyze"
+	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/pkg/analyze"
 	"github.com/fatih/camelcase"
 )
 
@@ -104,7 +104,7 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 		}
 		if bytes.Compare(b0, b1) != 0 {
 			return fmt.Errorf("file '%s' is not up-to-date; please run command: "+
-				"go run github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/internal/manifestcodegen/cmd/manifestcodegen %s",
+				"go run github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/cmd/manifestcodegen %s",
 				generatedFile, file.Package.Path())
 		}
 	}
