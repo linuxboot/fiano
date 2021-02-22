@@ -24,14 +24,22 @@ func Header(depth uint, description string, obj interface{}) string {
 	return description
 }
 
-func SubValue(depth uint, fieldName, valueDescription string, value interface{}) string {
-	if valueDescription == "" {
-		valueDescription = getDescriptionForValue(depth, value)
+func SubValue(depth uint, fieldName, valueDescription string, value interface{}, opts ...Option) []string {
+	cfg := getConfig(opts)
+	if cfg.OmitKeySignature {
+		switch fieldName {
+		case "PMSE: Signature", "Key And Signature":
+			return nil
+		}
 	}
-	return fmt.Sprintf("%s %s", Header(depth, fieldName, nil), valueDescription)
+
+	if valueDescription == "" {
+		valueDescription = getDescriptionForValue(depth, value, opts...)
+	}
+	return []string{fmt.Sprintf("%s %s", Header(depth, fieldName, nil), valueDescription)}
 }
 
-func getDescriptionForValue(depth uint, value interface{}) string {
+func getDescriptionForValue(depth uint, value interface{}, opts ...Option) string {
 	v := reflect.ValueOf(value)
 	if v.Kind() == reflect.Ptr && v.IsNil() {
 		return "is not set (nil)"
@@ -39,9 +47,9 @@ func getDescriptionForValue(depth uint, value interface{}) string {
 
 	switch value := value.(type) {
 	case interface {
-		PrettyString(depth uint, withHeader bool) string
+		PrettyString(depth uint, withHeader bool, opts ...Option) string
 	}:
-		description := value.PrettyString(depth, false)
+		description := value.PrettyString(depth, false, opts...)
 		if len(strings.Split(description, "\n")) > 1 {
 			return "\n" + description
 		} else {

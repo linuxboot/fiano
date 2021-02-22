@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/internal/manifestcodegen/pkg/analyze"
+	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/pkg/analyze"
 )
 
 func assertNoError(err error) {
