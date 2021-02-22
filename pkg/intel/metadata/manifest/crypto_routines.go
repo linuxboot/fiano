@@ -3,7 +3,15 @@ package manifest
 import (
 	"crypto"
 	"fmt"
+	"hash"
 	"strings"
+
+	// Required for hash.Hash return in hashInfo struct
+	_ "crypto/sha1"
+	_ "crypto/sha256"
+	_ "crypto/sha512"
+
+	"github.com/tjfoc/gmsm/sm3"
 )
 
 // MAX_DIGEST_BUFFER is the maximum size of []byte request or response fields.
@@ -32,22 +40,13 @@ const (
 
 var hashInfo = []struct {
 	alg  Algorithm
-	hash crypto.Hash
+	hash hash.Hash
 }{
-	{AlgSHA1, crypto.SHA1},
-	{AlgSHA256, crypto.SHA256},
-	{AlgSHA384, crypto.SHA384},
-	{AlgSHA512, crypto.SHA512},
-}
-
-// HashToAlgorithm looks up the manifest algorithm corresponding to the provided crypto.Hash
-func HashToAlgorithm(hash crypto.Hash) (Algorithm, error) {
-	for _, info := range hashInfo {
-		if info.hash == hash {
-			return info.alg, nil
-		}
-	}
-	return AlgUnknown, fmt.Errorf("go hash algorithm #%d has no manifest algorithm", hash)
+	{AlgSHA1, crypto.SHA1.New()},
+	{AlgSHA256, crypto.SHA256.New()},
+	{AlgSHA384, crypto.SHA384.New()},
+	{AlgSHA512, crypto.SHA512.New()},
+	{AlgSM3_256, sm3.New()},
 }
 
 // IsNull returns true if a is AlgNull or zero (unset).
@@ -57,16 +56,16 @@ func (a Algorithm) IsNull() bool {
 
 // Hash returns a crypto.Hash based on the given id.
 // An error is returned if the given algorithm is not a hash algorithm or is not available.
-func (a Algorithm) Hash() (crypto.Hash, error) {
+func (a Algorithm) Hash() (hash.Hash, error) {
 	for _, info := range hashInfo {
 		if info.alg == a {
-			if !info.hash.Available() {
-				return crypto.Hash(0), fmt.Errorf("go hash algorithm #%d not available", info.hash)
+			if info.hash == nil {
+				return nil, fmt.Errorf("go hash algorithm #%snot available", info.alg.String())
 			}
 			return info.hash, nil
 		}
 	}
-	return crypto.Hash(0), fmt.Errorf("hash algorithm not supported: 0x%x", a)
+	return nil, fmt.Errorf("hash algorithm not supported: %s", a.String())
 }
 
 func (a Algorithm) String() string {

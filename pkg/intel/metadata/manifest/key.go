@@ -156,11 +156,10 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 	buf := new(bytes.Buffer)
 	if len(k.Data) > 1 {
-		h, err := bpmAlg.Hash()
+		hash, err := bpmAlg.Hash()
 		if err != nil {
 			return err
 		}
-		hash := h.New()
 		if k.KeyAlg == AlgRSA {
 			if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
 				return err
@@ -197,11 +196,10 @@ func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
 			if kmAlg != AlgSHA256 {
 				return fmt.Errorf("KM public key hash algorithm must be SHA256")
 			}
-			h, err := kmAlg.Hash()
+			hash, err := kmAlg.Hash()
 			if err != nil {
 				return err
 			}
-			hash := h.New()
 			hash.Write(buf.Bytes())
 			fmt.Printf("   Key Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 		} else {

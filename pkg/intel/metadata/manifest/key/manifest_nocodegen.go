@@ -11,5 +11,10 @@ import (
 
 // Print prints the Key Manifest.
 func (m *Manifest) Print() {
-	fmt.Printf("%v\n", m.PrettyString(1, true))
+	if m.KeyAndSignature.Signature.DataTotalSize() < 1 {
+		fmt.Printf("%v\n", m.PrettyString(1, true, false))
+		fmt.Printf("  --KeyAndSignature--\n\tKey Manifest not signed!\n\n")
+	} else {
+		fmt.Printf("%v\n", m.PrettyString(1, true, true))
+	}
 }
