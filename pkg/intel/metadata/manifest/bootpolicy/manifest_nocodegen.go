@@ -8,6 +8,8 @@ package bootpolicy
 
 import (
 	"fmt"
+
+	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/pretty"
 )
 
 func (bpm *Manifest) rehashedBPMH() BPMH {
@@ -41,8 +43,9 @@ func (bpm Manifest) Print() {
 	}
 
 	if bpm.PMSE.Signature.DataTotalSize() < 1 {
+		fmt.Printf("%v\n", bpm.PrettyString(1, true, pretty.OptionOmitKeySignature(true)))
 		fmt.Printf("  --PMSE--\n\tBoot Policy Manifest not signed!\n\n")
 	} else {
-		fmt.Printf("%v \n", bpm.PMSE.PrettyString(1, true))
+		fmt.Printf("%v\n", bpm.PrettyString(1, true, pretty.OptionOmitKeySignature(false)))
 	}
 }
