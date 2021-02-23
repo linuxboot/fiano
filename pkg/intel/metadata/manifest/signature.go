@@ -74,11 +74,11 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface) error {
 
 	switch sig := sig.(type) {
 	case SignatureRSAPSS:
-		m.SigScheme = AlgRSA
+		m.SigScheme = AlgRSAPSS
 		m.HashAlg = AlgSHA256
 		m.KeySize.SetInBytes(uint16(len(m.Data)))
 	case SignatureRSAASA:
-		m.SigScheme = AlgRSA
+		m.SigScheme = AlgRSASSA
 		m.HashAlg = AlgSHA256
 		m.KeySize.SetInBytes(uint16(len(m.Data)))
 	case SignatureECDSA:
