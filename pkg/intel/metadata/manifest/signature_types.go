@@ -53,7 +53,6 @@ func NewSignatureData(
 			return nil, fmt.Errorf("unable to sign with RSAPSS the data: %w", err)
 		}
 		return SignatureRSAPSS(data), nil
-
 	case AlgRSASSA:
 		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
 		if !ok {
@@ -67,7 +66,6 @@ func NewSignatureData(
 			return nil, fmt.Errorf("unable to sign with RSASSA the data: %w", err)
 		}
 		return SignatureRSAASA(data), nil
-
 	case AlgECDSA:
 		eccPrivateKey, ok := privKey.(*ecdsa.PrivateKey)
 		if !ok {
@@ -80,7 +78,6 @@ func NewSignatureData(
 			return nil, fmt.Errorf("unable to sign with ECDSA the data: %w", err)
 		}
 		return data, nil
-
 	case AlgSM2:
 		eccPrivateKey, ok := privKey.(*sm2.PrivateKey)
 		if !ok {
@@ -95,6 +92,46 @@ func NewSignatureData(
 		return data, nil
 	}
 
+	return nil, fmt.Errorf("signing algorithm '%s' is not implemented in this library", signAlgo)
+}
+
+// NewSignatureByData returns an implementation of SignatureDataInterface,
+// accordingly to signAlgo, publicKey and signedData.
+//
+// if signAlgo is zero then it is detected automatically, based on the type
+// of the provided private key.
+func NewSignatureByData(
+	signAlgo Algorithm,
+	pubKey crypto.PublicKey,
+	signedData []byte,
+) (SignatureDataInterface, error) {
+	if signAlgo == 0 {
+		// auto-detect the sign algorithm, based on the provided signing key
+		switch pubKey.(type) {
+		case *rsa.PublicKey:
+			signAlgo = AlgRSASSA
+		case *ecdsa.PublicKey:
+			signAlgo = AlgECDSA
+		case *sm2.PublicKey:
+			signAlgo = AlgSM2
+		}
+	}
+	switch signAlgo {
+	case AlgRSAPSS:
+		return SignatureRSAPSS(signedData), nil
+	case AlgRSASSA:
+		return SignatureRSAASA(signedData), nil
+	case AlgECDSA:
+		return SignatureECDSA{
+			R: new(big.Int).SetBytes(reverseBytes(signedData[:len(signedData)/2])),
+			S: new(big.Int).SetBytes(reverseBytes(signedData[len(signedData)/2:])),
+		}, nil
+	case AlgSM2:
+		return SignatureSM2{
+			R: new(big.Int).SetBytes(reverseBytes(signedData[:len(signedData)/2])),
+			S: new(big.Int).SetBytes(reverseBytes(signedData[len(signedData)/2:])),
+		}, nil
+	}
 	return nil, fmt.Errorf("signing algorithm '%s' is not implemented in this library", signAlgo)
 }
 
@@ -167,7 +204,6 @@ func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, signedData []byte) err
 type SignatureECDSA struct {
 	// R is the R component of the signature.
 	R *big.Int
-
 	// S is the S component of the signature.
 	S *big.Int
 }
