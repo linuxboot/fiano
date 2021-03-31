@@ -439,7 +439,7 @@ func (s *Manifest) PrettyString(depth uint, withHeader bool, opts ...pretty.Opti
 	// ManifestFieldType is endValue
 	lines = append(lines, pretty.SubValue(depth+1, "Pub Key Hash Alg", "", &s.PubKeyHashAlg, opts...)...)
 	// ManifestFieldType is list
-	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("Hash: Array of \"Hash\" of length %d", len(s.Hash)), s.Hash))
+	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("Hash: Array of \"Key Manifest\" of length %d", len(s.Hash)), s.Hash))
 	for i := 0; i < len(s.Hash); i++ {
 		lines = append(lines, fmt.Sprintf("%sitem #%d: ", strings.Repeat("  ", int(depth+2)), i)+strings.TrimSpace(s.Hash[i].PrettyString(depth+2, true)))
 	}

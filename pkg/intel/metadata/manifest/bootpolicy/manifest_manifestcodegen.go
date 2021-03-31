@@ -421,7 +421,7 @@ func (s *Manifest) PrettyString(depth uint, withHeader bool, opts ...pretty.Opti
 	// ManifestFieldType is element
 	lines = append(lines, pretty.SubValue(depth+1, "BPMH: Header", "", &s.BPMH, opts...)...)
 	// ManifestFieldType is elementList
-	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("SE: Array of \"IBB Segments Element\" of length %d", len(s.SE)), s.SE))
+	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("SE: Array of \"Boot Policy Manifest\" of length %d", len(s.SE)), s.SE))
 	for i := 0; i < len(s.SE); i++ {
 		lines = append(lines, fmt.Sprintf("%sitem #%d: ", strings.Repeat("  ", int(depth+2)), i)+strings.TrimSpace(s.SE[i].PrettyString(depth+2, true)))
 	}

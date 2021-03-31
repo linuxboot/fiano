@@ -221,12 +221,27 @@ func (s *Key) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) s
 }
 
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags BitSize) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+func (v BitSize) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, "Bit Size", flags))
+		lines = append(lines, pretty.Header(depth, "Bit Size", v))
 	}
-	lines = append(lines, pretty.SubValue(depth+1, "In Bits", "", flags.InBits(), opts...)...)
-	lines = append(lines, pretty.SubValue(depth+1, "In Bytes", "", flags.InBytes(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "In Bits", "", v.InBits(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "In Bytes", "", v.InBytes(), opts...)...)
 	return strings.Join(lines, "\n")
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (v BitSize) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the BitSize into 'w' in binary format.
+func (v BitSize) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the BitSize from 'r' in binary format.
+func (v BitSize) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
 }

@@ -98,7 +98,7 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 		if err != nil {
 			return fmt.Errorf("unable to read a temp file '%s'", outFile)
 		}
-		b1, err := ioutil.ReadFile(generatedFile)
+		b1, err := ioutil.ReadFile(generatedFile + "~")
 		if err != nil {
 			return fmt.Errorf("unable to read file '%s'", generatedFile)
 		}

@@ -355,11 +355,26 @@ func (s *BPMH) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) 
 }
 
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags Size4K) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+func (v Size4K) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, "Size 4 K", flags))
+		lines = append(lines, pretty.Header(depth, "Size 4 K", v))
 	}
-	lines = append(lines, pretty.SubValue(depth+1, "In Bytes", "", flags.InBytes(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "In Bytes", "", v.InBytes(), opts...)...)
 	return strings.Join(lines, "\n")
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (v Size4K) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the Size4K into 'w' in binary format.
+func (v Size4K) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the Size4K from 'r' in binary format.
+func (v Size4K) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
 }

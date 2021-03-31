@@ -160,6 +160,21 @@ func (s *Hash) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) 
 }
 
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags Usage) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
-	return flags.String()
+func (v Usage) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	return v.String()
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (v Usage) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the Usage into 'w' in binary format.
+func (v Usage) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the Usage from 'r' in binary format.
+func (v Usage) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
 }
