@@ -5,6 +5,8 @@ package manifest
 import (
 	"encoding/binary"
 	"io"
+
+	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/pretty"
 )
 
 var (
@@ -34,7 +36,7 @@ type Structure interface {
 	io.WriterTo
 	TotalSize() uint64
 	// PrettyString returns the whole object as a structured string.
-	PrettyString(depth uint, withHeader bool) string
+	PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string
 }
 
 type Element interface {

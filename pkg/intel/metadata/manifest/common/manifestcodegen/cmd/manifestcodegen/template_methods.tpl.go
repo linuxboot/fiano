@@ -497,7 +497,7 @@ func (s *{{ $struct.Name }}) PrettyString(depth uint, withHeader bool, opts ...p
   {{- $fieldType := $field.ManifestFieldType.String }}
 	// ManifestFieldType is {{ $fieldType }}
   {{- if or (eq $fieldType "list") (eq $fieldType "elementList") }}
-	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf({{ printf "%s: Array of \"%s\" of length %%d" $field.Name $field.Struct.PrettyString | printf "%q"}}, len(s.{{ $field.Name }})), s.{{ $field.Name }}))
+	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf({{ printf "%s: Array of \"%s\" of length %%d" $field.Name $field.Parent.PrettyString | printf "%q"}}, len(s.{{ $field.Name }})), s.{{ $field.Name }}))
 	for i := 0; i<len(s.{{ $field.Name }}); i++ {
 		lines = append(lines, fmt.Sprintf("%sitem #%d: ", strings.Repeat("  ", int(depth+2)), i) + strings.TrimSpace(s.{{ $field.Name }}[i].PrettyString(depth+2, true)))
 	}
@@ -520,29 +520,45 @@ func (s *{{ $struct.Name }}) PrettyString(depth uint, withHeader bool, opts ...p
 
 {{- range $index,$type := .BasicNamedTypes }}
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags {{ $type.Name }}) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+func (v {{ $type.Name }}) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
  {{- if not (isNil ($type.MethodByName "String")) }}
-	return flags.String()
+	return v.String()
  {{- else }}
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, {{ $type.PrettyString | printf "%q" }}, flags))
+		lines = append(lines, pretty.Header(depth, {{ $type.PrettyString | printf "%q" }}, v))
 	}
   {{- range $index, $method := $type.Methods }}
    {{- if $method.ReturnsFlagValue }}
     {{- if eq $method.ReturnsTypeName "bool" }}
-	if flags.{{ $method.Name }}() {
+	if v.{{ $method.Name }}() {
 		lines = append(lines, pretty.SubValue(depth+1, "{{ $method.Name.Name | camelcaseToSentence }}", {{ $method.PrettyStringForResult true | printf "%q" }}, true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "{{ $method.Name.Name | camelcaseToSentence }}", {{ $method.PrettyStringForResult false | printf "%q" }}, false, opts...)...)
 	}
     {{- else }}
-	lines = append(lines, pretty.SubValue(depth+1, "{{ $method.Name.Name | camelcaseToSentence }}", "", flags.{{ $method.Name }}(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "{{ $method.Name.Name | camelcaseToSentence }}", "", v.{{ $method.Name }}(), opts...)...)
     {{- end }}
    {{- end }}
   {{- end }}
 	return strings.Join(lines, "\n")
  {{- end }}
 }
+
+// TotalSize returns the total size measured through binary.Size.
+func (v {{ $type.Name }}) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the {{ $type.Name }} into 'w' in binary format.
+func (v {{ $type.Name }}) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the {{ $type.Name }} from 'r' in binary format.
+func (v {{ $type.Name }}) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
+}
+
 {{- end }}
 `

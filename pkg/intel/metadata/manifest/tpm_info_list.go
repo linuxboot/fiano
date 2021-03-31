@@ -12,14 +12,20 @@ const (
 
 type TPMFamilySupport uint8
 
+// PrettyString-true:  Discrete TPM1.2 is supported
+// PrettyString-false: Discrete TPM1.2 is not supported
 func (familySupport TPMFamilySupport) IsDiscreteTPM12Supported() bool {
 	return familySupport&1 != 0
 }
 
+// PrettyString-true:  Discrete TPM2.0 is supported
+// PrettyString-false: Discrete TPM2.0 is not supported
 func (familySupport TPMFamilySupport) IsDiscreteTPM20Supported() bool {
 	return familySupport&2 != 0
 }
 
+// PrettyString-true:  Firmware TPM2.0 is supported
+// PrettyString-false: Firmware TPM2.0 is not supported
 func (familySupport TPMFamilySupport) IsFirmwareTPM20Supported() bool {
 	return familySupport&(1<<3) != 0
 }

@@ -946,7 +946,7 @@ func (s *SE) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) st
 	// ManifestFieldType is arrayStatic
 	lines = append(lines, pretty.SubValue(depth+1, "Reserved 2", "", &s.Reserved2, opts...)...)
 	// ManifestFieldType is list
-	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("IBBSegments: Array of \"IBB Segment\" of length %d", len(s.IBBSegments)), s.IBBSegments))
+	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("IBBSegments: Array of \"IBB Segments Element\" of length %d", len(s.IBBSegments)), s.IBBSegments))
 	for i := 0; i < len(s.IBBSegments); i++ {
 		lines = append(lines, fmt.Sprintf("%sitem #%d: ", strings.Repeat("  ", int(depth+2)), i)+strings.TrimSpace(s.IBBSegments[i].PrettyString(depth+2, true)))
 	}
@@ -960,51 +960,96 @@ func (s *SE) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) st
 }
 
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags CachingType) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
-	return flags.String()
+func (v CachingType) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	return v.String()
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (v CachingType) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the CachingType into 'w' in binary format.
+func (v CachingType) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the CachingType from 'r' in binary format.
+func (v CachingType) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
 }
 
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags PBETValue) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+func (v PBETValue) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, "PBET Value", flags))
+		lines = append(lines, pretty.Header(depth, "PBET Value", v))
 	}
-	lines = append(lines, pretty.SubValue(depth+1, "PBET Value", "", flags.PBETValue(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "PBET Value", "", v.PBETValue(), opts...)...)
 	return strings.Join(lines, "\n")
 }
 
+// TotalSize returns the total size measured through binary.Size.
+func (v PBETValue) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the PBETValue into 'w' in binary format.
+func (v PBETValue) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the PBETValue from 'r' in binary format.
+func (v PBETValue) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
+}
+
 // PrettyString returns the bits of the flags in an easy-to-read format.
-func (flags SEFlags) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+func (v SEFlags) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, "SE Flags", flags))
+		lines = append(lines, pretty.Header(depth, "SE Flags", v))
 	}
-	lines = append(lines, pretty.SubValue(depth+1, "Reserved 0", "", flags.Reserved0(), opts...)...)
-	if flags.SupportsTopSwapRemediation() {
+	lines = append(lines, pretty.SubValue(depth+1, "Reserved 0", "", v.Reserved0(), opts...)...)
+	if v.SupportsTopSwapRemediation() {
 		lines = append(lines, pretty.SubValue(depth+1, "Supports Top Swap Remediation", "BIOS supports Top Swap remediation action", true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "Supports Top Swap Remediation", "BIOS does not support Top Swap remediation action", false, opts...)...)
 	}
-	if flags.TPMFailureLeavesHierarchiesEnabled() {
+	if v.TPMFailureLeavesHierarchiesEnabled() {
 		lines = append(lines, pretty.SubValue(depth+1, "TPM Failure Leaves Hierarchies Enabled", "Leave Hierarchies enabled. Cap all PCRs on failure.", true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "TPM Failure Leaves Hierarchies Enabled", "Do not leave enabled. Disable all Hierarchies or deactivate on failure.", false, opts...)...)
 	}
-	if flags.AuthorityMeasure() {
+	if v.AuthorityMeasure() {
 		lines = append(lines, pretty.SubValue(depth+1, "Authority Measure", "Extend Authority Measurements into the Authority PCR 7", true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "Authority Measure", "Do not extend into the Authority PCR 7", false, opts...)...)
 	}
-	if flags.Locality3Startup() {
+	if v.Locality3Startup() {
 		lines = append(lines, pretty.SubValue(depth+1, "Locality 3 Startup", "Issue TPM Start-up from Locality 3", true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "Locality 3 Startup", "Disabled", false, opts...)...)
 	}
-	if flags.DMAProtection() {
+	if v.DMAProtection() {
 		lines = append(lines, pretty.SubValue(depth+1, "DMA Protection", "Enable DMA Protection", true, opts...)...)
 	} else {
 		lines = append(lines, pretty.SubValue(depth+1, "DMA Protection", "Disable DMA Protection", false, opts...)...)
 	}
 	return strings.Join(lines, "\n")
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (v SEFlags) TotalSize() uint64 {
+	return uint64(binary.Size(v))
+}
+
+// WriteTo writes the SEFlags into 'w' in binary format.
+func (v SEFlags) WriteTo(w io.Writer) (int64, error) {
+	return int64(v.TotalSize()), binary.Write(w, binary.LittleEndian, v)
+}
+
+// ReadFrom reads the SEFlags from 'r' in binary format.
+func (v SEFlags) ReadFrom(r io.Reader) (int64, error) {
+	return int64(v.TotalSize()), binary.Read(r, binary.LittleEndian, v)
 }

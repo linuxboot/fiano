@@ -174,7 +174,7 @@ func (s *HashList) PrettyString(depth uint, withHeader bool, opts ...pretty.Opti
 	// ManifestFieldType is endValue
 	lines = append(lines, pretty.SubValue(depth+1, "Size", "", &s.Size, opts...)...)
 	// ManifestFieldType is list
-	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("List: Array of \"Hash Structure\" of length %d", len(s.List)), s.List))
+	lines = append(lines, pretty.Header(depth+1, fmt.Sprintf("List: Array of \"Hash List\" of length %d", len(s.List)), s.List))
 	for i := 0; i < len(s.List); i++ {
 		lines = append(lines, fmt.Sprintf("%sitem #%d: ", strings.Repeat("  ", int(depth+2)), i)+strings.TrimSpace(s.List[i].PrettyString(depth+2, true)))
 	}
