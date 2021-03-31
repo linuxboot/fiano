@@ -1,3 +1,5 @@
+//go:generate manifestcodegen
+
 package manifest
 
 import (
