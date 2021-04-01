@@ -9,18 +9,18 @@ import (
 type BPMH struct {
 	StructInfo `id:"__ACBP__" version:"0x23" var0:"0x20" var1:"uint16(s.TotalSize())"`
 
-	KeySignatureOffset uint16 `json:"bpmh_KeySignatureOffset"`
+	KeySignatureOffset uint16 `json:"bpmhKeySignatureOffset"`
 
-	BPMRevision uint8 `json:"bpmh_Revision"`
+	BPMRevision uint8 `json:"bpmhRevision"`
 
 	// PrettyString: BPM SVN
-	BPMSVN manifest.SVN `json:"bpmh_SNV"`
+	BPMSVN manifest.SVN `json:"bpmhSNV"`
 	// PrettyString: ACM SVN Auth
-	ACMSVNAuth manifest.SVN `json:"bpmh_ACMSVN"`
+	ACMSVNAuth manifest.SVN `json:"bpmhACMSVN"`
 
-	Reserved0 [1]byte `require:"0" json:"bpmh_Reserved0,omitemtpy"`
+	Reserved0 [1]byte `require:"0" json:"bpmhReserved0,omitemtpy"`
 
-	NEMDataStack Size4K `json:"bpmh_NEMStackSize"`
+	NEMDataStack Size4K `json:"bpmhNEMStackSize"`
 }
 
 // Size4K is a size in units of 4096 bytes.

@@ -13,35 +13,35 @@ import (
 // PrettyString: IBB Segments Element
 type SE struct {
 	StructInfo `id:"__IBBS__" version:"0x20" var0:"0" var1:"uint16(s.TotalSize())"`
-	Reserved0  [1]byte   `require:"0" json:"se_Reserved0,omitempty"`
-	SetNumber  uint8     `require:"0" json:"se_SetNumber,omitempty"`
-	Reserved1  [1]byte   `require:"0" json:"se_Reserved1,omitempty"`
-	PBETValue  PBETValue `json:"se_PBETValue"`
-	Flags      SEFlags   `json:"se_Flags"`
+	Reserved0  [1]byte   `require:"0" json:"seReserved0,omitempty"`
+	SetNumber  uint8     `require:"0" json:"seSetNumber,omitempty"`
+	Reserved1  [1]byte   `require:"0" json:"seReserved1,omitempty"`
+	PBETValue  PBETValue `json:"sePBETValue"`
+	Flags      SEFlags   `json:"seFlags"`
 	// PrettyString: IBB MCHBAR
-	IBBMCHBAR uint64 `json:"se_IBBMCHBAR"`
+	IBBMCHBAR uint64 `json:"seIBBMCHBAR"`
 	// PrettyString: VT-d BAR
-	VTdBAR uint64 `json:"se_VTdBAR"`
+	VTdBAR uint64 `json:"seVTdBAR"`
 	// PrettyString: DMA Protection 0 Base Address
-	DMAProtBase0 uint32 `json:"se_DMAProtBase0"`
+	DMAProtBase0 uint32 `json:"seDMAProtBase0"`
 	// PrettyString: DMA Protection 0 Limit Address
-	DMAProtLimit0 uint32 `json:"se_DMAProtLimit0"`
+	DMAProtLimit0 uint32 `json:"seDMAProtLimit0"`
 	// PrettyString: DMA Protection 1 Base Address
-	DMAProtBase1 uint64 `json:"se_DMAProtBase1"`
+	DMAProtBase1 uint64 `json:"seDMAProtBase1"`
 	// PrettyString: DMA Protection 2 Limit Address
-	DMAProtLimit1 uint64 `json:"se_DMAProtLimit1"`
+	DMAProtLimit1 uint64 `json:"seDMAProtLimit1"`
 
-	PostIBBHash manifest.HashStructure `json:"se_PostIBBHash"`
+	PostIBBHash manifest.HashStructure `json:"sePostIBBHash"`
 
-	IBBEntryPoint uint32 `json:"se_IBBEntry"`
+	IBBEntryPoint uint32 `json:"seIBBEntry"`
 
-	DigestList manifest.HashList `json:"se_DigestList"`
+	DigestList manifest.HashList `json:"seDigestList"`
 
-	OBBHash manifest.HashStructure `json:"se_OBBHash"`
+	OBBHash manifest.HashStructure `json:"seOBBHash"`
 
-	Reserved2 [3]byte `require:"0" json:"se_Reserved2,omitempty"`
+	Reserved2 [3]byte `require:"0" json:"seReserved2,omitempty"`
 
-	IBBSegments []IBBSegment `countType:"uint8" json:"se_IBBSegments,omitempty"`
+	IBBSegments []IBBSegment `countType:"uint8" json:"seIBBSegments,omitempty"`
 }
 
 type PBETValue uint8
@@ -110,10 +110,10 @@ func (flags SEFlags) DMAProtection() bool {
 }
 
 type IBBSegment struct {
-	Reserved [2]byte `require:"0"`
-	Flags    uint16
-	Base     uint32
-	Size     uint32
+	Reserved [2]byte `require:"0" json:"ibbSegReserved"`
+	Flags    uint16  `json:"ibbSegFlags"`
+	Base     uint32  `json:"ibbSegBase"`
+	Size     uint32  `json:"ibbSegSize"`
 }
 
 type CachingType uint8
