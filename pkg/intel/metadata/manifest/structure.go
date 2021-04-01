@@ -12,10 +12,10 @@ var (
 )
 
 type StructInfo struct {
-	ID          StructureID
-	Version     uint8
-	Variable0   uint8
-	ElementSize uint16
+	ID          StructureID `json:"StructInfoID"`
+	Version     uint8       `json:"StructInfoVersion"`
+	Variable0   uint8       `json:"StructInfoVariable0"`
+	ElementSize uint16      `json:"StructInfoElementSize"`
 }
 
 func (s StructInfo) StructInfo() StructInfo {

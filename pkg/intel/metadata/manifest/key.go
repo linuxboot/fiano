@@ -17,10 +17,10 @@ import (
 
 // Key is a public key of an asymmetric crypto keypair.
 type Key struct {
-	KeyAlg  Algorithm `json:"key_alg"`
-	Version uint8     `require:"0x10"  json:"key_version"`
-	KeySize BitSize   `json:"key_bitsize"`
-	Data    []byte    `countValue:"keyDataSize()" json:"key_data"`
+	KeyAlg  Algorithm `json:"keyAlg"`
+	Version uint8     `require:"0x10"  json:"keyVersion"`
+	KeySize BitSize   `json:"keyBitsize"`
+	Data    []byte    `countValue:"keyDataSize()" json:"keyData"`
 }
 
 // BitSize is a size in bits.

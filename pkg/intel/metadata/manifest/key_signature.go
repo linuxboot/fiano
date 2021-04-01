@@ -9,9 +9,9 @@ import (
 
 // KeySignature
 type KeySignature struct {
-	Version   uint8     `require:"0x10" json:"ks_Version,omitempty"`
-	Key       Key       `json:"ks_key"`
-	Signature Signature `json:"ks_Signature"`
+	Version   uint8     `require:"0x10" json:"ksVersion,omitempty"`
+	Key       Key       `json:"ksKey"`
+	Signature Signature `json:"ksSignature"`
 }
 
 // Verify verifies the builtin signature with the builtin public key.
