@@ -15,10 +15,10 @@ type Hash struct {
 	//
 	// More than one bit can be set to indicate shared digest usage.
 	// Usage of bit 0 is normative; other usages are informative.
-	Usage Usage `json:"hash_Usage"`
+	Usage Usage `json:"hashUsage"`
 
 	// Digest is the actual digest.
-	Digest manifest.HashStructure `json:"hash_Struct"`
+	Digest manifest.HashStructure `json:"hashStruct"`
 }
 
 // Usage is the digest usage bitmask.

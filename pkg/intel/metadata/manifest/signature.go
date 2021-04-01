@@ -16,11 +16,11 @@ var (
 
 // Signature exports the Signature structure
 type Signature struct {
-	SigScheme Algorithm `json:"sig_scheme"`
-	Version   uint8     `require:"0x10" json:"sig_version,omitempty"`
-	KeySize   BitSize   `json:"sig_keysize,omitempty"`
-	HashAlg   Algorithm `json:"sig_hashAlg"`
-	Data      []byte    `countValue:"KeySize.InBytes()" prettyValue:"dataPrettyValue()" json:"sig_data"`
+	SigScheme Algorithm `json:"sigScheme"`
+	Version   uint8     `require:"0x10" json:"sigVersion,omitempty"`
+	KeySize   BitSize   `json:"sigKeysize,omitempty"`
+	HashAlg   Algorithm `json:"sigHashAlg"`
+	Data      []byte    `countValue:"KeySize.InBytes()" prettyValue:"dataPrettyValue()" json:"sigData"`
 }
 
 func (m Signature) dataPrettyValue() interface{} {

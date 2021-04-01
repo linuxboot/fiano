@@ -11,24 +11,24 @@ import (
 
 type TXT struct {
 	StructInfo      `id:"__TXTS__" version:"0x21" var0:"0" var1:"uint16(s.TotalSize())"`
-	Reserved0       [1]byte          `require:"0" json:"txt_Reserved0,omitempty"`
-	SetNumber       [1]byte          `require:"0" json:"txt_SetNumer,omitempty"`
-	SInitMinSVNAuth uint8            `json:"txt_SVN"`
-	Reserved1       [1]byte          `require:"0" json:"txt_Reserved1,omitempty"`
-	ControlFlags    TXTControlFlags  `json:"txt_Flags"`
-	PwrDownInterval Duration16In5Sec `json:"tx_PwrDownInterval"`
+	Reserved0       [1]byte          `require:"0" json:"txtReserved0,omitempty"`
+	SetNumber       [1]byte          `require:"0" json:"txtSetNumer,omitempty"`
+	SInitMinSVNAuth uint8            `json:"txtSVN"`
+	Reserved1       [1]byte          `require:"0" json:"txtReserved1,omitempty"`
+	ControlFlags    TXTControlFlags  `json:"txtFlags"`
+	PwrDownInterval Duration16In5Sec `json:"txtPwrDownInterval"`
 	// PrettyString: PTT CMOS Offset 0
-	PTTCMOSOffset0 uint8 `default:"126" json:"txt_PTTCMOSOffset0"`
+	PTTCMOSOffset0 uint8 `default:"126" json:"txtPTTCMOSOffset0"`
 	// PrettyString: PTT CMOS Offset 1
-	PTTCMOSOffset1 uint8   `default:"127" json:"txt_PTTCMOSOffset1"`
-	ACPIBaseOffset uint16  `default:"0x400" json:"txt_ACPIBaseOffset,omitempty"`
-	Reserved2      [2]byte `json:"txt_Reserved2,omitempty"`
+	PTTCMOSOffset1 uint8   `default:"127" json:"txtPTTCMOSOffset1"`
+	ACPIBaseOffset uint16  `default:"0x400" json:"txtACPIBaseOffset,omitempty"`
+	Reserved2      [2]byte `json:"txtReserved2,omitempty"`
 	// PrettyString: ACPI MMIO Offset
-	PwrMBaseOffset uint32            `default:"0xFE000000" json:"txt_PwrMBaseOffset,omitempty"`
-	DigestList     manifest.HashList `json:"txt_DigestList"`
-	Reserved3      [3]byte           `require:"0" json:"txt_Reserved3,omitempty"`
+	PwrMBaseOffset uint32            `default:"0xFE000000" json:"txtPwrMBaseOffset,omitempty"`
+	DigestList     manifest.HashList `json:"txtDigestList"`
+	Reserved3      [3]byte           `require:"0" json:"txtReserved3,omitempty"`
 
-	SegmentCount uint8 `require:"0" json:"txt_SegmentCount,omitempty"`
+	SegmentCount uint8 `require:"0" json:"txtSegmentCount,omitempty"`
 }
 
 // Duration16In5Sec exports the custom type Duration16In5Sec
