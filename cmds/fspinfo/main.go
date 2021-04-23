@@ -12,9 +12,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/linuxboot/fiano/pkg/fsp"
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -54,20 +54,20 @@ func extractFirstFSPHeader(b []byte) (*fsp.InfoHeaderRev3, error) {
 func main() {
 	flag.Parse()
 	if flag.Arg(0) == "" {
-		log.Fatal("Error: missing file name")
+		log.Fatalf("missing file name")
 	}
 	data, err := ioutil.ReadFile(flag.Arg(0))
 	if err != nil {
-		log.Fatalf("Error: cannot read input file: %v", err)
+		log.Fatalf("cannot read input file: %v", err)
 	}
 	hdr, err := extractFirstFSPHeader(data)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 
 	j, err := json.MarshalIndent(hdr, "", "    ")
 	if err != nil {
-		log.Fatalf("Error: cannot marshal JSON: %v", err)
+		log.Fatalf("cannot marshal JSON: %v", err)
 	}
 	if *flagJSON {
 		fmt.Println(string(j))

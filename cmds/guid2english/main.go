@@ -23,11 +23,11 @@ package main
 import (
 	"flag"
 	"io"
-	"log"
 	"os"
 	"text/template"
 
 	"github.com/linuxboot/fiano/pkg/guid2english"
+	"github.com/linuxboot/fiano/pkg/log"
 	"golang.org/x/text/transform"
 )
 
@@ -48,12 +48,12 @@ func main() {
 		}
 		defer r.Close()
 	default:
-		log.Fatal("Error: At most 1 positional arguments expected")
+		log.Fatalf("At most 1 positional arguments expected")
 	}
 
 	t, err := template.New("guid2english").Parse(*tmpl)
 	if err != nil {
-		log.Fatalf("Error: Template not valid: %v", err)
+		log.Fatalf("Template not valid: %v", err)
 	}
 
 	trans := guid2english.New(guid2english.NewTemplateMapper(t))

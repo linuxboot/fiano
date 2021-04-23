@@ -10,11 +10,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"unsafe"
 
 	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/guid"
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/unicode"
 )
 
@@ -401,7 +401,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 				var err error
 				encapBuf, err = compressor.Decode(buf[typeSpec.DataOffset:])
 				if err != nil {
-					log.Print(err)
+					log.Errorf("%v", err)
 					typeSpec.Compression = "UNKNOWN"
 					encapBuf = []byte{}
 				}
@@ -439,7 +439,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	case SectionTypeDXEDepEx, SectionTypePEIDepEx, SectionMMDepEx:
 		var err error
 		if s.DepEx, err = parseDepEx(s.buf[headerSize:]); err != nil {
-			log.Println("warning:", err)
+			log.Warnf("%v", err)
 		}
 	}
 

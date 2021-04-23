@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 
 	"github.com/linuxboot/fiano/pkg/guid"
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -44,7 +44,7 @@ func (v *Find) Run(f uefi.Firmware) error {
 	if v.W != nil {
 		b, err := json.MarshalIndent(v.Matches, "", "\t")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("%v", err)
 		}
 		fmt.Fprintln(v.W, string(b))
 	}

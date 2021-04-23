@@ -6,8 +6,7 @@
 package unicode
 
 import (
-	"log"
-
+	"github.com/linuxboot/fiano/pkg/log"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
@@ -17,7 +16,7 @@ func UCS2ToUTF8(input []byte) string {
 	e := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM)
 	output, _, err := transform.Bytes(e.NewDecoder(), input)
 	if err != nil {
-		log.Printf("could not decode UCS2: %v", err)
+		log.Errorf("could not decode UCS2: %v", err)
 		return string(input)
 	}
 	// Remove null terminator if one exists.
@@ -33,7 +32,7 @@ func UTF8ToUCS2(input string) []byte {
 	input = input + "\000" // null terminator
 	output, _, err := transform.Bytes(e.NewEncoder(), []byte(input))
 	if err != nil {
-		log.Printf("could not encode UCS2: %v", err)
+		log.Errorf("could not encode UCS2: %v", err)
 		return []byte(input)
 	}
 	return output

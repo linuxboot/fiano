@@ -56,8 +56,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/utk"
 	"github.com/linuxboot/fiano/pkg/visitors"
 )
@@ -73,6 +73,6 @@ func init() {
 func main() {
 	flag.Parse()
 	if err := utk.Run(flag.Args()...); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 }

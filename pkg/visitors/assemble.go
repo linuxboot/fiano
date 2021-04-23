@@ -8,11 +8,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"sort"
 
 	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/guid"
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/unicode"
 )
@@ -81,7 +81,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			fileBuf := file.Buf()
 			fileLen := uint64(len(fileBuf))
 			if fileLen == 0 {
-				log.Fatal(file.Header.GUID)
+				log.Fatalf("%v", file.Header.GUID)
 			}
 
 			// Pad to the 8 byte alignments.
