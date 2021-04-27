@@ -90,6 +90,9 @@ type EntryMicrocodeUpdateEntry struct{ EntryBase }
 // EntrySACM represents a FIT entry of type "Startup AC Module Entry" (0x02)
 type EntrySACM struct{ EntryBase }
 
+// EntryDiagnosticACM represents a FIT entry of type "Diagnostic ACM" (0x03)
+type EntryDiagnosticACM struct{ EntryBase }
+
 // EntryBIOSStartupModuleEntry represents a FIT entry of type "BIOS Startup Module Entry" (0x07)
 type EntryBIOSStartupModuleEntry struct{ EntryBase }
 

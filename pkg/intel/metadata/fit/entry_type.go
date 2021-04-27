@@ -9,6 +9,7 @@ const (
 	EntryTypeFITHeaderEntry              = EntryType(0x00)
 	EntryTypeMicrocodeUpdateEntry        = EntryType(0x01)
 	EntryTypeStartupACModuleEntry        = EntryType(0x02)
+	EntryTypeDiagnosticACModuleEntry     = EntryType(0x03)
 	EntryTypeBIOSStartupModuleEntry      = EntryType(0x07)
 	EntryTypeTPMPolicyRecord             = EntryType(0x08)
 	EntryTypeBIOSPolicyRecord            = EntryType(0x09)
@@ -29,6 +30,8 @@ func (_type EntryType) String() string {
 		return "microcode_update_entry"
 	case EntryTypeStartupACModuleEntry:
 		return "startup_ACM_entry"
+	case EntryTypeDiagnosticACModuleEntry:
+		return "diagnostic_ACM_entry"
 	case EntryTypeBIOSStartupModuleEntry:
 		return "BIOS_startup_module_entry"
 	case EntryTypeTPMPolicyRecord:

@@ -28,7 +28,7 @@ type EntryHeaders struct {
 	// Must be aligned on 16 byte boundary.
 	Address Address64
 
-	Size Size24M16 `json:"Size24M16"`
+	Size Uint24 `json:"Size"`
 
 	// Reserved should always be equal to zero.
 	Reserved uint8 `json:",omitempty"`
@@ -43,23 +43,28 @@ type EntryHeaders struct {
 func (hdr *EntryHeaders) GoString() string {
 	var result strings.Builder
 	result.WriteString(fmt.Sprintf("   Address: 0x%x\n", hdr.Address.Pointer()))
-	result.WriteString(fmt.Sprintf("   size: 0x%x\n", uint16(hdr.Size.Size())))
+	result.WriteString(fmt.Sprintf("   size: 0x%x\n", hdr.Size.Uint32()))
 	result.WriteString(fmt.Sprintf("   Version: 0x%x\n", uint16(hdr.Version)))
 	result.WriteString(fmt.Sprintf("   Type: 0x%x\n", uint8(hdr.TypeAndIsChecksumValid)))
 	result.WriteString(fmt.Sprintf("   Checksum: 0x%x\n", hdr.Checksum))
 	return result.String()
 }
 
-// Size24M16 is a 24 bit value of a size in multiple of 16 bytes
-type Size24M16 struct {
+// Uint24 is a 24 bit unsigned little-endian integer value.
+type Uint24 struct {
 	Value [3]byte
 }
 
-// Size returns the size in bytes
-func (size Size24M16) Size() uint32 {
+// Uint32 returns the value as parsed uint32.
+//
+// If the value is used in "Size" then in the most cases the value should be
+// shifted with "<< 4" to get the real size value.
+//
+// See also the code of EntryHeaders.getDataCoordinates()
+func (size Uint24) Uint32() uint32 {
 	b := make([]byte, 4)
 	copy(b[:], size.Value[:])
-	return binary.LittleEndian.Uint32(b) << 4
+	return binary.LittleEndian.Uint32(b)
 }
 
 // Address64 is a 64bit address type
@@ -188,8 +193,8 @@ func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker, firmwareLength uint
 
 func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLength uint64) (forcedBytes []byte, startIdx *uint64, dataSize *uint32, errs []error) {
 	_startIdx := uefiConsts.CalculateOffsetFromPhysAddr(hdr.Address.Pointer(), firmwareLength)
-	_dataSize := hdr.Size.Size()
 
+	var _dataSize uint32
 	switch hdr.Type() {
 	case EntryTypeFITHeaderEntry:
 		// See "1.2.2" of the specification.
@@ -204,6 +209,10 @@ func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLeng
 		if err != nil {
 			return nil, nil, nil, []error{err}
 		}
+	case EntryTypeDiagnosticACModuleEntry:
+		return nil, nil, nil, []error{fmt.Errorf("support of EntryTypeDiagnosticACModuleEntry is not implemented, yet")}
+	case EntryTypeTPMPolicyRecord:
+		return nil, nil, nil, []error{fmt.Errorf("support of EntryTypeTPMPolicyRecord is not implemented, yet")}
 	case EntryTypeTXTPolicyRecord:
 		// See "1.2.8" of the specification.
 		// The "Address" field is actually the structure in this case :(
@@ -213,6 +222,8 @@ func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLeng
 			return nil, nil, nil, []error{err}
 		}
 		return buf.Bytes(), nil, nil, nil
+	default:
+		_dataSize = hdr.DataSize()
 	}
 
 	if _dataSize == 0 {
@@ -220,6 +231,23 @@ func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLeng
 	}
 
 	return nil, &_startIdx, &_dataSize, nil
+}
+
+// DataSize returns the size of the data referenced by the FIT entry.
+//
+// Panics if the entry type does not allow to know the size without parsing
+// the data itself.
+func (hdr *EntryHeaders) DataSize() uint32 {
+	switch hdr.Type() {
+	case EntryTypeStartupACModuleEntry, EntryTypeDiagnosticACModuleEntry, EntryTypeTPMPolicyRecord, EntryTypeTXTPolicyRecord:
+		panic(fmt.Sprintf("method DataSize should not be used for an entry type %v", hdr.Type()))
+	case EntryTypeBIOSPolicyRecord, EntryTypeBootPolicyManifest, EntryTypeKeyManifestRecord:
+		return hdr.Size.Uint32()
+	default:
+		// See description of "FIT Entry Format", it says:
+		// > SIZE - Size is the span of the component in multiple of 16 bytes.
+		return hdr.Size.Uint32() << 4
+	}
 }
 
 func (hdr *EntryHeaders) newBaseFromBytes(firmware []byte) (result EntryBase) {
@@ -293,6 +321,8 @@ func (hdr *EntryHeaders) newEntryFromBase(entryBase EntryBase) Entry {
 		return &EntryMicrocodeUpdateEntry{entryBase}
 	case EntryTypeStartupACModuleEntry:
 		return &EntrySACM{entryBase}
+	case EntryTypeDiagnosticACModuleEntry:
+		return &EntryDiagnosticACM{entryBase}
 	case EntryTypeBIOSStartupModuleEntry:
 		return &EntryBIOSStartupModuleEntry{entryBase}
 	case EntryTypeTPMPolicyRecord:
