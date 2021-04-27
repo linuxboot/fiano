@@ -17,9 +17,9 @@ package main
 import (
 	"flag"
 	"io/ioutil"
-	"log"
 
 	"github.com/linuxboot/fiano/pkg/compression"
+	"github.com/linuxboot/fiano/pkg/log"
 )
 
 var (
@@ -33,13 +33,13 @@ func main() {
 	flag.Parse()
 
 	if *d == *e {
-		log.Fatal("either decode (-d) or encode (-e) must be set")
+		log.Fatalf("either decode (-d) or encode (-e) must be set")
 	}
 	if *o == "" {
-		log.Fatal("output file must be set")
+		log.Fatalf("output file must be set")
 	}
 	if flag.NArg() != 1 {
-		log.Fatal("expected one input file")
+		log.Fatalf("expected one input file")
 	}
 
 	var compressor compression.Compressor
@@ -58,13 +58,13 @@ func main() {
 
 	in, err := ioutil.ReadFile(flag.Args()[0])
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	out, err := op(in)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	if err := ioutil.WriteFile(*o, out, 0666); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 }

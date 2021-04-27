@@ -6,10 +6,10 @@ package visitors
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -23,7 +23,7 @@ func init() {
 	var err error
 	sampleFV, err = ioutil.ReadFile("../../integration/roms/ovmfSECFV.fv")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 }
 

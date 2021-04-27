@@ -6,11 +6,11 @@ package visitors
 
 import (
 	"encoding/binary"
-	"log"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/guid"
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -35,25 +35,25 @@ func init() {
 	// Level 2 sections: sections that are inside compressed sections.
 	ss1, err = uefi.CreateSection(uefi.SectionTypeRaw, []byte("Subsection 1 data"), nil, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	ss2, err = uefi.CreateSection(uefi.SectionTypeRaw, []byte("Subsection 2 data"), nil, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 
 	// Level 1 sections: includes guid defined compression sections.
 	cs1, err = uefi.CreateSection(uefi.SectionTypeGUIDDefined, nil, []uefi.Firmware{ss1}, &compression.LZMAGUID)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	rs1, err = uefi.CreateSection(uefi.SectionTypeRaw, []byte("Raw section data"), nil, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	cs2, err = uefi.CreateSection(uefi.SectionTypeGUIDDefined, nil, []uefi.Firmware{ss2}, &compression.LZMAGUID)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 
 	// Sample Files
