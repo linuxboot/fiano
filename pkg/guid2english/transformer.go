@@ -8,12 +8,12 @@ package guid2english
 
 import (
 	"bytes"
-	"log"
 	"regexp"
 	"text/template"
 
 	"github.com/linuxboot/fiano/pkg/guid"
 	"github.com/linuxboot/fiano/pkg/knownguids"
+	"github.com/linuxboot/fiano/pkg/log"
 	"golang.org/x/text/transform"
 )
 
@@ -66,7 +66,7 @@ func (f *TemplateMapper) Map(g guid.GUID) []byte {
 	if err != nil {
 		// There is likely a bug in the template. We do not want to
 		// interrupt the byte stream, so just log the error.
-		log.Printf("Error in template: %v", err)
+		log.Errorf("Error in template: %v", err)
 	}
 	return b.Bytes()
 }

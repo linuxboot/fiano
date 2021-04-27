@@ -9,8 +9,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
+
+	"github.com/linuxboot/fiano/pkg/log"
 )
 
 const (
@@ -66,7 +67,7 @@ func Parse(s string) (*GUID, error) {
 func MustParse(s string) *GUID {
 	guid, err := Parse(s)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 	return guid
 }

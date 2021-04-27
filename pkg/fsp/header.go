@@ -9,8 +9,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"strings"
+
+	"github.com/linuxboot/fiano/pkg/log"
 )
 
 // TODO support FSP versions < 2.0
@@ -222,7 +223,7 @@ func NewInfoHeader(b []byte) (*InfoHeaderRev3, error) {
 	}
 	// reserved bytes must be zero'ed
 	if !bytes.Equal(f.Reserved1[:], []byte{0, 0}) {
-		log.Printf("warning: reserved bytes must be zero, got %v", f.Reserved1)
+		log.Warnf("reserved bytes must be zero, got %v", f.Reserved1)
 	}
 	// check spec version
 	// TODO currently, only FSP 2.0 is supported

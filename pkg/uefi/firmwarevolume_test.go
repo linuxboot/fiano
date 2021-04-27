@@ -7,8 +7,9 @@ package uefi
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"testing"
+
+	"github.com/linuxboot/fiano/pkg/log"
 )
 
 var (
@@ -21,7 +22,7 @@ func init() {
 	var err error
 	sampleFV, err = ioutil.ReadFile("../../integration/roms/ovmfSECFV.fv")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 }
 

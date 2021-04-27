@@ -36,12 +36,12 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"text/template"
 
 	"github.com/linuxboot/fiano/pkg/fmap"
+	"github.com/linuxboot/fiano/pkg/log"
 )
 
 var cmds = map[string]struct {
@@ -308,7 +308,7 @@ func verify(a cmdArgs) error {
 	for i, area := range a.f.Areas {
 		if area.Offset+area.Size > a.f.Size {
 			err = errors.New("Invalid flash map")
-			log.Printf("Area %d is out of range", i)
+			log.Errorf("Area %d is out of range", i)
 		}
 	}
 	return err
@@ -330,11 +330,11 @@ func main() {
 	}
 	cmd, ok := cmds[os.Args[1]]
 	if !ok {
-		log.Printf("Invalid command %#v\n", os.Args[1])
+		log.Errorf("Invalid command %#v\n", os.Args[1])
 		printUsage()
 	}
 	if len(os.Args) != cmd.nArgs+3 {
-		log.Printf("Expected %d arguments, got %d\n", cmd.nArgs+3, len(os.Args))
+		log.Errorf("Expected %d arguments, got %d\n", cmd.nArgs+3, len(os.Args))
 		printUsage()
 	}
 
@@ -348,7 +348,7 @@ func main() {
 		// Open file.
 		r, err := os.Open(os.Args[len(os.Args)-1])
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("%v", err)
 		}
 		a.r = r
 		defer r.Close()
@@ -359,13 +359,13 @@ func main() {
 		// Parse fmap.
 		f, m, err := fmap.Read(a.r)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("%v", err)
 		}
 		a.f, a.m = f, m
 	}
 
 	// Execute command.
 	if err := cmd.f(a); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%v", err)
 	}
 }

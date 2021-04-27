@@ -6,8 +6,8 @@ package visitors
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -82,7 +82,7 @@ func (v *TightenME) process() error {
 	v.br.FRegion.Base = uint16(updateBase)
 	v.br.Length += offsetShift
 	if v.br.Length > 16*1024*1024 {
-		log.Printf("warning new BIOS Regions length %d (%#x) exceed 16MiB limit", v.br.Length, v.br.Length)
+		log.Warnf("new BIOS Regions length %d (%#x) exceed 16MiB limit", v.br.Length, v.br.Length)
 	}
 	// update elements offsets
 	for i, e := range v.br.Elements {
