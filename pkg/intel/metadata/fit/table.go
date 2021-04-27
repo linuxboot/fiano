@@ -143,7 +143,7 @@ func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) 
 	// OK, it's correct. Now we know the size of the table and we can
 	// parseHeaders it.
 
-	endIdx = startIdx + uint64(tableMeta.Size.Size())
+	endIdx = startIdx + uint64(tableMeta.DataSize())
 	if err = check.BytesRange(firmware, int(startIdx), int(endIdx)); err != nil {
 		err = fmt.Errorf("invalid entries bytes range: %w", err)
 		return
