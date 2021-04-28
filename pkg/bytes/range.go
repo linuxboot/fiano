@@ -56,6 +56,13 @@ func (s Ranges) Sort() {
 	})
 }
 
+func maxUint64(a, b uint64) uint64 {
+	if a >= b {
+		return a
+	}
+	return b
+}
+
 // MergeRanges just merges ranges which has distance less or equal to
 // mergeDistance.
 //
@@ -72,7 +79,8 @@ func MergeRanges(in Ranges, mergeDistance uint64) Ranges {
 		// mergeDistance.
 
 		if entry.Offset+entry.Length+mergeDistance >= nextEntry.Offset {
-			entry.Length = (nextEntry.Offset - entry.Offset) + nextEntry.Length
+			newRangeEnd := maxUint64(nextEntry.Offset+nextEntry.Length, entry.Offset+entry.Length)
+			entry.Length = newRangeEnd - entry.Offset
 			continue
 		}
 
