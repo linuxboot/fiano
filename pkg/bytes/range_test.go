@@ -52,4 +52,59 @@ func TestRangesSortAndMerge(t *testing.T) {
 			Length: 4,
 		}}, entries)
 	})
+	t.Run("merge_next_range_inside_previous", func(t *testing.T) {
+		entries := Ranges{
+			{
+				Offset: 0,
+				Length: 0,
+			},
+			{
+				Offset: 12320788,
+				Length: 4,
+			},
+			{
+				Offset: 12255584,
+				Length: 32,
+			},
+			{
+				Offset: 12582912,
+				Length: 4194304,
+			},
+			{
+				Offset: 15760208,
+				Length: 67646,
+			},
+			{
+				Offset: 1114112,
+				Length: 11141120,
+			},
+			{
+				Offset: 16777152,
+				Length: 16,
+			},
+			{
+				Offset: 12255232,
+				Length: 432,
+			},
+		}
+		entries.SortAndMerge()
+		require.Equal(t, Ranges{
+			{
+				Offset: 0,
+				Length: 0,
+			},
+			{
+				Offset: 1114112,
+				Length: 11141552,
+			},
+			{
+				Offset: 12320788,
+				Length: 4,
+			},
+			{
+				Offset: 12582912,
+				Length: 4194304,
+			},
+		}, entries)
+	})
 }
