@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-// KeySignature
+// KeySignature combines a public key and a signature in a single structure.
 type KeySignature struct {
 	Version   uint8     `require:"0x10" json:"ksVersion,omitempty"`
 	Key       Key       `json:"ksKey"`
