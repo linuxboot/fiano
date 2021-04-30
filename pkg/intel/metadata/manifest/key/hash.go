@@ -32,15 +32,15 @@ const (
 	// Boot Policy Manifest signing pubkey digest.
 	UsageBPMSigningPKD = Usage(1 << iota)
 
-	// UsageBPMSigningPKD is the bit meaning the digest could be used as
+	// UsageFITPatchManifestSigningPKD is the bit meaning the digest could be used as
 	// FIT Patch Manifest signing pubkey digest.
 	UsageFITPatchManifestSigningPKD
 
-	// UsageBPMSigningPKD is the bit meaning the digest could be used as
+	// UsageACMManifestSigningPKD is the bit meaning the digest could be used as
 	// ACM Manifest signing pubkey digest.
 	UsageACMManifestSigningPKD
 
-	// UsageBPMSigningPKD is the bit meaning the digest could be used as
+	// UsageSDEVSigningPKD is the bit meaning the digest could be used as
 	// SDEV signing pubkey digest.
 	UsageSDEVSigningPKD
 
