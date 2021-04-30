@@ -58,11 +58,12 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 			// No children, buffer should already contain data.
 			return nil
 		}
+
+		// First pass to check to see if we need to find free space in a pad file.
 		// We assume the buffer already contains the header. We repopulate the header from the buffer
 		// Construct the full buffer.
 		// The FV header is the only thing we've read in so far.
-		fBuf := f.Buf()
-		fBufLen := uint64(len(fBuf))
+		fBufLen := uint64(len(f.Buf()))
 		// The reason I check against f.Length and fBuf instead of the min size is that the volume could
 		// have extended headers.
 		if f.Length < fBufLen {
@@ -71,6 +72,86 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 		fileOffset := f.DataOffset
+
+		var pad *uefi.File
+		var shrink uint64
+		for _, file := range f.Files {
+			fileBuf := file.Buf()
+			fileLen := uint64(len(fileBuf))
+			if fileLen == 0 {
+				log.Fatal("Unexpected empty file buffer (at least a header was expected): %v", file.Header.GUID)
+			}
+			if file.Header.GUID == *uefi.FFGUID && fileLen > 24 {
+				// found non-empty PAD to check for free space.
+				pad = file
+			}
+
+			// Pad to the 8 byte alignments.
+			alignedOffset := uefi.Align8(fileOffset)
+			// Read out the file alignment requirements
+			if alignBase := file.Header.Attributes.GetAlignment(); alignBase != 1 {
+				hl := file.HeaderLen()
+				// We need to align the data, not the header. This is so terrible.
+				fileDataOffset := uefi.Align(alignedOffset+hl, alignBase)
+				// Calculate the starting offset of the file
+				newOffset := fileDataOffset - hl
+				if gap := (newOffset - alignedOffset); gap >= 8 && gap < uefi.FileHeaderMinLength {
+					// We need to re align to the next boundary cause we can't put a pad file in here.
+					// Who thought this was a good idea?
+					fileDataOffset = uefi.Align(fileDataOffset+1, alignBase)
+					newOffset = fileDataOffset - hl
+				}
+				if newOffset != alignedOffset {
+					// Add a pad file starting from alignedOffset to newOffset
+					alignedOffset = newOffset
+				}
+			}
+			fileOffset = alignedOffset + fileLen
+		}
+
+		// Check if we're out of space.
+		if f.Length < fileOffset && !f.Resizable {
+			// do we have a non-empty pad file?
+			if pad != nil {
+				shrink = fileOffset - f.Length
+				trim := shrink
+				if trim > (uint64(len(pad.Buf()) + 24)) {
+					return fmt.Errorf("out of space in non-empty padding. space available: %v bytes, need apace: %v bytes", len(pad.Buf()), trim)
+				}
+				// remove free space after the header from pad file and recalculate
+				tmp_header := pad.Buf()[:24]
+				tmp_body := pad.Buf()[trim:]
+				tmp_state := tmp_header[23]
+				tmp_size := len(tmp_header) + len(tmp_body)
+				tmp_header[20] = uint8((tmp_size) & 0xff)
+				tmp_header[21] = uint8((tmp_size / 0x100) & 0xff)
+				tmp_header[22] = uint8((tmp_size / 0x10000) & 0xff)
+				tmp_header[16] = 0x0
+				tmp_header[17] = 0x0
+				tmp_header[23] = 0x0
+				tmp_header[16] = uint8((uint16(0x100) - uint16(uefi.Checksum8(tmp_header))) & 0xff)
+				tmp_header[23] = tmp_state
+				tmp_header[17] = 0xaa // Fixed
+				pad.SetBuf(append(tmp_header, tmp_body...))
+			} else {
+				fmt.Printf("no non-empry pad file\n")
+			}
+		}
+
+		// Second pass to check to see if there is enough free space in FV or non-empty pad file
+		// We assume the buffer already contains the header. We repopulate the header from the buffer
+		// Construct the full buffer.
+		// The FV header is the only thing we've read in so far.
+		fBuf := f.Buf()
+		fBufLen = uint64(len(fBuf))
+		// The reason I check against f.Length and fBuf instead of the min size is that the volume could
+		// have extended headers.
+		if f.Length < fBufLen {
+			return fmt.Errorf("buffer read in bigger than FV length!, expected %v got %v bytes",
+				f.Length, fBufLen)
+		}
+
+		fileOffset = f.DataOffset
 		if f.DataOffset != fBufLen {
 			// remove all old file data
 			fBuf = fBuf[:f.DataOffset]
@@ -99,7 +180,8 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 					fileDataOffset = uefi.Align(fileDataOffset+1, alignBase)
 					newOffset = fileDataOffset - hl
 				}
-				if newOffset != alignedOffset {
+				// Don't add new pad files if we have an non-empty pad file
+				if newOffset != alignedOffset && shrink == 0 {
 					// Add a pad file starting from alignedOffset to newOffset
 					pfile, err := uefi.CreatePadFile(newOffset - alignedOffset)
 					if err != nil {
@@ -108,8 +190,8 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 					if err = f.InsertFile(alignedOffset, pfile.Buf()); err != nil {
 						return fmt.Errorf("File %s: %v", pfile.Header.GUID, err)
 					}
+					alignedOffset = newOffset
 				}
-				alignedOffset = newOffset
 			}
 			if err = f.InsertFile(alignedOffset, fileBuf); err != nil {
 				return fmt.Errorf("File %s: %v", file.Header.GUID, err)

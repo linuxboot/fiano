@@ -121,7 +121,21 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 				case InsertDXE:
 					fallthrough
 				case InsertEnd:
-					f.Files = append(f.Files, v.NewFile)
+					non_empty_pad := -1
+					for i := 0; i < len(f.Files); i++ {
+						fileBuf := f.Files[i].Buf()
+						fileLen := uint64(len(fileBuf))
+						if f.Files[i].Header.GUID == *uefi.FFGUID && fileLen > 24 {
+							// found non-empty PAD to check for free space.
+							non_empty_pad = i
+						}
+					}
+					if non_empty_pad >= 0 {
+						i := non_empty_pad
+						f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i:]...)...)
+					} else {
+						f.Files = append(f.Files, v.NewFile)
+					}
 				case InsertAfter:
 					f.Files = append(f.Files[:i+1], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
 				case InsertBefore:

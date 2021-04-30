@@ -2,6 +2,25 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:b872f65e2b628d6746e7b0ac0b5bb1b7e47005ab0d8789bf51e2d584aa8d5d10"
+  name = "github.com/linuxboot/fiano"
+  packages = [
+    "pkg/compression",
+    "pkg/fmap",
+    "pkg/fsp",
+    "pkg/guid",
+    "pkg/guid2english",
+    "pkg/knownguids",
+    "pkg/uefi",
+    "pkg/unicode",
+    "pkg/utk",
+    "pkg/visitors",
+  ]
+  pruneopts = "UT"
+  revision = "d73b5b573b278175cc75ede7ac816c061cbf8192"
+
+[[projects]]
   digest = "1:51ceb357de5c06371be8becad34cff7e22041cfbed039631a22e17c1600af422"
   name = "github.com/u-root/u-root"
   packages = [
@@ -46,6 +65,16 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/linuxboot/fiano/pkg/compression",
+    "github.com/linuxboot/fiano/pkg/fmap",
+    "github.com/linuxboot/fiano/pkg/fsp",
+    "github.com/linuxboot/fiano/pkg/guid",
+    "github.com/linuxboot/fiano/pkg/guid2english",
+    "github.com/linuxboot/fiano/pkg/knownguids",
+    "github.com/linuxboot/fiano/pkg/uefi",
+    "github.com/linuxboot/fiano/pkg/unicode",
+    "github.com/linuxboot/fiano/pkg/utk",
+    "github.com/linuxboot/fiano/pkg/visitors",
     "github.com/u-root/u-root/pkg/testutil",
     "github.com/ulikunitz/xz/lzma",
     "golang.org/x/text/encoding/unicode",
