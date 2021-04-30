@@ -13,9 +13,10 @@
   version = "v4.0.0"
 
 [[projects]]
-  digest = "1:74424672efb1cc0a95c80db0787e1a791ff562fa990facbd1530296f4f9ca7a7"
+  digest = "1:db345c377984d0907323c09a9b17f11d995a59649fd38f909727df358b5f9020"
   name = "github.com/ulikunitz/xz"
   packages = [
+    ".",
     "internal/hash",
     "internal/xlog",
     "lzma",
@@ -47,6 +48,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/u-root/u-root/pkg/testutil",
+    "github.com/ulikunitz/xz",
     "github.com/ulikunitz/xz/lzma",
     "golang.org/x/text/encoding/unicode",
     "golang.org/x/text/transform",

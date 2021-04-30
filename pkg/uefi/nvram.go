@@ -211,6 +211,9 @@ func (s *NVarStore) getGUIDFromStore(i uint8) guid.GUID {
 		}
 		s.GUIDStore = append(s.GUIDStore, a...)
 	}
+	if int(i) >= len(s.GUIDStore) {
+		return *ZeroGUID
+	}
 	return s.GUIDStore[i]
 }
 
