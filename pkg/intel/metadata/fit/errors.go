@@ -40,3 +40,9 @@ func (err *ErrExpectedFITHeadersMagic) Error() string {
 	return fmt.Sprintf("string '%s' was expected as the Address value of the FIT header entry, but received: '%s'",
 		consts.FITHeadersMagic, err.Received)
 }
+
+type ErrNotFound struct{}
+
+func (ErrNotFound) Error() string {
+	return fmt.Sprintf("not found")
+}
