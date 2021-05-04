@@ -13,7 +13,7 @@ type TXT struct {
 	StructInfo      `id:"__TXTS__" version:"0x21" var0:"0" var1:"uint16(s.TotalSize())"`
 	Reserved0       [1]byte          `require:"0" json:"txtReserved0,omitempty"`
 	SetNumber       [1]byte          `require:"0" json:"txtSetNumer,omitempty"`
-	SInitMinSVNAuth uint8            `json:"txtSVN"`
+	SInitMinSVNAuth uint8            `default:"0" json:"txtSVN"`
 	Reserved1       [1]byte          `require:"0" json:"txtReserved1,omitempty"`
 	ControlFlags    TXTControlFlags  `json:"txtFlags"`
 	PwrDownInterval Duration16In5Sec `json:"txtPwrDownInterval"`
