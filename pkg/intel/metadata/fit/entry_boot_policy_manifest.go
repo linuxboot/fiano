@@ -7,7 +7,7 @@ import (
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/bootpolicy"
 )
 
-// Parse creates EntryKeyManifestRecord from EntryKeyManifest
+// ParseData creates EntryKeyManifestRecord from EntryKeyManifest
 func (entry *EntryBootPolicyManifestRecord) ParseData() (*bootpolicy.Manifest, error) {
 	var bpManifest bootpolicy.Manifest
 	_, err := bpManifest.ReadFrom(bytes.NewReader(entry.GetDataBytes()))
@@ -15,4 +15,15 @@ func (entry *EntryBootPolicyManifestRecord) ParseData() (*bootpolicy.Manifest, e
 		return nil, fmt.Errorf("failed to parse KeyManifest, err: %v", err)
 	}
 	return &bpManifest, nil
+}
+
+// ParseBootPolicyManifest returns a boot policy manifest if it was able to
+// parse one.
+func (table Table) ParseBootPolicyManifest(firmware []byte) (*bootpolicy.Manifest, error) {
+	hdr := table.First(EntryTypeBootPolicyManifest)
+	if hdr == nil {
+		return nil, ErrNotFound{}
+	}
+
+	return hdr.GetEntry(firmware).(*EntryBootPolicyManifestRecord).ParseData()
 }
