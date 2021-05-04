@@ -22,6 +22,16 @@ func (table Table) GetEntries(firmware []byte) (result []Entry) {
 	return
 }
 
+// First returns the first entry headers with selected entry type
+func (table Table) First(entryType EntryType) *EntryHeaders {
+	for idx, headers := range table {
+		if headers.Type() == entryType {
+			return &table[idx]
+		}
+	}
+	return nil
+}
+
 // ParseEntryHeadersFrom parses a single entry headers entry.
 func ParseEntryHeadersFrom(r io.Reader) (*EntryHeaders, error) {
 	entryHeaders := EntryHeaders{}
