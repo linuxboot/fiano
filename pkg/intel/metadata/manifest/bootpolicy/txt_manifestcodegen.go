@@ -31,6 +31,8 @@ func NewTXT() *TXT {
 	copy(s.StructInfo.ID[:], []byte(StructureIDTXT))
 	s.StructInfo.Version = 0x21
 	// Set through tag "default":
+	s.SInitMinSVNAuth = 0
+	// Set through tag "default":
 	s.PTTCMOSOffset0 = 126
 	// Set through tag "default":
 	s.PTTCMOSOffset1 = 127
