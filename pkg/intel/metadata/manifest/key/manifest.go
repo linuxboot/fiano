@@ -3,6 +3,7 @@
 package key
 
 import (
+	"bytes"
 	"crypto"
 	"fmt"
 
@@ -53,6 +54,43 @@ func (m *Manifest) SetSignature(
 		return fmt.Errorf("unable to set the signature: %w", err)
 	}
 	m.PubKeyHashAlg = m.KeyAndSignature.Signature.HashAlg
+
+	return nil
+}
+
+func (m *Manifest) ValidateBPMKey(bpmKS manifest.KeySignature) error {
+	hashCount := 0
+	for _, hashEntry := range m.Hash {
+		if !hashEntry.Usage.IsSet(UsageBPMSigningPKD) {
+			continue
+		}
+
+		h, err := hashEntry.Digest.HashAlg.Hash()
+		if err != nil {
+			return fmt.Errorf("invalid hash algo %v: %w", hashEntry.Digest.HashAlg, err)
+		}
+
+		if len(hashEntry.Digest.HashBuffer) != h.Size() {
+			return fmt.Errorf("invalid hash lenght: actual:%d expected:%d", len(hashEntry.Digest.HashBuffer), h.Size())
+		}
+
+		switch bpmKS.Key.KeyAlg {
+		case manifest.AlgRSA:
+			h.Write(bpmKS.Key.Data[4:])
+		default:
+			return fmt.Errorf("unsupported key algorithm: %v", bpmKS.Key.KeyAlg)
+		}
+		digest := h.Sum(nil)
+
+		if bytes.Compare(hashEntry.Digest.HashBuffer, digest) != 0 {
+			return fmt.Errorf("BPM key hash does not match the one in KM: actual:%X != in-KM:%X (hash algo: %v)", digest, hashEntry.Digest.HashBuffer, hashEntry.Digest.HashAlg)
+		}
+		hashCount++
+	}
+
+	if hashCount == 0 {
+		return fmt.Errorf("no hash of BPM's key was found in KM")
+	}
 
 	return nil
 }
