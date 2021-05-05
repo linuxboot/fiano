@@ -168,7 +168,7 @@ func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, signedData []byte) err
 	}
 	err := rsa.VerifyPSS(pk, crypto.SHA256, hash, s, &pss)
 	if err != nil {
-		return fmt.Errorf("data was not signed by the key: %w", err)
+		return fmt.Errorf("signature does not correspond to the pub key: %w", err)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, signedData []byte) err
 
 	err := rsa.VerifyPKCS1v15(pk, crypto.SHA256, hash, s)
 	if err != nil {
-		return fmt.Errorf("data was not signed by the key: %w", err)
+		return fmt.Errorf("signature does not correspond to the pub key: %w", err)
 	}
 
 	return nil
