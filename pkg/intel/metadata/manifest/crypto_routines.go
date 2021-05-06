@@ -4,14 +4,13 @@ package manifest
 
 import (
 	"crypto"
-	"fmt"
-	"hash"
-	"strings"
-
 	// Required for hash.Hash return in hashInfo struct
 	_ "crypto/sha1"
 	_ "crypto/sha256"
 	_ "crypto/sha512"
+	"fmt"
+	"hash"
+	"strings"
 
 	"github.com/tjfoc/gmsm/sm3"
 )
@@ -41,14 +40,14 @@ const (
 )
 
 var hashInfo = []struct {
-	alg  Algorithm
-	hash hash.Hash
+	alg         Algorithm
+	hashFactory func() hash.Hash
 }{
-	{AlgSHA1, crypto.SHA1.New()},
-	{AlgSHA256, crypto.SHA256.New()},
-	{AlgSHA384, crypto.SHA384.New()},
-	{AlgSHA512, crypto.SHA512.New()},
-	{AlgSM3_256, sm3.New()},
+	{AlgSHA1, crypto.SHA1.New},
+	{AlgSHA256, crypto.SHA256.New},
+	{AlgSHA384, crypto.SHA384.New},
+	{AlgSHA512, crypto.SHA512.New},
+	{AlgSM3_256, sm3.New},
 }
 
 // IsNull returns true if a is AlgNull or zero (unset).
@@ -61,10 +60,10 @@ func (a Algorithm) IsNull() bool {
 func (a Algorithm) Hash() (hash.Hash, error) {
 	for _, info := range hashInfo {
 		if info.alg == a {
-			if info.hash == nil {
+			if info.hashFactory == nil {
 				return nil, fmt.Errorf("go hash algorithm #%snot available", info.alg.String())
 			}
-			return info.hash, nil
+			return info.hashFactory(), nil
 		}
 	}
 	return nil, fmt.Errorf("hash algorithm not supported: %s", a.String())
