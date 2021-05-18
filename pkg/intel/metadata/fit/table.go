@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/9elements/converged-security-suite/v2/pkg/check"
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/fit/consts"
@@ -20,6 +21,27 @@ func (table Table) GetEntries(firmware []byte) (result []Entry) {
 		result = append(result, headers.GetEntry(firmware))
 	}
 	return
+}
+
+// String prints the fit table in a tabular form
+func (table Table) String() string {
+	var s strings.Builder
+	// PrintFit prints the Firmware Interface Table in a tabular human readable form.
+	s.WriteString("Firmware Interface Table\n")
+	s.WriteString("------------------------\n")
+	fmt.Fprintf(&s, "%-25s | %-20s | %-8s | %-10s | %-15s | %-10s\n", "Type", "Address", "Size", "Version", "Checksum valid", "Checksum")
+	s.WriteString("-----------------------------------------------------------------------------------------------------\n")
+	for _, entry := range table {
+		fmt.Fprintf(&s, "%-25s | %-20s | %-8d | %-10s | %-15v | %-10d\n",
+			entry.Type().String(),
+			entry.Address.String(),
+			entry.Size.Uint32(),
+			entry.Version.String(),
+			entry.IsChecksumValid(),
+			entry.Checksum)
+	}
+	s.WriteString("\n")
+	return s.String()
 }
 
 // First returns the first entry headers with selected entry type
