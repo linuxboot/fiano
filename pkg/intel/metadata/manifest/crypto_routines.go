@@ -103,3 +103,35 @@ func (a Algorithm) String() string {
 	}
 	return s.String()
 }
+
+func GetAlgFromString(name string) (Algorithm, error) {
+	n := strings.ToUpper(name)
+	switch n {
+	case "ALGUNKNOWN":
+		return AlgUnknown, nil
+	case "RSA":
+		return AlgRSA, nil
+	case "SHA1":
+		return AlgSHA1, nil
+	case "SHA256":
+		return AlgSHA256, nil
+	case "SHA384":
+		return AlgSHA384, nil
+	case "SM3":
+		return AlgSM3, nil
+	case "ALGNULL":
+		return AlgNull, nil
+	case "RSASSA":
+		return AlgRSASSA, nil
+	case "RSAPSS":
+		return AlgRSAPSS, nil
+	case "ECDSA":
+		return AlgECDSA, nil
+	case "ECC":
+		return AlgECC, nil
+	case "SM2":
+		return AlgSM2, nil
+	default:
+		return AlgNull, fmt.Errorf("Algorihm name provided unknown")
+	}
+}
