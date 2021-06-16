@@ -202,6 +202,11 @@ func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
 			}
 			hash.Write(buf.Bytes())
 			fmt.Printf("   Key Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
+			// On SKL and KBL the exponent is not included in the KM hash
+			buf.Truncate(len(k.Data[4:]))
+			hash.Reset()
+			hash.Write(buf.Bytes())
+			fmt.Printf("   Key Manifest Pubkey Hash (Skylake and Kabylake only): 0x%x\n", hash.Sum(nil))
 		} else {
 			fmt.Printf("   Key Manifest Pubkey Hash: Unsupported Algorithm\n")
 		}
