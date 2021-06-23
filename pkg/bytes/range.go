@@ -38,6 +38,49 @@ func (r Range) Intersect(cmp Range) bool {
 	return true
 }
 
+// End returns the first offset after the range.
+func (r Range) End() uint64 {
+	return r.Offset + r.Length
+}
+
+// Exclude returns the parts of the range, which excludes the selected ones.
+func (r Range) Exclude(_toExcludes ...Range) Ranges {
+	toExcludes := Ranges(_toExcludes)
+	toExcludes.SortAndMerge()
+
+	var result Ranges
+	curStart := r.Offset
+	curEnd := r.End()
+	for _, toExclude := range toExcludes {
+		excStart := toExclude.Offset
+		excEnd := toExclude.End()
+		if excEnd <= curStart {
+			continue
+		}
+		if excStart >= curEnd {
+			continue
+		}
+
+		if curStart < excStart {
+			result = append(result, Range{
+				Offset: curStart,
+				Length: excStart - curStart,
+			})
+		}
+
+		curStart = excEnd
+		if curStart >= curEnd {
+			return result
+		}
+	}
+
+	result = append(result, Range{
+		Offset: curStart,
+		Length: curEnd - curStart,
+	})
+	return result
+}
+
 // Ranges is a helper to manipulate multiple `Range`-s at once
 type Ranges []Range
 

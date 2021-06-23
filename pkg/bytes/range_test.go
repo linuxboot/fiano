@@ -108,3 +108,182 @@ func TestRangesSortAndMerge(t *testing.T) {
 		}, entries)
 	})
 }
+
+func TestRangeExclude(t *testing.T) {
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 0,
+				Length: 1,
+			},
+			Range{
+				Offset: 2,
+				Length: 3,
+			},
+			Range{
+				Offset: 6,
+				Length: 4,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 1,
+				Length: 1,
+			},
+			Range{
+				Offset: 5,
+				Length: 1,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 1,
+				Length: 9,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 0,
+				Length: 1,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 0,
+				Length: 9,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 9,
+				Length: 1,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 11,
+				Length: 9,
+			},
+		},
+		Range{
+			Offset: 10,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 9,
+				Length: 2,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 0,
+				Length: 9,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 9,
+				Length: 2,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 0,
+				Length: 10,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 10,
+				Length: 10,
+			},
+		},
+		Range{
+			Offset: 10,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 0,
+				Length: 10,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges{
+			Range{
+				Offset: 0,
+				Length: 10,
+			},
+		},
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 10,
+				Length: 10,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges(nil),
+		Range{
+			Offset: 0,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 0,
+				Length: 10,
+			},
+		),
+	)
+
+	require.Equal(t,
+		Ranges(nil),
+		Range{
+			Offset: 10,
+			Length: 10,
+		}.Exclude(
+			Range{
+				Offset: 0,
+				Length: 30,
+			},
+		),
+	)
+}
