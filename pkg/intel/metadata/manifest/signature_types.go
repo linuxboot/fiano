@@ -11,7 +11,7 @@ import (
 	"github.com/tjfoc/gmsm/sm2"
 )
 
-var SM2UID = []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
+var sm2UID = []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
 
 // NewSignatureData returns an implementation of SignatureDataInterface,
 // accordingly to signAlgo, privKey and signedData.
@@ -85,7 +85,7 @@ func NewSignatureData(
 		}
 		var data SignatureSM2
 		var err error
-		data.R, data.S, err = sm2.Sm2Sign(eccPrivateKey, signedData, SM2UID, RandReader)
+		data.R, data.S, err = sm2.Sm2Sign(eccPrivateKey, signedData, sm2UID, RandReader)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with SM2 the data: %w", err)
 		}
@@ -159,7 +159,9 @@ func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, signedData []byte) err
 		return fmt.Errorf("expected public key of type %T, but received %T", pk, pkIface)
 	}
 	h := sha256.New()
-	h.Write(signedData)
+	if _, err := h.Write(signedData); err != nil {
+		return fmt.Errorf("unable to hash the data: %w", err)
+	}
 	hash := h.Sum(nil)
 
 	pss := rsa.PSSOptions{
@@ -189,7 +191,9 @@ func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, signedData []byte) err
 	}
 
 	h := sha256.New()
-	h.Write(signedData)
+	if _, err := h.Write(signedData); err != nil {
+		return fmt.Errorf("unable to hash the data: %w", err)
+	}
 	hash := h.Sum(nil)
 
 	err := rsa.VerifyPKCS1v15(pk, crypto.SHA256, hash, s)

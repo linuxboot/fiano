@@ -9,6 +9,7 @@ import (
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
 )
 
+// TXT is the TXT element
 type TXT struct {
 	StructInfo      `id:"__TXTS__" version:"0x21" var0:"0" var1:"uint16(s.TotalSize())"`
 	Reserved0       [1]byte          `require:"0" json:"txtReserved0,omitempty"`
