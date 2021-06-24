@@ -100,7 +100,7 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface, hashAlgo Algo
 	case SignatureSM2:
 		m.SigScheme = AlgSM2
 		if hashAlgo.IsNull() {
-			m.HashAlg = AlgSM3_256
+			m.HashAlg = AlgSM3
 		} else {
 			m.HashAlg = hashAlgo
 		}

@@ -16,7 +16,7 @@ import (
 func ParseChipsetACModuleInformation(r io.Reader) (int64, ChipsetACModuleInformationV5, error) {
 	var result ChipsetACModuleInformationV5
 	total, err := result.Base.ReadFrom(r)
-	if bytes.Compare(result.Base.UUID[:], chipsetACModuleInformationSignature) != 0 {
+	if !bytes.Equal(result.Base.UUID[:], chipsetACModuleInformationSignature) {
 		return 0, ChipsetACModuleInformationV5{}, fmt.Errorf(
 			"incorrect UUID [%x], expected: [%x]", result.Base.UUID, chipsetACModuleInformationSignature)
 	}

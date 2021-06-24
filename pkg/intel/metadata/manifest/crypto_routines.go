@@ -15,14 +15,10 @@ import (
 	"github.com/tjfoc/gmsm/sm3"
 )
 
-// MAX_DIGEST_BUFFER is the maximum size of []byte request or response fields.
-// Typically used for chunking of big blobs of data (such as for hashing or
-// encryption).
-const maxDigestBuffer = 1024
-
 // Algorithm represents a crypto algorithm value.
 type Algorithm uint16
 
+// Supported algorithms
 const (
 	AlgUnknown Algorithm = 0x0000
 	AlgRSA     Algorithm = 0x0001
@@ -31,7 +27,7 @@ const (
 	AlgSHA384  Algorithm = 0x000C
 	AlgSHA512  Algorithm = 0x000D
 	AlgNull    Algorithm = 0x0010
-	AlgSM3_256 Algorithm = 0x0012
+	AlgSM3     Algorithm = 0x0012
 	AlgRSASSA  Algorithm = 0x0014
 	AlgRSAPSS  Algorithm = 0x0016
 	AlgECDSA   Algorithm = 0x0018
@@ -47,7 +43,7 @@ var hashInfo = []struct {
 	{AlgSHA256, crypto.SHA256.New},
 	{AlgSHA384, crypto.SHA384.New},
 	{AlgSHA512, crypto.SHA512.New},
-	{AlgSM3_256, sm3.New},
+	{AlgSM3, sm3.New},
 }
 
 // IsNull returns true if a is AlgNull or zero (unset).
@@ -85,7 +81,7 @@ func (a Algorithm) String() string {
 		_, err = s.WriteString("SHA384")
 	case AlgSHA512:
 		_, err = s.WriteString("SHA512")
-	case AlgSM3_256:
+	case AlgSM3:
 		_, err = s.WriteString("SM3_256")
 	case AlgNull:
 		_, err = s.WriteString("AlgNull")

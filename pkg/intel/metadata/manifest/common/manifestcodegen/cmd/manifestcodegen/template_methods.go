@@ -102,7 +102,7 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 		if err != nil {
 			return fmt.Errorf("unable to read file '%s'", generatedFile)
 		}
-		if bytes.Compare(b0, b1) != 0 {
+		if !bytes.Equal(b0, b1) {
 			return fmt.Errorf("file '%s' is not up-to-date; please run command: "+
 				"go run github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/cmd/manifestcodegen %s",
 				generatedFile, file.Package.Path())
