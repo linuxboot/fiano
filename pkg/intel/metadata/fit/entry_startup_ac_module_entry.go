@@ -84,7 +84,7 @@ type ACFlags uint16
 // ACModuleVendor defines the module vendor identifier
 type ACModuleVendor uint32
 
-// BCDDate is a date in format ("year.month.day").
+// BCDDate is a date in format ("year.month.day")
 type BCDDate uint32
 
 // SizeM4 is a size in multiples of four bytes
@@ -126,8 +126,6 @@ type SegSel uint32
 // EntryPoint is the authenticated code entry point offset (bytes)
 type EntryPoint uint32
 
-type SACMFieldOffset uint32
-
 // EntrySACMDataCommon is the common part from the beginning of a startup AC module
 // entry of any version.
 type EntrySACMDataCommon struct {
@@ -153,37 +151,88 @@ type EntrySACMDataCommon struct {
 	ScratchSize     SizeM4
 }
 
+// GetModuleType returns the type of AC module
 func (entryData *EntrySACMDataCommon) GetModuleType() ACModuleType { return entryData.ModuleType }
+
+// GetModuleSubType returns the subtype of AC module (0 - TXT ACM; 1 - S-ACM)
 func (entryData *EntrySACMDataCommon) GetModuleSubType() ACModuleSubType {
 	return entryData.ModuleSubType
 }
+
+// GetHeaderLen returns HeaderLen field value
 func (entryData *EntrySACMDataCommon) GetHeaderLen() SizeM4 { return entryData.HeaderLen }
+
+// GetHeaderVersion returns module format version:
+// * 0.0 – for SINIT ACM before 2017
+// * 3.0 – for SINIT ACM of converge of BtG and TXT
 func (entryData *EntrySACMDataCommon) GetHeaderVersion() ACModuleHeaderVersion {
 	return entryData.HeaderVersion
 }
-func (entryData *EntrySACMDataCommon) GetChipsetID() ACChipsetID       { return entryData.ChipsetID }
-func (entryData *EntrySACMDataCommon) GetFlags() ACFlags               { return entryData.Flags }
+
+// GetChipsetID returns ChipsetID field value
+func (entryData *EntrySACMDataCommon) GetChipsetID() ACChipsetID { return entryData.ChipsetID }
+
+// GetFlags returns Flags field value (the module-specific flags)
+func (entryData *EntrySACMDataCommon) GetFlags() ACFlags { return entryData.Flags }
+
+// GetModuleVendor returns ModuleVendor field value
 func (entryData *EntrySACMDataCommon) GetModuleVendor() ACModuleVendor { return entryData.ModuleVendor }
-func (entryData *EntrySACMDataCommon) GetDate() BCDDate                { return entryData.Date }
-func (entryData *EntrySACMDataCommon) GetSize() SizeM4                 { return entryData.Size }
-func (entryData *EntrySACMDataCommon) GetTXTSVN() TXTSVN               { return entryData.TXTSVN }
-func (entryData *EntrySACMDataCommon) GetSESVN() SESVN                 { return entryData.SESVN }
-func (entryData *EntrySACMDataCommon) GetCodeControl() CodeControl     { return entryData.CodeControl }
+
+// GetDate returns Date field value ("year.month.day")
+func (entryData *EntrySACMDataCommon) GetDate() BCDDate { return entryData.Date }
+
+// GetSize returns Size field value (the size in multiples of four bytes)
+func (entryData *EntrySACMDataCommon) GetSize() SizeM4 { return entryData.Size }
+
+// GetTXTSVN returns TXT security version number
+func (entryData *EntrySACMDataCommon) GetTXTSVN() TXTSVN { return entryData.TXTSVN }
+
+// GetSESVN returns Software Guard Extensions (Secure Enclaves) Security Version Number
+func (entryData *EntrySACMDataCommon) GetSESVN() SESVN { return entryData.SESVN }
+
+// GetCodeControl returns the authenticated code control flags
+func (entryData *EntrySACMDataCommon) GetCodeControl() CodeControl { return entryData.CodeControl }
+
+// GetErrorEntryPoint returns error entry point field value
 func (entryData *EntrySACMDataCommon) GetErrorEntryPoint() ErrorEntryPoint {
 	return entryData.ErrorEntryPoint
 }
-func (entryData *EntrySACMDataCommon) GetGDTLimit() GDTLimit       { return entryData.GDTLimit }
-func (entryData *EntrySACMDataCommon) GetGDTBasePtr() GDTBasePtr   { return entryData.GDTBasePtr }
-func (entryData *EntrySACMDataCommon) GetSegSel() SegSel           { return entryData.SegSel }
-func (entryData *EntrySACMDataCommon) GetEntryPoint() EntryPoint   { return entryData.EntryPoint }
-func (entryData *EntrySACMDataCommon) GetReserved2() [64]byte      { return entryData.Reserved2 }
-func (entryData *EntrySACMDataCommon) GetKeySize() SizeM4          { return entryData.KeySize }
-func (entryData *EntrySACMDataCommon) GetScratchSize() SizeM4      { return entryData.ScratchSize }
+
+// GetGDTLimit returns GDTLimit field value
+func (entryData *EntrySACMDataCommon) GetGDTLimit() GDTLimit { return entryData.GDTLimit }
+
+// GetGDTBasePtr returns the GDT base pointer offset (bytes)
+func (entryData *EntrySACMDataCommon) GetGDTBasePtr() GDTBasePtr { return entryData.GDTBasePtr }
+
+// GetSegSel the segment selector initializer
+func (entryData *EntrySACMDataCommon) GetSegSel() SegSel { return entryData.SegSel }
+
+// GetEntryPoint returns the authenticated code entry point offset (bytes)
+func (entryData *EntrySACMDataCommon) GetEntryPoint() EntryPoint { return entryData.EntryPoint }
+
+// GetReserved2 returns the Reserved2 field value
+func (entryData *EntrySACMDataCommon) GetReserved2() [64]byte { return entryData.Reserved2 }
+
+// GetKeySize returns the KeySize field value (the size in multiples of four bytes)
+func (entryData *EntrySACMDataCommon) GetKeySize() SizeM4 { return entryData.KeySize }
+
+// GetScratchSize returns the ScratchSize field value (the size in multiples of four bytes)
+func (entryData *EntrySACMDataCommon) GetScratchSize() SizeM4 { return entryData.ScratchSize }
+
+// GetRSAPubKey returns the RSA public key
 func (entryData *EntrySACMDataCommon) GetRSAPubKey() rsa.PublicKey { return rsa.PublicKey{} }
-func (entryData *EntrySACMDataCommon) GetRSAPubExp() uint32        { return 0 }
-func (entryData *EntrySACMDataCommon) GetRSASig() []byte           { return nil }
-func (entryData *EntrySACMDataCommon) RSASigBinaryOffset() uint64  { return 0 }
-func (entryData *EntrySACMDataCommon) GetScratch() []byte          { return nil }
+
+// GetRSAPubExp returns the RSA exponent
+func (entryData *EntrySACMDataCommon) GetRSAPubExp() uint32 { return 0 }
+
+// GetRSASig returns the RSA signature.
+func (entryData *EntrySACMDataCommon) GetRSASig() []byte { return nil }
+
+// RSASigBinaryOffset returns the RSA signature offset
+func (entryData *EntrySACMDataCommon) RSASigBinaryOffset() uint64 { return 0 }
+
+// GetScratch returns the Scratch field value
+func (entryData *EntrySACMDataCommon) GetScratch() []byte { return nil }
 
 // HeaderVersionBinaryOffset returns the offset of the field 'HeaderVersion'
 // relatively to the beginning of the structure in the binary
@@ -220,6 +269,7 @@ func (entryData EntrySACMDataCommon) KeySizeBinaryOffset() uint {
 	return 120
 }
 
+// EntrySACMData0 is the structure for ACM of version 0.0.
 type EntrySACMData0 struct {
 	EntrySACMDataCommon
 
@@ -231,6 +281,7 @@ type EntrySACMData0 struct {
 
 var entrySACMData0Size = uint(binary.Size(EntrySACMData0{}))
 
+// GetRSAPubKey returns the RSA public key
 func (entryData *EntrySACMData0) GetRSAPubKey() rsa.PublicKey {
 	pubKey := rsa.PublicKey{
 		N: big.NewInt(0),
@@ -239,17 +290,26 @@ func (entryData *EntrySACMData0) GetRSAPubKey() rsa.PublicKey {
 	pubKey.N.SetBytes(entryData.RSAPubKey[:])
 	return pubKey
 }
+
+// GetRSAPubExp returns the RSA exponent
 func (entryData *EntrySACMData0) GetRSAPubExp() uint32 {
 	return binary.LittleEndian.Uint32(entryData.RSAPubExp[:])
 }
+
+// GetRSASig returns the RSA signature.
 func (entryData *EntrySACMData0) GetRSASig() []byte { return entryData.RSASig[:] }
+
+// RSASigBinaryOffset returns the RSA signature offset
 func (entryData *EntrySACMData0) RSASigBinaryOffset() uint64 {
 	return uint64(binary.Size(entryData.EntrySACMDataCommon)) +
 		uint64(binary.Size(entryData.RSAPubKey)) +
 		uint64(binary.Size(entryData.RSAPubExp))
 }
+
+// GetScratch returns the Scratch field value
 func (entryData *EntrySACMData0) GetScratch() []byte { return entryData.Scratch[:] }
 
+// EntrySACMData3 is the structure for ACM of version 3.0
 type EntrySACMData3 struct {
 	EntrySACMDataCommon
 
@@ -260,6 +320,7 @@ type EntrySACMData3 struct {
 
 var entrySACMData3Size = uint(binary.Size(EntrySACMData3{}))
 
+// GetRSAPubKey returns the RSA public key
 func (entryData *EntrySACMData3) GetRSAPubKey() rsa.PublicKey {
 	pubKey := rsa.PublicKey{
 		N: big.NewInt(0),
@@ -268,19 +329,27 @@ func (entryData *EntrySACMData3) GetRSAPubKey() rsa.PublicKey {
 	pubKey.N.SetBytes(entryData.RSAPubKey[:])
 	return pubKey
 }
+
+// GetRSASig returns the RSA signature.
 func (entryData *EntrySACMData3) GetRSASig() []byte { return entryData.RSASig[:] }
+
+// RSASigBinaryOffset returns the RSA signature offset
 func (entryData *EntrySACMData3) RSASigBinaryOffset() uint64 {
 	return uint64(binary.Size(entryData.EntrySACMDataCommon)) +
 		uint64(binary.Size(entryData.RSAPubKey))
 }
+
+// GetScratch returns the Scratch field value
 func (entryData *EntrySACMData3) GetScratch() []byte { return entryData.Scratch[:] }
 
+// EntrySACMData combines the structure for ACM and the user area.
 type EntrySACMData struct {
 	EntrySACMDataInterface
 
 	UserArea []byte
 }
 
+// GetCommon returns the common part of the structures for different ACM versions.
 func (entryData *EntrySACMData) GetCommon() *EntrySACMDataCommon {
 	if entryData == nil {
 		return nil
@@ -296,6 +365,7 @@ func (entryData *EntrySACMData) GetCommon() *EntrySACMDataCommon {
 	return nil
 }
 
+// EntrySACMParseSizeFrom parses SACM structure size
 func EntrySACMParseSizeFrom(r io.ReadSeeker, offset uint64) (uint32, error) {
 	sizeFieldLocalOffset := EntrySACMDataCommon{}.SizeBinaryOffset()
 	sizeFieldOffset := int64(offset) + int64(sizeFieldLocalOffset)
@@ -311,6 +381,7 @@ func EntrySACMParseSizeFrom(r io.ReadSeeker, offset uint64) (uint32, error) {
 	return result << 2, nil
 }
 
+// EntrySACMParseSize parses SACM structure size
 func EntrySACMParseSize(b []byte) (uint32, error) {
 	sizeFieldOffset := EntrySACMDataCommon{}.SizeBinaryOffset()
 	if int(sizeFieldOffset) >= len(b)-4 {
@@ -319,6 +390,7 @@ func EntrySACMParseSize(b []byte) (uint32, error) {
 	return binary.LittleEndian.Uint32(b[sizeFieldOffset:]) << 2, nil
 }
 
+// ParseData parses SACM entry and returns EntrySACMData.
 func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 	common := EntrySACMDataCommon{}
 	if err := binary.Read(bytes.NewReader(entry.DataBytes), binary.LittleEndian, &common); err != nil {
@@ -365,6 +437,7 @@ type entrySACMJSON struct {
 	DataParseError error
 }
 
+// MarshalJSON implements json.Marshaler
 func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
 	result := entrySACMJSON{}
 	result.Headers = entry.Headers
@@ -375,6 +448,7 @@ func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&result)
 }
 
+// UnmarshalJSON implements json.Unmarshaller
 func (entry *EntrySACM) UnmarshalJSON(b []byte) error {
 	result := entrySACMJSON{}
 	err := json.Unmarshal(b, &result)
