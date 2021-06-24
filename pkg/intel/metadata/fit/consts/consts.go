@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	// BasePhysAddr is the physical memory address where the mapped image ends.
 	BasePhysAddr = uefiConsts.BasePhysAddr
 
 	// FITPointerOffset is the offset of the physical address of the FIT pointer.

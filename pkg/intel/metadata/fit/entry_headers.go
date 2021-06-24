@@ -40,6 +40,7 @@ type EntryHeaders struct {
 	Checksum uint8 `json:",omitempty"`
 }
 
+// GoString implements fmt.GoStringer.
 func (hdr *EntryHeaders) GoString() string {
 	var result strings.Builder
 	result.WriteString(fmt.Sprintf("   Address: 0x%x\n", hdr.Address.Pointer()))
@@ -182,11 +183,12 @@ func (f *TypeAndIsChecksumValid) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// GetEntry returns a full entry (headers + data).
+// GetEntry returns a full entry (headers + data)
 func (hdr EntryHeaders) GetEntry(firmware []byte) Entry {
 	return hdr.newEntryFromBytes(firmware)
 }
 
+// GetEntryFrom returns a full entry (headers + data)
 func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker, firmwareLength uint64) Entry {
 	return hdr.newEntryFromReader(firmware, firmwareLength)
 }
@@ -339,8 +341,8 @@ func (hdr *EntryHeaders) newEntryFromBase(entryBase EntryBase) Entry {
 		return &EntryCSESecureBoot{entryBase}
 	case EntryTypeFeaturePolicyDeliveryRecord:
 		return &EntryFeaturePolicyDeliveryRecord{entryBase}
-	case EntryTypeJMP_DebugPolicy:
-		return &EntryJMP_DebugPolicy{entryBase}
+	case EntryTypeJMPDebugPolicy:
+		return &EntryJMPDebugPolicy{entryBase}
 	case EntryTypeSkip:
 		return &EntrySkip{entryBase}
 	default:

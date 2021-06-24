@@ -117,9 +117,8 @@ type EntryCSESecureBoot struct{ EntryBase }
 // EntryFeaturePolicyDeliveryRecord represents a FIT entry of type "Feature Policy Delivery Record" (0x2D)
 type EntryFeaturePolicyDeliveryRecord struct{ EntryBase }
 
-// EntryJMP_DebugPolicy represents a FIT entry of type "JMP $ Debug Policy" (0x2F)
-//noinspection GoSnakeCaseUsage
-type EntryJMP_DebugPolicy struct{ EntryBase }
+// EntryJMPDebugPolicy represents a FIT entry of type "JMP $ Debug Policy" (0x2F)
+type EntryJMPDebugPolicy struct{ EntryBase }
 
 // EntrySkip represents a FIT entry of type "Unused Entry (skip)" (0x7F)
 type EntrySkip struct{ EntryBase }
