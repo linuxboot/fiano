@@ -76,13 +76,15 @@ func (m *Manifest) ValidateBPMKey(bpmKS manifest.KeySignature) error {
 
 		switch bpmKS.Key.KeyAlg {
 		case manifest.AlgRSA:
-			h.Write(bpmKS.Key.Data[4:])
+			if _, err := h.Write(bpmKS.Key.Data[4:]); err != nil {
+				return fmt.Errorf("unable to hash: %w", err)
+			}
 		default:
 			return fmt.Errorf("unsupported key algorithm: %v", bpmKS.Key.KeyAlg)
 		}
 		digest := h.Sum(nil)
 
-		if bytes.Compare(hashEntry.Digest.HashBuffer, digest) != 0 {
+		if !bytes.Equal(hashEntry.Digest.HashBuffer, digest) {
 			return fmt.Errorf("BPM key hash does not match the one in KM: actual:%X != in-KM:%X (hash algo: %v)", digest, hashEntry.Digest.HashBuffer, hashEntry.Digest.HashAlg)
 		}
 		hashCount++

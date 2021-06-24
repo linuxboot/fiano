@@ -163,7 +163,7 @@ func (_ {{ $struct.Name }}) fieldNameByIndex(fieldIndex int) string {
 }
 
 // ReadFrom reads the {{ $struct.Name }} from 'r' in format defined in the document #575623.
-func (s *{{ $struct.Name }}) ReadFrom(r io.Reader) (int64, error) {
+func (s *{{ $struct.Name }}) ReadFrom(r io.Reader) (returnN int64, returnErr error) {
 	var missingFieldsByIndices = [{{ len $struct.Fields }}]bool{
  {{- range $index, $field := $struct.Fields }}
   {{- if and (not $field.IsSlice) (not $field.IsPointer) }}
@@ -171,6 +171,17 @@ func (s *{{ $struct.Name }}) ReadFrom(r io.Reader) (int64, error) {
   {{- end }}
  {{- end }}
 	}
+	defer func() {
+		if returnErr != nil {
+			return
+		}
+		for fieldIndex, v := range missingFieldsByIndices {
+			if v {
+				returnErr = fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
+				break
+			}
+		}
+	}()
 	var totalN int64
 	previousFieldIndex := int(-1)
 	for {
@@ -228,14 +239,6 @@ func (s *{{ $struct.Name }}) ReadFrom(r io.Reader) (int64, error) {
 		totalN += n
 		previousFieldIndex = fieldIndex
 	}
-
-	for fieldIndex, v := range missingFieldsByIndices {
-		if v {
-			return totalN, fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
-		}
-	}
-
-	return totalN, nil
 }
 
 {{- else }}
