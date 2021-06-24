@@ -13,6 +13,7 @@ var (
 	binaryOrder = binary.LittleEndian
 )
 
+// StructInfo is the common part of any structure of a manifest
 type StructInfo struct {
 	ID          StructureID `json:"StructInfoID"`
 	Version     uint8       `json:"StructInfoVersion"`
@@ -20,10 +21,14 @@ type StructInfo struct {
 	ElementSize uint16      `json:"StructInfoElementSize"`
 }
 
+// StructInfo just returns StructInfo, it is a handy method if StructInfo
+// is included anonymously to another type.
 func (s StructInfo) StructInfo() StructInfo {
 	return s
 }
 
+// StructureID is the magic ID string used to identify the structure type
+// in the manifest
 type StructureID [8]byte
 
 // String returns the ID as a string.
@@ -31,6 +36,7 @@ func (s StructureID) String() string {
 	return string(s[:])
 }
 
+// Structure is an abstraction of a structure of a manifest.
 type Structure interface {
 	io.ReaderFrom
 	io.WriterTo
@@ -39,6 +45,7 @@ type Structure interface {
 	PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string
 }
 
+// Element is an abstraction of an element of a manifest.
 type Element interface {
 	Structure
 	ReadDataFrom(r io.Reader) (int64, error)
@@ -46,6 +53,8 @@ type Element interface {
 	SetStructInfo(StructInfo)
 }
 
+// ElementsContainer is an abstraction of set of elements of a manifest (for
+// example: the root structure of BPM).
 type ElementsContainer interface {
 	Structure
 	GetFieldByStructID(structID string) interface{}

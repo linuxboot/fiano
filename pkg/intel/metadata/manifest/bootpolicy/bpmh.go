@@ -6,6 +6,7 @@ import (
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
 )
 
+// BPMH is the header of boot policy manifest
 type BPMH struct {
 	StructInfo `id:"__ACBP__" version:"0x23" var0:"0x20" var1:"uint16(s.TotalSize())"`
 
@@ -13,8 +14,13 @@ type BPMH struct {
 
 	BPMRevision uint8 `json:"bpmhRevision"`
 
+	// BPMSVN is BPM security version number
+	//
 	// PrettyString: BPM SVN
 	BPMSVN manifest.SVN `json:"bpmhSNV"`
+
+	// ACMSVNAuth is authorized ACM security version number
+	//
 	// PrettyString: ACM SVN Auth
 	ACMSVNAuth manifest.SVN `json:"bpmhACMSVN"`
 
