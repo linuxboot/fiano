@@ -6,10 +6,13 @@ import (
 	"fmt"
 )
 
+// EntryTXTPolicyRecordDataInterface is a parsed TXT Policy Record entry
 type EntryTXTPolicyRecordDataInterface interface {
 	IsTXTEnabled() bool
 }
 
+// EntryTXTPolicyRecordDataIndexedIO is a parsed TXT Policy Record entry of
+// version 1.
 type EntryTXTPolicyRecordDataIndexedIO struct {
 	IndexRegisterIOAddress uint16
 	DataRegisterIOAddress  uint16
@@ -18,19 +21,26 @@ type EntryTXTPolicyRecordDataIndexedIO struct {
 	Index                  uint16
 }
 
+// IsTXTEnabled returns true if TXT is enabled.
 func (entryData *EntryTXTPolicyRecordDataIndexedIO) IsTXTEnabled() bool {
 	panic("not implemented")
 }
 
+// EntryTXTPolicyRecordDataFlatPointer is a parsed TXT Policy Record entry
+// of version 0
 type EntryTXTPolicyRecordDataFlatPointer uint64
 
+// TPMPolicyPointer returns the TPM Policy pointer.
 func (entryData EntryTXTPolicyRecordDataFlatPointer) TPMPolicyPointer() uint64 {
 	return uint64(entryData & 0x7fffffffffffffff)
 }
+
+// IsTXTEnabled returns true if TXT is enabled.
 func (entryData EntryTXTPolicyRecordDataFlatPointer) IsTXTEnabled() bool {
 	return entryData&0x8000000000000000 != 0
 }
 
+// Parse parses TXT Policy Record entry
 func (entry *EntryTXTPolicyRecord) Parse() (EntryTXTPolicyRecordDataInterface, error) {
 	switch entry.Headers.Version {
 	case 0:

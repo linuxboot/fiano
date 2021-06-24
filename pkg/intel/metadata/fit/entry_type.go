@@ -18,10 +18,11 @@ const (
 	EntryTypeBootPolicyManifest          = EntryType(0x0C)
 	EntryTypeCSESecureBoot               = EntryType(0x10)
 	EntryTypeFeaturePolicyDeliveryRecord = EntryType(0x2D)
-	EntryTypeJMP_DebugPolicy             = EntryType(0x2F)
+	EntryTypeJMPDebugPolicy              = EntryType(0x2F)
 	EntryTypeSkip                        = EntryType(0x7F)
 )
 
+// String implements fmt.Stringer
 func (_type EntryType) String() string {
 	switch _type {
 	case EntryTypeFITHeaderEntry:
@@ -48,8 +49,8 @@ func (_type EntryType) String() string {
 		return "CSE_SecureBoot"
 	case EntryTypeFeaturePolicyDeliveryRecord:
 		return "feature_policy_delivery_record"
-	case EntryTypeJMP_DebugPolicy:
-		return "JMP__debug_policy"
+	case EntryTypeJMPDebugPolicy:
+		return "JMP_debug_policy"
 	case EntryTypeSkip:
 		return "skip_entry"
 	}
