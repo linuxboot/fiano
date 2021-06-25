@@ -1,6 +1,6 @@
 package manifest
 
-// Firmware is a firmware abstraction
+// Firmware is an abstraction of a firmware image, obtained for example via flashrom
 type Firmware interface {
 	ImageBytes() []byte
 	PhysAddrToOffset(physAddr uint64) uint64

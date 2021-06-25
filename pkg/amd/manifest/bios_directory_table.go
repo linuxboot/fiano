@@ -10,13 +10,14 @@ import (
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
 // Processors (NDA), Publication # 55758 Revision: 1.11 Issue Date: August 2020 (1)
 
-const BIOSDirectoryTableCookie = 0x24424844       // $BHD
-const BIOSDirectoryTableLevel2Cookie = 0x24424c32 // $BL2
+const BIOSDirectoryTableCookie = 0x44484224       // $BHD
+const BIOSDirectoryTableLevel2Cookie = 0x324C4224 // $BL2
 
 type BIOSDirectoryTableEntryType uint8
 
 const (
 	APCBBinaryEntry               BIOSDirectoryTableEntryType = 0x60
+	BIOSRTMVolumeEntry            BIOSDirectoryTableEntryType = 0x62
 	BIOSDirectoryTableLevel2Entry BIOSDirectoryTableEntryType = 0x70
 )
 
@@ -55,7 +56,7 @@ type BIOSDirectoryTable struct {
 func FindBIOSDirectoryTable(firmware Firmware) (*BIOSDirectoryTable, uint64, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(cookieBytes, BIOSDirectoryTableCookie)
+	binary.LittleEndian.PutUint32(cookieBytes, BIOSDirectoryTableCookie)
 
 	image := firmware.ImageBytes()
 
@@ -73,7 +74,7 @@ func FindBIOSDirectoryTable(firmware Firmware) (*BIOSDirectoryTable, uint64, err
 			continue
 		}
 
-		return table, firmware.OffsetToPhysAddr(offset), err
+		return table, offset, err
 	}
 
 	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
@@ -82,7 +83,7 @@ func FindBIOSDirectoryTable(firmware Firmware) (*BIOSDirectoryTable, uint64, err
 // ParseBIOSDirectoryTable converts input bytes into BIOSDirectoryTable
 func ParseBIOSDirectoryTable(r io.Reader) (*BIOSDirectoryTable, error) {
 	var table BIOSDirectoryTable
-	if err := binary.Read(r, binary.BigEndian, &table.BIOSCookie); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &table.BIOSCookie); err != nil {
 		return nil, err
 	}
 	if table.BIOSCookie != BIOSDirectoryTableCookie && table.BIOSCookie != BIOSDirectoryTableLevel2Cookie {
