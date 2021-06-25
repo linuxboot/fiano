@@ -15,11 +15,6 @@ import (
 	"github.com/tjfoc/gmsm/sm3"
 )
 
-// MAX_DIGEST_BUFFER is the maximum size of []byte request or response fields.
-// Typically used for chunking of big blobs of data (such as for hashing or
-// encryption).
-const maxDigestBuffer = 1024
-
 // Algorithm represents a crypto algorithm value.
 type Algorithm uint16
 

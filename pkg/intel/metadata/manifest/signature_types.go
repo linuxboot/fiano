@@ -159,7 +159,9 @@ func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, signedData []byte) err
 		return fmt.Errorf("expected public key of type %T, but received %T", pk, pkIface)
 	}
 	h := sha256.New()
-	h.Write(signedData)
+	if _, err := h.Write(signedData); err != nil {
+		return fmt.Errorf("unable to hash the data: %w", err)
+	}
 	hash := h.Sum(nil)
 
 	pss := rsa.PSSOptions{
@@ -189,7 +191,9 @@ func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, signedData []byte) err
 	}
 
 	h := sha256.New()
-	h.Write(signedData)
+	if _, err := h.Write(signedData); err != nil {
+		return fmt.Errorf("unable to hash the data: %w", err)
+	}
 	hash := h.Sum(nil)
 
 	err := rsa.VerifyPKCS1v15(pk, crypto.SHA256, hash, s)
