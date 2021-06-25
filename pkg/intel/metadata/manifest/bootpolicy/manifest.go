@@ -35,7 +35,6 @@ type Manifest struct {
 	// PME is the platform manufacturer element
 	//
 	// PrettyString: PME: Platform Manufacturer
-
 	PME *PM `json:"bpmPME,omitempty"`
 
 	// PMSE is the signature element
