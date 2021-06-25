@@ -10,13 +10,14 @@ import (
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
 // Processors (NDA), Publication # 55758 Revision: 1.11 Issue Date: August 2020 (1)
 
-const PSPDirectoryTableCookie = 0x24505350       // "$PSP"
-const PSPDirectoryTableLevel2Cookie = 0x24504c32 // $PL2
+const PSPDirectoryTableCookie = 0x50535024       // "$PSP"
+const PSPDirectoryTableLevel2Cookie = 0x324C5024 // "$PL2"
 
 type PSPDirectoryTableEntryType uint8
 
 const (
 	AMDPublicKeyEntry            PSPDirectoryTableEntryType = 0x00
+	PSPBootloaderFirmwareEntry   PSPDirectoryTableEntryType = 0x01
 	BIOSRTMEntry                 PSPDirectoryTableEntryType = 0x07
 	PSPDirectoryTableLevel2Entry PSPDirectoryTableEntryType = 0x40
 )
@@ -31,7 +32,7 @@ type PSPDirectoryTableEntry struct {
 	LocationOrValue uint64
 }
 
-// PSPDirectoryTableEntry represents PSP Directory Table Header with all entries
+// PSPDirectoryTable represents PSP Directory Table Header with all entries
 // Table 3 from (1)
 type PSPDirectoryTable struct {
 	PSPCookie      uint32
@@ -46,7 +47,7 @@ type PSPDirectoryTable struct {
 func FindPSPDirectoryTable(firmware Firmware) (*PSPDirectoryTable, uint64, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(cookieBytes, PSPDirectoryTableCookie)
+	binary.LittleEndian.PutUint32(cookieBytes, PSPDirectoryTableCookie)
 
 	image := firmware.ImageBytes()
 
@@ -73,7 +74,7 @@ func FindPSPDirectoryTable(firmware Firmware) (*PSPDirectoryTable, uint64, error
 // ParsePSPDirectoryTable converts input bytes into PSPDirectoryTable
 func ParsePSPDirectoryTable(r io.Reader) (*PSPDirectoryTable, error) {
 	var table PSPDirectoryTable
-	if err := binary.Read(r, binary.BigEndian, &table.PSPCookie); err != nil {
+	if err := binary.Read(r, binary.LittleEndian, &table.PSPCookie); err != nil {
 		return nil, err
 	}
 	if table.PSPCookie != PSPDirectoryTableCookie && table.PSPCookie != PSPDirectoryTableLevel2Cookie {
