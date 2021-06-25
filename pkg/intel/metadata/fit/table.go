@@ -167,7 +167,7 @@ func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) 
 		err = fmt.Errorf("unable to read the Address value of the FIT header entry: %w", err)
 		return
 	}
-	if bytes.Compare([]byte(consts.FITHeadersMagic), buf.Bytes()) != 0 {
+	if !bytes.Equal([]byte(consts.FITHeadersMagic), buf.Bytes()) {
 		err = &ErrExpectedFITHeadersMagic{Received: buf.Bytes()}
 		return
 	}
