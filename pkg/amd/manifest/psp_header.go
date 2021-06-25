@@ -6,10 +6,13 @@ import (
 	"io"
 )
 
+// PSPBootloaderCookie is a special identifier of a PSP binary
 const PSPBootloaderCookie = 0x31535024 // "$PS1"
 
+// FirmwareVersion represents PSP firmware version
 type FirmwareVersion [4]byte
 
+// String converts FirmwareVersion into a string
 func (v FirmwareVersion) String() string {
 	return fmt.Sprintf("%x.%x.%x.%x", v[3], v[2], v[1], v[0])
 }
@@ -24,6 +27,7 @@ type PSPHeader struct {
 	Reserved3 [156]byte
 }
 
+// ParsePSPHeader parses
 func ParsePSPHeader(r io.Reader) (*PSPHeader, error) {
 	var result PSPHeader
 	if err := binary.Read(r, binary.LittleEndian, &result); err != nil {

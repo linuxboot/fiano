@@ -10,14 +10,20 @@ import (
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
 // Processors (NDA), Publication # 55758 Revision: 1.11 Issue Date: August 2020 (1)
 
-const BIOSDirectoryTableCookie = 0x44484224       // $BHD
+// BIOSDirectoryTableCookie is a special identifier of BIOS Directory table level 1
+const BIOSDirectoryTableCookie = 0x44484224 // $BHD
+// BIOSDirectoryTableLevel2Cookie is a special identifier of BIOS Directory table level 2
 const BIOSDirectoryTableLevel2Cookie = 0x324C4224 // $BL2
 
+// BIOSDirectoryTableEntryType is an entry type of BIOS Directory table
 type BIOSDirectoryTableEntryType uint8
 
 const (
-	APCBBinaryEntry               BIOSDirectoryTableEntryType = 0x60
-	BIOSRTMVolumeEntry            BIOSDirectoryTableEntryType = 0x62
+	// APCBBinaryEntry denotes APCB binary entry in BIOS Directory table
+	APCBBinaryEntry BIOSDirectoryTableEntryType = 0x60
+	// BIOSRTMVolumeEntry denotes BIOS RTM Volume entry in BIOS Directory table
+	BIOSRTMVolumeEntry BIOSDirectoryTableEntryType = 0x62
+	// BIOSDirectoryTableLevel2Entry denotes an entry that points to BIOS Directory table level 2
 	BIOSDirectoryTableLevel2Entry BIOSDirectoryTableEntryType = 0x70
 )
 
@@ -33,7 +39,7 @@ type BIOSDirectoryTableEntry struct {
 	Compressed bool
 	Instance   uint8
 	Subprogram uint8
-	RomId      uint8
+	RomID      uint8
 
 	Size               uint32
 	SourceAddress      uint64
@@ -135,7 +141,7 @@ func ParseBIOSDirectoryTableEntry(r io.Reader) (*BIOSDirectoryTableEntry, error)
 		return nil, err
 	}
 	entry.Subprogram = flags & 7
-	entry.RomId = (flags >> 3) & 0x3
+	entry.RomID = (flags >> 3) & 0x3
 
 	if err := binary.Read(r, binary.LittleEndian, &entry.Size); err != nil {
 		return nil, err
