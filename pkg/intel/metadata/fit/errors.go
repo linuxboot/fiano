@@ -50,5 +50,5 @@ func (err *ErrExpectedFITHeadersMagic) Error() string {
 type ErrNotFound struct{}
 
 func (ErrNotFound) Error() string {
-	return fmt.Sprintf("not found")
+	return "not found"
 }
