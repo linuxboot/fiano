@@ -10,8 +10,10 @@ import (
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
 // Processors (NDA), Publication # 55758 Revision: 1.11 Issue Date: August 2020 (1)
 
+// EmbeddedFirmwareStructureSignature is a special identifier of Firmware Embedded Structure
 const EmbeddedFirmwareStructureSignature = 0x55aa55aa
 
+// EmbeddedFirmwareStructure represents Embedded Firmware Structure defined in Table 2 in (1)
 type EmbeddedFirmwareStructure struct {
 	Signature                uint32
 	Required1                [16]byte
@@ -22,6 +24,7 @@ type EmbeddedFirmwareStructure struct {
 	BIOSDirectoryTableFamily17hModels30h3FhPointer uint32
 }
 
+// FindEmbeddedFirmwareStructure locates and parses Embedded Firmware Structure
 func FindEmbeddedFirmwareStructure(firmware Firmware) (*EmbeddedFirmwareStructure, uint64, error) {
 	var addresses = []uint64{
 		0xfffa0000,
@@ -49,6 +52,7 @@ func FindEmbeddedFirmwareStructure(firmware Firmware) (*EmbeddedFirmwareStructur
 	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
 }
 
+// ParseEmbeddedFirmwareStructure converts input bytes into EmbeddedFirmwareStructure
 func ParseEmbeddedFirmwareStructure(r io.Reader) (*EmbeddedFirmwareStructure, error) {
 	var result EmbeddedFirmwareStructure
 	if err := binary.Read(r, binary.LittleEndian, &result); err != nil {

@@ -10,20 +10,25 @@ import (
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
 // Processors (NDA), Publication # 55758 Revision: 1.11 Issue Date: August 2020 (1)
 
-const PSPDirectoryTableCookie = 0x50535024       // "$PSP"
+// PSPDirectoryTableCookie is a special identifier of PSP Directory table level 1
+const PSPDirectoryTableCookie = 0x50535024 // "$PSP"
+// PSPDirectoryTableLevel2Cookie is a special identifier of PSP Directory table level 2
 const PSPDirectoryTableLevel2Cookie = 0x324C5024 // "$PL2"
 
+// PSPDirectoryTableEntryType is an entry type of PSP Directory table
 type PSPDirectoryTableEntryType uint8
 
 const (
-	AMDPublicKeyEntry            PSPDirectoryTableEntryType = 0x00
-	PSPBootloaderFirmwareEntry   PSPDirectoryTableEntryType = 0x01
-	BIOSRTMEntry                 PSPDirectoryTableEntryType = 0x07
+	// AMDPublicKeyEntry denotes AMD public key entry in PSP Directory table
+	AMDPublicKeyEntry PSPDirectoryTableEntryType = 0x00
+	// PSPBootloaderFirmwareEntry denotes a PSP bootloader firmware entry in PSP Directory table
+	PSPBootloaderFirmwareEntry PSPDirectoryTableEntryType = 0x01
+	// PSPDirectoryTableLevel2Entry denotes an entry that points to PSP Directory table level 2
 	PSPDirectoryTableLevel2Entry PSPDirectoryTableEntryType = 0x40
 )
 
 // PSPDirectoryTableEntry represents a single entry in PSP Directory Table
-// Table 5 from (1)
+// Table 5 in (1)
 type PSPDirectoryTableEntry struct {
 	Type            PSPDirectoryTableEntryType
 	Subprogram      uint8
@@ -33,7 +38,7 @@ type PSPDirectoryTableEntry struct {
 }
 
 // PSPDirectoryTable represents PSP Directory Table Header with all entries
-// Table 3 from (1)
+// Table 3 in (1)
 type PSPDirectoryTable struct {
 	PSPCookie      uint32
 	Checksum       uint32
@@ -43,7 +48,7 @@ type PSPDirectoryTable struct {
 }
 
 // FindPSPDirectoryTable scans firmware for PSPDirectoryTableCookie
-// and treats remaining bytes as BIOSDirectoryTable
+// and treats remaining bytes as PSPDirectoryTable
 func FindPSPDirectoryTable(firmware Firmware) (*PSPDirectoryTable, uint64, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
