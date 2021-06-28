@@ -54,23 +54,26 @@ func (bpm *Manifest) ValidateIBBs(firmware uefi.Firmware) error {
 		return fmt.Errorf("no IBB hashes")
 	}
 
-	for _, digest := range bpm.SE[0].DigestList.List {
-		h, err := digest.HashAlg.Hash()
-		if err != nil {
-			return fmt.Errorf("invalid hash function: %v", digest.HashAlg)
-		}
+	digest := bpm.SE[0].DigestList.List[0] // [0] instead of range -- is intentionally
 
-		for _, seg := range bpm.SE[0].IBBSegments {
-			startIdx := consts.CalculateOffsetFromPhysAddr(uint64(seg.Base), uint64(len(firmware.Buf())))
-			if _, err := h.Write(firmware.Buf()[startIdx : startIdx+uint64(seg.Size)]); err != nil {
-				return fmt.Errorf("unable to hash: %w", err)
-			}
-		}
-		hashValue := h.Sum(nil)
+	h, err := digest.HashAlg.Hash()
+	if err != nil {
+		return fmt.Errorf("invalid hash function: %v", digest.HashAlg)
+	}
 
-		if !bytes.Equal(hashValue, digest.HashBuffer) {
-			return fmt.Errorf("IBB %s hash mismatch: %X != %X", digest.HashAlg, hashValue, digest.HashBuffer)
+	for _, seg := range bpm.SE[0].IBBSegments {
+		if seg.Flags&1 == 1 {
+			continue
 		}
+		startIdx := consts.CalculateOffsetFromPhysAddr(uint64(seg.Base), uint64(len(firmware.Buf())))
+		if _, err := h.Write(firmware.Buf()[startIdx : startIdx+uint64(seg.Size)]); err != nil {
+			return fmt.Errorf("unable to hash: %w", err)
+		}
+	}
+	hashValue := h.Sum(nil)
+
+	if !bytes.Equal(hashValue, digest.HashBuffer) {
+		return fmt.Errorf("IBB %s hash mismatch: %X != %X", digest.HashAlg, hashValue, digest.HashBuffer)
 	}
 
 	return nil
