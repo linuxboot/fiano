@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 )
 
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
@@ -45,6 +46,30 @@ type PSPDirectoryTable struct {
 	TotalEntries   uint32
 	AdditionalInfo uint32
 	Entries        []PSPDirectoryTableEntry
+}
+
+func (p PSPDirectoryTable) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "PSP Cookie: 0x%x\n", p.PSPCookie)
+	fmt.Fprintf(&s, "Checksum: %d\n", p.Checksum)
+	fmt.Fprintf(&s, "Total Entries: %d\n", p.TotalEntries)
+	fmt.Fprintf(&s, "Additional Info: 0x%x\n\n", p.AdditionalInfo)
+	fmt.Fprintf(&s, "%-5s | %-8s | %-5s | %-10s | %-10s\n",
+		"Type",
+		"Subprogram",
+		"ROMId",
+		"Size",
+		"Location/Value")
+	fmt.Fprintf(&s, "%s\n", "------------------------------------------------------------------------")
+	for _, entry := range p.Entries {
+		fmt.Fprintf(&s, "0x%-3x | 0x%-8x | 0x%-3x | %-10d | 0x%-10x\n",
+			entry.Type,
+			entry.Subprogram,
+			entry.ROMId,
+			entry.Size,
+			entry.LocationOrValue)
+	}
+	return s.String()
 }
 
 // FindPSPDirectoryTable scans firmware for PSPDirectoryTableCookie
