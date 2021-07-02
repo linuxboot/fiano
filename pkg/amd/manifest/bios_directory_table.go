@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 )
 
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
@@ -55,6 +56,43 @@ type BIOSDirectoryTable struct {
 	Reserved     uint32
 
 	Entries []BIOSDirectoryTableEntry
+}
+
+func (b BIOSDirectoryTable) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "BIOS Cookie: 0x%x \n", b.BIOSCookie)
+	fmt.Fprintf(&s, "Checksum: %d\n", b.Checksum)
+	fmt.Fprintf(&s, "Total Entries: %d\n", b.TotalEntries)
+	fmt.Fprintf(&s, "%-5s | %-10s | %-10s | %-9s | %-8s | %-10s | %-8s | %-10s | %-5s | %-6s | %-13s | %-18s\n",
+		"Type",
+		"RegionType",
+		"ResetImage",
+		"CopyImage",
+		"ReadOnly",
+		"Compressed",
+		"Instance",
+		"Subprogram",
+		"RomID",
+		"Size",
+		"SourceAddress",
+		"DestinationAddress")
+	fmt.Fprintf(&s, "%s\n", "----------------------------------------------------------------------------------------------------------------------------------------------------------------")
+	for _, entry := range b.Entries {
+		fmt.Fprintf(&s, "0x%-3x | 0x%-8x | %-10v | %-9v | %-8v | %-10v | 0x%-6x | 0x%-8x | 0x%-3x | %-6d | 0x%-11x | 0x%-18x\n",
+			entry.Type,
+			entry.RegionType,
+			entry.ResetImage,
+			entry.CopyImage,
+			entry.ReadOnly,
+			entry.Compressed,
+			entry.Instance,
+			entry.Subprogram,
+			entry.RomID,
+			entry.Size,
+			entry.SourceAddress,
+			entry.DestinationAddress)
+	}
+	return s.String()
 }
 
 // FindBIOSDirectoryTable scans firmware for BIOSDirectoryTableCookie
