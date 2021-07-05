@@ -50,7 +50,9 @@ type PSPDirectoryTable struct {
 
 func (p PSPDirectoryTable) String() string {
 	var s strings.Builder
-	fmt.Fprintf(&s, "PSP Cookie: 0x%x\n", p.PSPCookie)
+	cookieBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(cookieBytes, p.PSPCookie)
+	fmt.Fprintf(&s, "PSP Cookie: 0x%x (%s)\n", p.PSPCookie, cookieBytes)
 	fmt.Fprintf(&s, "Checksum: %d\n", p.Checksum)
 	fmt.Fprintf(&s, "Total Entries: %d\n", p.TotalEntries)
 	fmt.Fprintf(&s, "Additional Info: 0x%x\n\n", p.AdditionalInfo)
