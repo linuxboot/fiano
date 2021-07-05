@@ -60,7 +60,9 @@ type BIOSDirectoryTable struct {
 
 func (b BIOSDirectoryTable) String() string {
 	var s strings.Builder
-	fmt.Fprintf(&s, "BIOS Cookie: 0x%x \n", b.BIOSCookie)
+	cookieBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(cookieBytes, b.BIOSCookie)
+	fmt.Fprintf(&s, "BIOS Cookie: 0x%x (%s)\n", b.BIOSCookie, cookieBytes)
 	fmt.Fprintf(&s, "Checksum: %d\n", b.Checksum)
 	fmt.Fprintf(&s, "Total Entries: %d\n", b.TotalEntries)
 	fmt.Fprintf(&s, "%-5s | %-10s | %-10s | %-9s | %-8s | %-10s | %-8s | %-10s | %-5s | %-6s | %-13s | %-18s\n",
