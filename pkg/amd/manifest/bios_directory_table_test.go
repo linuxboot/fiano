@@ -20,33 +20,13 @@ var biosDirectoryTableDataChunk = []byte{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 }
 
-type dummyFirmware struct {
-	data []byte
-}
-
-func (f *dummyFirmware) ImageBytes() []byte {
-	return f.data
-}
-
-func (f *dummyFirmware) PhysAddrToOffset(physAddr uint64) uint64 {
-	return physAddr
-}
-
-func (f *dummyFirmware) OffsetToPhysAddr(offset uint64) uint64 {
-	return offset
-}
-
 func TestFindBIOSDirectoryTable(t *testing.T) {
 	firmwareChunk := []byte{
 		0x12, 0x00, 0x15, 0x00, 0x15, // some prefix
 	}
 
 	t.Run("no_bios_table_cookie", func(t *testing.T) {
-		firmware := &dummyFirmware{
-			data: firmwareChunk,
-		}
-
-		table, _, err := FindBIOSDirectoryTable(firmware)
+		table, _, err := FindBIOSDirectoryTable(firmwareChunk)
 		if err == nil {
 			t.Errorf("Expected an error when finding bios directory table in a broken firmware")
 		}
@@ -56,10 +36,7 @@ func TestFindBIOSDirectoryTable(t *testing.T) {
 	})
 
 	t.Run("bios_table_cookie_found", func(t *testing.T) {
-		firmware := &dummyFirmware{
-			data: append(firmwareChunk, biosDirectoryTableDataChunk...),
-		}
-		table, addr, err := FindBIOSDirectoryTable(firmware)
+		table, addr, err := FindBIOSDirectoryTable(append(firmwareChunk, biosDirectoryTableDataChunk...))
 		if err != nil {
 			t.Errorf("Unexecpted error when finding BIOS Directory table")
 			t.Skip()

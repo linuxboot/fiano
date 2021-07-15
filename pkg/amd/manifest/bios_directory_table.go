@@ -99,12 +99,10 @@ func (b BIOSDirectoryTable) String() string {
 
 // FindBIOSDirectoryTable scans firmware for BIOSDirectoryTableCookie
 // and treats remaining bytes as BIOSDirectoryTable
-func FindBIOSDirectoryTable(firmware Firmware) (*BIOSDirectoryTable, uint64, error) {
+func FindBIOSDirectoryTable(image []byte) (*BIOSDirectoryTable, uint64, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(cookieBytes, BIOSDirectoryTableCookie)
-
-	image := firmware.ImageBytes()
 
 	var offset uint64
 	for {
@@ -114,13 +112,13 @@ func FindBIOSDirectoryTable(firmware Firmware) (*BIOSDirectoryTable, uint64, err
 		}
 
 		table, err := ParseBIOSDirectoryTable(bytes.NewBuffer(image[idx:]))
-		offset += uint64(idx)
 		if err != nil {
-			image = image[idx+len(cookieBytes):]
+			shift := uint64(idx + len(cookieBytes))
+			image = image[shift:]
+			offset += shift
 			continue
 		}
-
-		return table, offset, err
+		return table, offset + uint64(idx), err
 	}
 
 	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
