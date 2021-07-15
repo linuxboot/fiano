@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"io"
 )
 
@@ -16,16 +17,20 @@ const EmbeddedFirmwareStructureSignature = 0x55aa55aa
 // EmbeddedFirmwareStructure represents Embedded Firmware Structure defined in Table 2 in (1)
 type EmbeddedFirmwareStructure struct {
 	Signature                uint32
-	Required1                [16]byte
+	Reserved1                [16]byte
 	PSPDirectoryTablePointer uint32
 
 	BIOSDirectoryTableFamily17hModels00h0FhPointer uint32
 	BIOSDirectoryTableFamily17hModels10h1FhPointer uint32
 	BIOSDirectoryTableFamily17hModels30h3FhPointer uint32
+	Reserved2                                      uint32
+	BIOSDirectoryTableFamily17hModels60h3FhPointer uint32
+
+	Reserved3 [30]byte
 }
 
 // FindEmbeddedFirmwareStructure locates and parses Embedded Firmware Structure
-func FindEmbeddedFirmwareStructure(firmware Firmware) (*EmbeddedFirmwareStructure, uint64, error) {
+func FindEmbeddedFirmwareStructure(firmware Firmware) (*EmbeddedFirmwareStructure, bytes2.Range, error) {
 	var addresses = []uint64{
 		0xfffa0000,
 		0xfff20000,
@@ -45,23 +50,22 @@ func FindEmbeddedFirmwareStructure(firmware Firmware) (*EmbeddedFirmwareStructur
 
 		actualSignature := binary.LittleEndian.Uint32(image[offset:])
 		if actualSignature == EmbeddedFirmwareStructureSignature {
-			result, err := ParseEmbeddedFirmwareStructure(bytes.NewBuffer(image[offset:]))
-			return result, addr, err
+			result, length, err := ParseEmbeddedFirmwareStructure(bytes.NewBuffer(image[offset:]))
+			return result, bytes2.Range{Offset: offset, Length: length}, err
 		}
 	}
-	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
+	return nil, bytes2.Range{}, fmt.Errorf("EmbeddedFirmwareStructure is not found")
 }
 
 // ParseEmbeddedFirmwareStructure converts input bytes into EmbeddedFirmwareStructure
-func ParseEmbeddedFirmwareStructure(r io.Reader) (*EmbeddedFirmwareStructure, error) {
+func ParseEmbeddedFirmwareStructure(r io.Reader) (*EmbeddedFirmwareStructure, uint64, error) {
 	var result EmbeddedFirmwareStructure
 	if err := binary.Read(r, binary.LittleEndian, &result); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if result.Signature != EmbeddedFirmwareStructureSignature {
-		return nil, fmt.Errorf("incorrect signature: %d", result.Signature)
+		return nil, 0, fmt.Errorf("incorrect signature: %d", result.Signature)
 	}
-
-	return &result, nil
+	return &result, uint64(binary.Size(result)), nil
 }

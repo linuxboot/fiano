@@ -24,11 +24,7 @@ func TestFindPSPDirectoryTable(t *testing.T) {
 	}
 
 	t.Run("no_psp_table_cookie", func(t *testing.T) {
-		firmware := &dummyFirmware{
-			data: firmwareChunk,
-		}
-
-		table, _, err := FindPSPDirectoryTable(firmware)
+		table, _, err := FindPSPDirectoryTable(firmwareChunk)
 		if err == nil {
 			t.Errorf("Expected an error when finding psp directory table in a broken firmware")
 		}
@@ -38,10 +34,7 @@ func TestFindPSPDirectoryTable(t *testing.T) {
 	})
 
 	t.Run("psp_table_cookie_found", func(t *testing.T) {
-		firmware := &dummyFirmware{
-			data: append(firmwareChunk, pspDirectoryTableDataChunk...),
-		}
-		table, addr, err := FindPSPDirectoryTable(firmware)
+		table, addr, err := FindPSPDirectoryTable(append(firmwareChunk, pspDirectoryTableDataChunk...))
 		if err != nil {
 			t.Errorf("Unexecpted error when finding PSP Directory table")
 			t.Skip()
