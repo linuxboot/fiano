@@ -76,12 +76,10 @@ func (p PSPDirectoryTable) String() string {
 
 // FindPSPDirectoryTable scans firmware for PSPDirectoryTableCookie
 // and treats remaining bytes as PSPDirectoryTable
-func FindPSPDirectoryTable(firmware Firmware) (*PSPDirectoryTable, uint64, error) {
+func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, uint64, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(cookieBytes, PSPDirectoryTableCookie)
-
-	image := firmware.ImageBytes()
 
 	var offset uint64
 	for {
@@ -91,15 +89,14 @@ func FindPSPDirectoryTable(firmware Firmware) (*PSPDirectoryTable, uint64, error
 		}
 
 		table, err := ParsePSPDirectoryTable(bytes.NewBuffer(image[idx:]))
-		offset += uint64(idx)
 		if err != nil {
+			shift := uint64(idx + len(cookieBytes))
 			image = image[idx+len(cookieBytes):]
+			offset += shift
 			continue
 		}
-
-		return table, firmware.OffsetToPhysAddr(offset), err
+		return table, offset + uint64(idx), err
 	}
-
 	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
 }
 
