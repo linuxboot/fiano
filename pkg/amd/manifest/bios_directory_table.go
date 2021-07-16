@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"io"
 	"strings"
 )
@@ -47,13 +48,19 @@ type BIOSDirectoryTableEntry struct {
 	DestinationAddress uint64
 }
 
-// BIOSDirectoryTable represents a BIOS Directory Table Header with all entries
+// BIOSDirectoryTableHeader represents a BIOS Directory Table Header
 // Table 11 from (1)
-type BIOSDirectoryTable struct {
+type BIOSDirectoryTableHeader struct {
 	BIOSCookie   uint32
 	Checksum     uint32
 	TotalEntries uint32
 	Reserved     uint32
+}
+
+// BIOSDirectoryTable represents a BIOS Directory Table Header with all entries
+// Table 11 & Table 12 from (1)
+type BIOSDirectoryTable struct {
+	BIOSDirectoryTableHeader
 
 	Entries []BIOSDirectoryTableEntry
 }
@@ -99,75 +106,77 @@ func (b BIOSDirectoryTable) String() string {
 
 // FindBIOSDirectoryTable scans firmware for BIOSDirectoryTableCookie
 // and treats remaining bytes as BIOSDirectoryTable
-func FindBIOSDirectoryTable(image []byte) (*BIOSDirectoryTable, uint64, error) {
+func FindBIOSDirectoryTable(image []byte) (*BIOSDirectoryTable, bytes2.Range, error) {
 	// there is no predefined address, search through the whole memory
-	cookieBytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(cookieBytes, BIOSDirectoryTableCookie)
+	var cookieBytes [4]byte
+	binary.LittleEndian.PutUint32(cookieBytes[:], BIOSDirectoryTableCookie)
 
 	var offset uint64
 	for {
-		idx := bytes.Index(image, cookieBytes)
+		idx := bytes.Index(image, cookieBytes[:])
 		if idx == -1 {
 			break
 		}
 
-		table, err := ParseBIOSDirectoryTable(bytes.NewBuffer(image[idx:]))
+		table, bytesRead, err := ParseBIOSDirectoryTable(bytes.NewBuffer(image[idx:]))
 		if err != nil {
 			shift := uint64(idx + len(cookieBytes))
 			image = image[shift:]
 			offset += shift
 			continue
 		}
-		return table, offset + uint64(idx), err
+		return table, bytes2.Range{Offset: offset + uint64(idx), Length: bytesRead}, err
 	}
-
-	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
+	return nil, bytes2.Range{}, fmt.Errorf("EmbeddedFirmwareStructure is not found")
 }
 
 // ParseBIOSDirectoryTable converts input bytes into BIOSDirectoryTable
-func ParseBIOSDirectoryTable(r io.Reader) (*BIOSDirectoryTable, error) {
+func ParseBIOSDirectoryTable(r io.Reader) (*BIOSDirectoryTable, uint64, error) {
 	var table BIOSDirectoryTable
-	if err := binary.Read(r, binary.LittleEndian, &table.BIOSCookie); err != nil {
-		return nil, err
+	var totalLength uint64
+	if err := readAndCountSize(r, binary.LittleEndian, &table.BIOSCookie, &totalLength); err != nil {
+		return nil, 0, err
 	}
 	if table.BIOSCookie != BIOSDirectoryTableCookie && table.BIOSCookie != BIOSDirectoryTableLevel2Cookie {
-		return nil, fmt.Errorf("incorrect cookie: %d", table.BIOSCookie)
+		return nil, 0, fmt.Errorf("incorrect cookie: %d", table.BIOSCookie)
 	}
 
-	if err := binary.Read(r, binary.LittleEndian, &table.Checksum); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.Checksum, &totalLength); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &table.TotalEntries); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.TotalEntries, &totalLength); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &table.Reserved); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.Reserved, &totalLength); err != nil {
+		return nil, 0, err
 	}
 
 	table.Entries = make([]BIOSDirectoryTableEntry, 0, table.TotalEntries)
 	for idx := uint32(0); idx < table.TotalEntries; idx++ {
-		entry, err := ParseBIOSDirectoryTableEntry(r)
+		entry, length, err := ParseBIOSDirectoryTableEntry(r)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		table.Entries = append(table.Entries, *entry)
+		totalLength += length
 	}
-	return &table, nil
+	return &table, totalLength, nil
 }
 
 // ParseBIOSDirectoryTableEntry converts input bytes into BIOSDirectoryTableEntry
-func ParseBIOSDirectoryTableEntry(r io.Reader) (*BIOSDirectoryTableEntry, error) {
+func ParseBIOSDirectoryTableEntry(r io.Reader) (*BIOSDirectoryTableEntry, uint64, error) {
 	var entry BIOSDirectoryTableEntry
-	if err := binary.Read(r, binary.LittleEndian, &entry.Type); err != nil {
-		return nil, err
+	var length uint64
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.Type, &length); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &entry.RegionType); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.RegionType, &length); err != nil {
+		return nil, 0, err
 	}
 
 	var flags uint8
-	if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &flags, &length); err != nil {
+		return nil, 0, err
 	}
 	entry.ResetImage = (flags>>7)&0x1 != 0
 	entry.CopyImage = (flags>>6)&0x1 != 0
@@ -175,20 +184,20 @@ func ParseBIOSDirectoryTableEntry(r io.Reader) (*BIOSDirectoryTableEntry, error)
 	entry.Compressed = (flags>>4)&0x1 != 0
 	entry.Instance = flags >> 3
 
-	if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &flags, &length); err != nil {
+		return nil, 0, err
 	}
 	entry.Subprogram = flags & 7
 	entry.RomID = (flags >> 3) & 0x3
 
-	if err := binary.Read(r, binary.LittleEndian, &entry.Size); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.Size, &length); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &entry.SourceAddress); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.SourceAddress, &length); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &entry.DestinationAddress); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.DestinationAddress, &length); err != nil {
+		return nil, 0, err
 	}
-	return &entry, nil
+	return &entry, length, nil
 }
