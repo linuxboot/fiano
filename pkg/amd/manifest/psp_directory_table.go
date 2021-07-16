@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"io"
 	"strings"
 )
@@ -38,14 +39,21 @@ type PSPDirectoryTableEntry struct {
 	LocationOrValue uint64
 }
 
-// PSPDirectoryTable represents PSP Directory Table Header with all entries
-// Table 3 in (1)
-type PSPDirectoryTable struct {
+// PSPDirectoryTableHeader represents a BIOS Directory Table Header
+// Tables 3&4 from (1)
+type PSPDirectoryTableHeader struct {
 	PSPCookie      uint32
 	Checksum       uint32
 	TotalEntries   uint32
 	AdditionalInfo uint32
-	Entries        []PSPDirectoryTableEntry
+}
+
+// PSPDirectoryTable represents PSP Directory Table Header with all entries
+// Table 5 in (1)
+type PSPDirectoryTable struct {
+	PSPDirectoryTableHeader
+
+	Entries []PSPDirectoryTableEntry
 }
 
 func (p PSPDirectoryTable) String() string {
@@ -76,7 +84,7 @@ func (p PSPDirectoryTable) String() string {
 
 // FindPSPDirectoryTable scans firmware for PSPDirectoryTableCookie
 // and treats remaining bytes as PSPDirectoryTable
-func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, uint64, error) {
+func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, bytes2.Range, error) {
 	// there is no predefined address, search through the whole memory
 	cookieBytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(cookieBytes, PSPDirectoryTableCookie)
@@ -88,69 +96,74 @@ func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, uint64, error) {
 			break
 		}
 
-		table, err := ParsePSPDirectoryTable(bytes.NewBuffer(image[idx:]))
+		table, length, err := ParsePSPDirectoryTable(bytes.NewBuffer(image[idx:]))
 		if err != nil {
 			shift := uint64(idx + len(cookieBytes))
 			image = image[idx+len(cookieBytes):]
 			offset += shift
 			continue
 		}
-		return table, offset + uint64(idx), err
+		return table, bytes2.Range{Offset: offset + uint64(idx), Length: length}, err
 	}
-	return nil, 0, fmt.Errorf("EmbeddedFirmwareStructure is not found")
+	return nil, bytes2.Range{}, fmt.Errorf("EmbeddedFirmwareStructure is not found")
 }
 
 // ParsePSPDirectoryTable converts input bytes into PSPDirectoryTable
-func ParsePSPDirectoryTable(r io.Reader) (*PSPDirectoryTable, error) {
+func ParsePSPDirectoryTable(r io.Reader) (*PSPDirectoryTable, uint64, error) {
 	var table PSPDirectoryTable
-	if err := binary.Read(r, binary.LittleEndian, &table.PSPCookie); err != nil {
-		return nil, err
+	var totalLength uint64
+
+	if err := readAndCountSize(r, binary.LittleEndian, &table.PSPCookie, &totalLength); err != nil {
+		return nil, 0, err
 	}
 	if table.PSPCookie != PSPDirectoryTableCookie && table.PSPCookie != PSPDirectoryTableLevel2Cookie {
-		return nil, fmt.Errorf("incorrect cookie: %d", table.PSPCookie)
+		return nil, 0, fmt.Errorf("incorrect cookie: %d", table.PSPCookie)
 	}
 
-	if err := binary.Read(r, binary.LittleEndian, &table.Checksum); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.Checksum, &totalLength); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &table.TotalEntries); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.TotalEntries, &totalLength); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &table.AdditionalInfo); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &table.AdditionalInfo, &totalLength); err != nil {
+		return nil, 0, err
 	}
 
 	for idx := uint32(0); idx < table.TotalEntries; idx++ {
-		entry, err := ParsePSPDirectoryTableEntry(r)
+		entry, length, err := ParsePSPDirectoryTableEntry(r)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		totalLength += length
 		table.Entries = append(table.Entries, *entry)
 	}
-	return &table, nil
+	return &table, totalLength, nil
 }
 
 // ParsePSPDirectoryTableEntry converts input bytes into PSPDirectoryTableEntry
-func ParsePSPDirectoryTableEntry(r io.Reader) (*PSPDirectoryTableEntry, error) {
+func ParsePSPDirectoryTableEntry(r io.Reader) (*PSPDirectoryTableEntry, uint64, error) {
 	var entry PSPDirectoryTableEntry
-	if err := binary.Read(r, binary.LittleEndian, &entry.Type); err != nil {
-		return nil, err
+	var length uint64
+
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.Type, &length); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &entry.Subprogram); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.Subprogram, &length); err != nil {
+		return nil, 0, err
 	}
 
 	var flags uint16
-	if err := binary.Read(r, binary.LittleEndian, &flags); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &flags, &length); err != nil {
+		return nil, 0, err
 	}
 	entry.ROMId = uint8(flags>>14) & 0x3
 
-	if err := binary.Read(r, binary.LittleEndian, &entry.Size); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.Size, &length); err != nil {
+		return nil, 0, err
 	}
-	if err := binary.Read(r, binary.LittleEndian, &entry.LocationOrValue); err != nil {
-		return nil, err
+	if err := readAndCountSize(r, binary.LittleEndian, &entry.LocationOrValue, &length); err != nil {
+		return nil, 0, err
 	}
-	return &entry, nil
+	return &entry, length, nil
 }
