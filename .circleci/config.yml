@@ -25,46 +25,30 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dep
-          command: |
-            wget https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64
-            mv dep-linux-amd64 dep
-            chmod +x dep
-      - run:
           name: Install golint
           command: go get -u golang.org/x/lint/golint
       - run:
           name: Install ineffassign
           command: go get github.com/gordonklaus/ineffassign
       - run:
-          name: Check vendored dependencies
+          name: Check dependencies
+          environment:
+            - GO111MODULE: "on"
           command: |
-            ./dep status
-            ./dep ensure -vendor-only
-            git status vendor
-            if [[ -n "$(git status --porcelain vendor)" ]]; then
-              echo 'vendor/ is out-of-date: run `dep ensure -vendor-only` and then check in the changes'
-              git status --porcelain vendor
-              exit 1
-            fi
-      - run:
-          name: vet
-          command: |
-            go vet ./...
+            go mod download
+            go mod verify
       - run:
           name: gofmt
           command: test -z "$(gofmt -s -l cmds pkg)"
       - run:
           name: golint
           command: golint --set_exit_status $(go list ./... | grep -v /vendor/)
-      - run:
-          name: ineffassign
-          command: ineffassign ./...
   test:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
+      - GO111MODULE: "on"
       - CGO_ENABLED: 0
     steps:
       - checkout
@@ -79,6 +63,7 @@ jobs:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
+      - GO111MODULE: "on"
       - CGO_ENABLED: 1
     steps:
       - checkout
@@ -90,6 +75,7 @@ jobs:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
+      - GO111MODULE: "on"
       - CGO_ENABLED: 0
     steps:
       - checkout
@@ -114,6 +100,7 @@ jobs:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/linuxboot/fiano
     environment:
+      - GO111MODULE: "on"
       - CGO_ENABLED: 0
     steps:
       - checkout
