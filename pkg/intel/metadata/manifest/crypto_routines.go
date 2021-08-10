@@ -132,6 +132,6 @@ func GetAlgFromString(name string) (Algorithm, error) {
 	case "SM2":
 		return AlgSM2, nil
 	default:
-		return AlgNull, fmt.Errorf("Algorihm name provided unknown")
+		return AlgNull, fmt.Errorf("algorithm name provided unknown")
 	}
 }
