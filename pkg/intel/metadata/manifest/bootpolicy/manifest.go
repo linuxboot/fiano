@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
+	pkgbytes "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
 	"github.com/9elements/converged-security-suite/v2/pkg/uefi/consts"
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -48,8 +49,8 @@ func (bpm Manifest) StructInfo() StructInfo {
 	return bpm.BPMH.StructInfo
 }
 
-// ValidateIBBs returns an error if IBB segments does not match the signature
-func (bpm *Manifest) ValidateIBBs(firmware uefi.Firmware) error {
+// ValidateIBB returns an error if IBB segments does not match the signature
+func (bpm *Manifest) ValidateIBB(firmware uefi.Firmware) error {
 	if len(bpm.SE[0].DigestList.List) == 0 {
 		return fmt.Errorf("no IBB hashes")
 	}
@@ -61,12 +62,8 @@ func (bpm *Manifest) ValidateIBBs(firmware uefi.Firmware) error {
 		return fmt.Errorf("invalid hash function: %v", digest.HashAlg)
 	}
 
-	for _, seg := range bpm.SE[0].IBBSegments {
-		if seg.Flags&1 == 1 {
-			continue
-		}
-		startIdx := consts.CalculateOffsetFromPhysAddr(uint64(seg.Base), uint64(len(firmware.Buf())))
-		if _, err := h.Write(firmware.Buf()[startIdx : startIdx+uint64(seg.Size)]); err != nil {
+	for _, _range := range bpm.IBBDataRanges(uint64(len(firmware.Buf()))) {
+		if _, err := h.Write(firmware.Buf()[_range.Offset:_range.End()]); err != nil {
 			return fmt.Errorf("unable to hash: %w", err)
 		}
 	}
@@ -77,4 +74,19 @@ func (bpm *Manifest) ValidateIBBs(firmware uefi.Firmware) error {
 	}
 
 	return nil
+}
+
+// IBBDataRanges returns data ranges of IBB.
+func (bpm *Manifest) IBBDataRanges(firmwareSize uint64) pkgbytes.Ranges {
+	var result pkgbytes.Ranges
+
+	for _, seg := range bpm.SE[0].IBBSegments {
+		if seg.Flags&1 == 1 {
+			continue
+		}
+		startIdx := consts.CalculateOffsetFromPhysAddr(uint64(seg.Base), firmwareSize)
+		result = append(result, pkgbytes.Range{Offset: startIdx, Length: uint64(seg.Size)})
+	}
+
+	return result
 }
