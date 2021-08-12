@@ -83,19 +83,28 @@ Example usage:
 
 ## Installation
 
-    # Golang version 1.12 is required:
+    # Golang version 1.13 is required:
     go version
 
     # For UTK:
-    go get github.com/linuxboot/fiano/cmds/utk
+    go install github.com/linuxboot/fiano/cmds/utk
 
     # For fmap:
-    go get github.com/linuxboot/fiano/cmds/fmap
+    go install github.com/linuxboot/fiano/cmds/fmap
 
 The executables are installed in `$HOME/go/bin`.
 
 ## Updating Dependencies
 
-    # Latest released version of dep is required:
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-    dep ensure
+    # Fiano utilizes Go modules.
+    Use the following to download the dependencies:
+    ```
+    go mod download
+    go mod verify
+    ```
+
+    If you desire to update a existing dependency to a newer version:
+    ```
+    go get path/to/dependency/module@tag
+    ```
+    Execute this in any directory of fiano repository
