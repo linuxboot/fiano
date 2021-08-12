@@ -21,8 +21,7 @@ type CreateFV struct {
 	Size      uint64
 	Name      guid.GUID
 
-	offset uint64
-	found  bool
+	found bool
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
@@ -32,7 +31,7 @@ func (v *CreateFV) Run(f uefi.Firmware) error {
 		return err
 	}
 	if !v.found {
-		return fmt.Errorf("Cannot create FV at %#x (+%#x) no BIOS region found", v.AbsOffset, v.Size)
+		return fmt.Errorf("cannot create FV at %#x (+%#x) no BIOS region found", v.AbsOffset, v.Size)
 	}
 	return nil
 }
@@ -52,10 +51,10 @@ func (v *CreateFV) Visit(f uefi.Firmware) error {
 			end = f.Length
 		}
 		if v.AbsOffset < offset {
-			return fmt.Errorf("Cannot create FV at %#x, BIOS region starts at %#x", v.AbsOffset, offset)
+			return fmt.Errorf("cannot create FV at %#x, BIOS region starts at %#x", v.AbsOffset, offset)
 		}
 		if v.AbsOffset+v.Size >= end {
-			return fmt.Errorf("Cannot create FV ending at %#x (%#x + %#x), BIOS region ends at %#x", v.AbsOffset+v.Size, v.AbsOffset, v.Size, end)
+			return fmt.Errorf("cannot create FV ending at %#x (%#x + %#x), BIOS region ends at %#x", v.AbsOffset+v.Size, v.AbsOffset, v.Size, end)
 		}
 
 		// Manually visit children, we want the index
@@ -79,7 +78,7 @@ func (v *CreateFV) Visit(f uefi.Firmware) error {
 		}
 
 		if idx == -1 {
-			return fmt.Errorf("Cannot create FV at %#x (+%#x) no matching BIOS Pad found", v.AbsOffset, v.Size)
+			return fmt.Errorf("cannot create FV at %#x (+%#x) no matching BIOS Pad found", v.AbsOffset, v.Size)
 		}
 		v.found = true
 		fv, err := createEmptyFirmwareVolume(v.AbsOffset-offset, v.Size, &v.Name)
@@ -194,16 +193,16 @@ func createEmptyFirmwareVolume(fvOffset, size uint64, name *guid.GUID) (*uefi.Fi
 		// [2]: https://github.com/tianocore/edk2/blob/master/BaseTools/Source/C/GenFv/GenFvInternalLib.c#L563
 		extHeaderFile, err := uefi.CreatePadFile(uint64(uefi.FileHeaderMinLength + fv.ExtHeaderSize))
 		if err != nil {
-			return nil, fmt.Errorf("Building ExtHeader %v", err)
+			return nil, fmt.Errorf("building ExtHeader %v", err)
 		}
 		if err := extHeaderFile.ChecksumAndAssemble(extHeader.Bytes()); err != nil {
-			return nil, fmt.Errorf("Building ExtHeader %v", err)
+			return nil, fmt.Errorf("building ExtHeader %v", err)
 		}
 
 		// Add the extended header in a Padfile just after the header.
 		extHeaderFileBuf := extHeaderFile.Buf()
 		if err = fv.InsertFile(fv.DataOffset, extHeaderFileBuf); err != nil {
-			return nil, fmt.Errorf("Adding ExtHeader %v", err)
+			return nil, fmt.Errorf("adding ExtHeader %v", err)
 		}
 		fv.DataOffset += uint64(len(extHeaderFileBuf))
 	}

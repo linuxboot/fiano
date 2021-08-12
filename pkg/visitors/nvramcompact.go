@@ -47,7 +47,9 @@ func compactNVarStore(s *uefi.NVarStore) error {
 			v.GUIDIndex = &guidIndex
 
 		}
-		v.Assemble(k.Buf()[k.DataOffset:], false)
+		if err := v.Assemble(k.Buf()[k.DataOffset:], false); err != nil {
+			return err
+		}
 		offset += uint64(len(v.Buf()))
 		newEntries = append(newEntries, &v)
 	}

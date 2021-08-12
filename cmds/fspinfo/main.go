@@ -36,7 +36,7 @@ func extractFirstFSPHeader(b []byte) (*fsp.InfoHeaderRev3, error) {
 		return nil, fmt.Errorf("cannot parse Firmware Volume: %v", err)
 	}
 	if len(fv.Files) < 1 {
-		return nil, errors.New("Firmware Volume has no files")
+		return nil, errors.New("firmware Volume has no files")
 	}
 	file := fv.Files[0]
 	sec, err := uefi.NewSection(file.Buf()[file.DataOffset:], 0)

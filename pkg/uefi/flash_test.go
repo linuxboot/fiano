@@ -48,11 +48,11 @@ func TestFindSignature(t *testing.T) {
 		msg    string
 	}{
 		{emptySig, -1,
-			fmt.Sprintf("Flash signature not found: first 20 bytes are:\n%s", hex.Dump(emptySig[:20]))},
+			fmt.Sprintf("flash signature not found: first 20 bytes are:\n%s", hex.Dump(emptySig[:20]))},
 		{ichSig, 4, ""},
 		{pchSig, 20, ""},
 		{misalignedSig, -1,
-			fmt.Sprintf("Flash signature not found: first 20 bytes are:\n%s", hex.Dump(misalignedSig[:20]))},
+			fmt.Sprintf("flash signature not found: first 20 bytes are:\n%s", hex.Dump(misalignedSig[:20]))},
 	}
 	for _, test := range tests {
 		f := FlashImage{buf: test.buf}

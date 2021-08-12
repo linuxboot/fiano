@@ -92,13 +92,13 @@ func (v *TightenME) process() error {
 		case *uefi.BIOSPadding:
 			f.Offset += offsetShift
 		default:
-			return fmt.Errorf("Unexpected Element at %d: %s", i, e.Type)
+			return fmt.Errorf("unexpected Element at %d: %s", i, e.Type)
 		}
 	}
 	// insert BIOSPad
 	bp, err := uefi.NewBIOSPadding(buf[bufOffset:], 0)
 	if err != nil {
-		return fmt.Errorf("Could not create BIOS Padding: %v", err)
+		return fmt.Errorf("could not create BIOS Padding: %v", err)
 	}
 	v.br.Elements = append([]*uefi.TypedFirmware{uefi.MakeTyped(bp)}, v.br.Elements...)
 	// Assemble will regenerate IFD so regions will be updated in the image
