@@ -96,10 +96,7 @@ func headerValid(h *Header) bool {
 	}
 
 	// Name is specified to be null terminated single-word string without spaces
-	if bytes.Index(h.Name.Value[:], []byte("\x00")) == -1 {
-		return false
-	}
-	return true
+	return bytes.Contains(h.Name.Value[:], []byte("\x00"))
 }
 
 // FlagNames returns human readable representation of the flags.
@@ -223,7 +220,7 @@ func (f *FMap) IndexOfArea(name string) int {
 // ReadArea reads an area from the flash image as a byte array given its index.
 func (f *FMap) ReadArea(r io.ReaderAt, i int) ([]byte, error) {
 	if i < 0 || int(f.NAreas) <= i {
-		return nil, fmt.Errorf("Area index %d out of range", i)
+		return nil, fmt.Errorf("area index %d out of range", i)
 	}
 	buf := make([]byte, f.Areas[i].Size)
 	_, err := r.ReadAt(buf, int64(f.Areas[i].Offset))
@@ -234,7 +231,7 @@ func (f *FMap) ReadArea(r io.ReaderAt, i int) ([]byte, error) {
 func (f *FMap) ReadAreaByName(r io.ReaderAt, name string) ([]byte, error) {
 	i := f.IndexOfArea(name)
 	if i == -1 {
-		return nil, fmt.Errorf("Fmap area %q not found", name)
+		return nil, fmt.Errorf("FMAP area %q not found", name)
 	}
 	return f.ReadArea(r, i)
 }
@@ -247,7 +244,7 @@ func (f *FMap) WriteArea(r io.WriterAt, i int, data []byte) error {
 		return fmt.Errorf("Area index %d out of range", i)
 	}
 	if uint32(len(data)) > f.Areas[i].Size {
-		return fmt.Errorf("Data too large for fmap area: %#x > %#x",
+		return fmt.Errorf("data too large for fmap area: %#x > %#x",
 			len(data), f.Areas[i].Size)
 	}
 	_, err := r.WriteAt(data, int64(f.Areas[i].Offset))
@@ -258,7 +255,7 @@ func (f *FMap) WriteArea(r io.WriterAt, i int, data []byte) error {
 func (f *FMap) WriteAreaByName(r io.WriterAt, name string, data []byte) error {
 	i := f.IndexOfArea(name)
 	if i == -1 {
-		return fmt.Errorf("Fmap area %q not found", name)
+		return fmt.Errorf("FMAP area %q not found", name)
 	}
 	return f.WriteArea(r, i, data)
 }

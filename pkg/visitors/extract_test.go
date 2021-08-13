@@ -15,8 +15,7 @@ import (
 
 var (
 	// FV examples
-	emptyFV  = []byte{} // Empty file
-	sampleFV []byte     // Sample FV from OVMF
+	sampleFV []byte // Sample FV from OVMF
 )
 
 func init() {
@@ -41,7 +40,6 @@ var (
 
 var (
 	// File examples
-	emptyFile        = []byte{}       // Empty file
 	emptyPadFile     = emptyPadHeader // Empty pad file with no data
 	badFreeFormFile  []byte           // File with bad checksum. Should construct fine, but not validate
 	goodFreeFormFile []byte           // Good file
@@ -75,12 +73,9 @@ var (
 
 var (
 	// Section examples
-	emptySec     = make([]byte, 0)                                                          // Empty section
-	tinySec      = []byte{4, 0, 0, byte(uefi.SectionTypeRaw)}                               // Section header with no data
-	wrongSizeSec = append([]byte{40, 0, 0, byte(uefi.SectionTypeRaw)}, make([]byte, 20)...) // Section with a size mismatch
-	largeSizeSec = append([]byte{10, 0, 0, byte(uefi.SectionTypeRaw)}, make([]byte, 20)...) // Section with a big buffer
-	smallSec     = append([]byte{22, 0, 0, byte(uefi.SectionTypeRaw)}, make([]byte, 18)...) // 20 byte Section
-	linuxSec     = []byte{0x10, 0x00, 0x00, 0x15, 0x4c, 0x00, 0x69, 0x00,
+	tinySec  = []byte{4, 0, 0, byte(uefi.SectionTypeRaw)}                               // Section header with no data
+	smallSec = append([]byte{22, 0, 0, byte(uefi.SectionTypeRaw)}, make([]byte, 18)...) // 20 byte Section
+	linuxSec = []byte{0x10, 0x00, 0x00, 0x15, 0x4c, 0x00, 0x69, 0x00,
 		0x6e, 0x00, 0x75, 0x00, 0x78, 0x00, 0x00, 0x00} // Linux UI section
 )
 

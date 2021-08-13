@@ -78,13 +78,13 @@ func (p *FlashParams) DualOutputFastReadSupported() uint {
 }
 
 func (p *FlashParams) String() string {
-	return fmt.Sprintf("FlashParams{...}")
+	return "FlashParams{...}"
 }
 
 // NewFlashParams initializes a FlashParam struct from a slice of bytes
 func NewFlashParams(buf []byte) (*FlashParams, error) {
 	if len(buf) != FlashParamsSize {
-		return nil, fmt.Errorf("Invalid image size: expected %v bytes, got %v",
+		return nil, fmt.Errorf("invalid image size: expected %v bytes, got %v",
 			FlashParamsSize,
 			len(buf),
 		)

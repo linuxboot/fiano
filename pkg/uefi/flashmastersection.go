@@ -42,7 +42,7 @@ func (m *FlashMasterSection) String() string {
 // object, if a valid one is passed, or an error
 func NewFlashMasterSection(buf []byte) (*FlashMasterSection, error) {
 	if len(buf) < FlashMasterSectionSize {
-		return nil, fmt.Errorf("Flash Master Section size too small: expected %v bytes, got %v",
+		return nil, fmt.Errorf("flash Master Section size too small: expected %v bytes, got %v",
 			FlashMasterSectionSize,
 			len(buf),
 		)

@@ -309,7 +309,7 @@ func TestNVar_Assemble(t *testing.T) {
 				// expected error
 				return
 			}
-			if bytes.Compare(test.buf, v.Buf()) != 0 {
+			if !bytes.Equal(test.buf, v.Buf()) {
 				t.Errorf("Bad assembled variable content, expected \n%v\n got \n%v\n", hex.Dump(test.buf), hex.Dump(v.Buf()))
 			}
 
@@ -341,7 +341,7 @@ func TestNVarStore_GetGUIDStoreBuf(t *testing.T) {
 				// expected error
 				return
 			}
-			if bytes.Compare(test.buf, buf) != 0 {
+			if !bytes.Equal(test.buf, buf) {
 				t.Errorf("Bad assembled GUID store content, expected \n%v\n got \n%v\n", hex.Dump(test.buf), hex.Dump(buf))
 			}
 
