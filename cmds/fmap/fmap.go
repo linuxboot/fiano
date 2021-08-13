@@ -307,7 +307,7 @@ func verify(a cmdArgs) error {
 	var err error
 	for i, area := range a.f.Areas {
 		if area.Offset+area.Size > a.f.Size {
-			err = errors.New("Invalid flash map")
+			err = errors.New("invalid flash map")
 			log.Errorf("Area %d is out of range", i)
 		}
 	}

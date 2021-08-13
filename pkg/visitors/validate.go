@@ -235,18 +235,18 @@ func (v *Validate) Visit(f uefi.Firmware) error {
 
 	case *uefi.MERegion:
 		if f.FlashRegion() == nil {
-			v.Errors = append(v.Errors, errors.New("Region position is nil"))
+			v.Errors = append(v.Errors, errors.New("region position is nil"))
 		}
 		if !f.FlashRegion().Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("Region is not valid, region was %v", *f.FlashRegion()))
+			v.Errors = append(v.Errors, fmt.Errorf("region is not valid, region was %v", *f.FlashRegion()))
 		}
 
 	case *uefi.RawRegion:
 		if f.FlashRegion() == nil {
-			v.Errors = append(v.Errors, errors.New("Region position is nil"))
+			v.Errors = append(v.Errors, errors.New("region position is nil"))
 		}
 		if !f.FlashRegion().Valid() {
-			v.Errors = append(v.Errors, fmt.Errorf("Region is not valid, region was %v", *f.FlashRegion()))
+			v.Errors = append(v.Errors, fmt.Errorf("region is not valid, region was %v", *f.FlashRegion()))
 		}
 	}
 	return f.ApplyChildren(v)

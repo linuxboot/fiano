@@ -207,7 +207,9 @@ func (s *NVarStore) getGUIDFromStore(i uint8) guid.GUID {
 		a := make([]guid.GUID, int(i+1)-len(s.GUIDStore))
 		for j := int(i) - len(s.GUIDStore); j >= 0; j-- {
 			// no error check as the Seek will fail first
-			binary.Read(r, binary.LittleEndian, &a[j])
+			if err := binary.Read(r, binary.LittleEndian, &a[j]); err != nil {
+				break
+			}
 		}
 		s.GUIDStore = append(s.GUIDStore, a...)
 	}

@@ -20,7 +20,7 @@ var (
 
 var (
 	// File examples
-	emptyFile        = []byte{}       // Empty file
+	emptyFile        = []byte{}       // nolint, Empty file
 	emptyPadFile     = emptyPadHeader // Empty pad file with no data
 	badFreeFormFile  []byte           // File with bad checksum. Should construct fine, but not validate
 	goodFreeFormFile []byte           // Good file

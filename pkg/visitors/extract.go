@@ -62,7 +62,7 @@ func (v *Extract) Run(f uefi.Firmware) error {
 		files, err := ioutil.ReadDir(v.BasePath)
 		if err == nil {
 			if len(files) != 0 {
-				return errors.New("Existing directory not empty, use --force to override")
+				return errors.New("existing directory not empty, use --force to override")
 			}
 		} else if !os.IsNotExist(err) {
 			// Error was not EEXIST, we do not know what went wrong.

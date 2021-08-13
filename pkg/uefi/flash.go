@@ -47,7 +47,7 @@ func FindSignature(buf []byte) (int, error) {
 		// + 4 since the descriptor starts after the signature
 		return len(FlashSignature), nil
 	}
-	return -1, fmt.Errorf("Flash signature not found: first 20 bytes are:\n%s",
+	return -1, fmt.Errorf("flash signature not found: first 20 bytes are:\n%s",
 		hex.Dump(buf[:20]))
 }
 
@@ -225,7 +225,7 @@ func (f *FlashImage) fillRegionGaps() error {
 // mode.
 func NewFlashImage(buf []byte) (*FlashImage, error) {
 	if len(buf) < FlashDescriptorLength {
-		return nil, fmt.Errorf("Flash Descriptor Map size too small: expected %v bytes, got %v",
+		return nil, fmt.Errorf("flash Descriptor Map size too small: expected %v bytes, got %v",
 			FlashDescriptorLength,
 			len(buf),
 		)

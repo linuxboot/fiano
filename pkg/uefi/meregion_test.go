@@ -42,7 +42,7 @@ func TestMEName_UnmarshalText(t *testing.T) {
 		{"NAM", MEName{'N', 'A', 'M', 0}, ""},
 		{"NA", MEName{'N', 'A', 0, 0}, ""},
 		{"N", MEName{'N', 0, 0, 0}, ""},
-		{"NAME1", MEName{'N', 'A', 'M', 'E'}, "Can’t unmarshal \"NAME1\" to MEName, 5 > 4"},
+		{"NAME1", MEName{'N', 'A', 'M', 'E'}, "can’t unmarshal \"NAME1\" to MEName, 5 > 4"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -65,7 +65,9 @@ func (v *ReplacePE32) Visit(f uefi.Firmware) error {
 		if f.Header.Type == uefi.SectionTypePE32 {
 			f.SetBuf(v.NewPE32)
 			f.Encapsulated = nil // Should already be empty
-			f.GenSecHeader()
+			if err := f.GenSecHeader(); err != nil {
+				return err
+			}
 		}
 		return f.ApplyChildren(v)
 
