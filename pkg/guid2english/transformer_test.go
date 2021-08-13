@@ -123,7 +123,7 @@ Waiting for D5125E0F-1226-444F-A218-0085996ED5DA (Smbus)?
 				t.Errorf("error copying buffer: %v", err)
 			}
 
-			if string(output.Bytes()) != tt.output {
+			if output.String() != tt.output {
 				t.Errorf("got %q, want %q", output.Bytes(), tt.output)
 			}
 		})

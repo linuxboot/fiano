@@ -106,13 +106,13 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 						return err
 					}
 					if err = f.InsertFile(alignedOffset, pfile.Buf()); err != nil {
-						return fmt.Errorf("File %s: %v", pfile.Header.GUID, err)
+						return fmt.Errorf("file %s: %v", pfile.Header.GUID, err)
 					}
 				}
 				alignedOffset = newOffset
 			}
 			if err = f.InsertFile(alignedOffset, fileBuf); err != nil {
-				return fmt.Errorf("File %s: %v", file.Header.GUID, err)
+				return fmt.Errorf("file %s: %v", file.Header.GUID, err)
 			}
 			fileOffset = alignedOffset + fileLen
 		}
@@ -469,7 +469,7 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		// Search for gaps
 		// if there are gaps or overlaps, fail immediately
 		offset := uint64(uefi.FlashDescriptorLength)
-		fBuf := make([]byte, 0, 0)
+		fBuf := make([]byte, 0)
 		fBuf = append(fBuf, ifdbuf...)
 		for _, t := range f.Regions {
 			r := t.Value.(uefi.Region)

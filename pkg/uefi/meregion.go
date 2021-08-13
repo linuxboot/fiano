@@ -67,7 +67,7 @@ func (n *MEName) UnmarshalText(b []byte) error {
 	copy(m[:], b)
 	*n = m
 	if len(b) > len(m) {
-		return fmt.Errorf("Can’t unmarshal %q to MEName, %d > %d", b, len(b), len(m))
+		return fmt.Errorf("can’t unmarshal %q to MEName, %d > %d", b, len(b), len(m))
 	}
 	return nil
 }

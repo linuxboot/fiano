@@ -19,7 +19,6 @@ const (
 	Size = 16
 	// UExample is a example of a string GUID
 	UExample  = "01234567-89AB-CDEF-0123-456789ABCDEF"
-	textLen   = len(UExample)
 	strFormat = "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X"
 )
 

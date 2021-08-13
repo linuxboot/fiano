@@ -44,7 +44,7 @@ func (f *FlashRegionSection) String() string {
 // NewFlashRegionSection initializes a FlashRegionSection from a slice of bytes
 func NewFlashRegionSection(data []byte) (*FlashRegionSection, error) {
 	if len(data) < FlashRegionSectionSize {
-		return nil, fmt.Errorf("Flash Region Section size too small: expected %v bytes, got %v",
+		return nil, fmt.Errorf("flash Region Section size too small: expected %v bytes, got %v",
 			FlashRegionSectionSize,
 			len(data),
 		)

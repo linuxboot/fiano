@@ -147,12 +147,6 @@ func (fv FirmwareVolume) String() string {
 	return fv.FileSystemGUID.String()
 }
 
-func fillFFs(b []byte) {
-	for i := range b {
-		b[i] = 0xFF
-	}
-}
-
 // InsertFile appends the file to the end of the buffer according to alignment requirements.
 func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
 	// fv.Length should contain the minimum fv size.
