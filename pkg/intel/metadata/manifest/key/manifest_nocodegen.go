@@ -1,4 +1,6 @@
+//go:build !manifestcodegen
 // +build !manifestcodegen
+
 //
 // To avoid error "m.StructInfo.PrettyString undefined" we place this
 // function to a file with a build tag "!manifestcodegen"
