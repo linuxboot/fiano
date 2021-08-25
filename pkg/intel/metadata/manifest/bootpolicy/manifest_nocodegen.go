@@ -1,4 +1,6 @@
+//go:build !manifestcodegen
 // +build !manifestcodegen
+
 //
 // To avoid errors "bpm.KeySignatureOffsetTotalSize undefined" and
 // "bpm.BPMH.PrettyString undefined" we place these functions to a file
