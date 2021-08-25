@@ -1,4 +1,6 @@
+//go:build !manifestcodegen
 // +build !manifestcodegen
+
 //
 // To avoid errors "type ChipsetACModuleInformation has no field or method ReadFrom"
 // with a build tag "!manifestcodegen"
