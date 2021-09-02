@@ -19,8 +19,6 @@ import (
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
-type buf16B = [16]uint8
-
 // Key structure extracted from the firmware
 type Key struct {
 	versionID       uint32
