@@ -2,6 +2,8 @@ package manifest
 
 import (
 	"bytes"
+	"fmt"
+
 	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 )
 
@@ -28,9 +30,30 @@ type PSPFirmware struct {
 	BIOSDirectoryLevel2Range bytes2.Range
 }
 
-// ParsePSPFirmware parses input firmware as PSP firmware image and
+// AMDFirmware represents an instance of firmware that exposes AMD specific
+// meatadata and structure.
+type AMDFirmware struct {
+	// firmware is a reference to a generic firmware interface
+	firmware Firmware
+
+	// pspFirmware is a reference to PSPFirmware structure. It is built at
+	// construction time and not exported.
+	pspFirmware *PSPFirmware
+}
+
+// Firmware returns the internal reference to Firmawre interface
+func (a *AMDFirmware) Firmware() Firmware {
+	return a.firmware
+}
+
+// PSPFirmware returns the PSPFirmware reference held by the AMDFirmware object
+func (a *AMDFirmware) PSPFirmware() *PSPFirmware {
+	return a.pspFirmware
+}
+
+// parsePSPFirmware parses input firmware as PSP firmware image and
 // collects Embedded firmware, PSP directory and BIOS directory structures
-func ParsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
+func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 	image := firmware.ImageBytes()
 
 	var result PSPFirmware
@@ -122,4 +145,14 @@ func ParsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 	}
 
 	return &result, nil
+}
+
+// NewAMDFirmware returns an AMDFirmware structure or an error if internal firmare structures cannot be parsed
+func NewAMDFirmware(firmware Firmware) (*AMDFirmware, error) {
+	pspFirmware, err := parsePSPFirmware(firmware)
+	if err != nil {
+		return nil, fmt.Errorf("could not construct AMDFirmware, cannot parse PSP firmware: %w", err)
+	}
+	return &AMDFirmware{firmware: firmware, pspFirmware: pspFirmware}, nil
+
 }
