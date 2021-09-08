@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 	"io"
+	"strings"
+
+	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
 const keydbHeaderSize = 80
@@ -17,6 +19,44 @@ const (
 	// KeyDatabaseEntry points to region of firmware containing key database
 	KeyDatabaseEntry amd_manifest.PSPDirectoryTableEntryType = 0x50
 )
+
+// KeyDatabase is a container for all keys known to the system
+type KeyDatabase struct {
+	db map[KeyID]*Key
+}
+
+// String returns a string representation of the key database
+func (kdb *KeyDatabase) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "Number of keys in database: %d\n\n", len(kdb.db))
+
+	for _, key := range kdb.db {
+		fmt.Fprintf(&s, "%s\n\n", key.String())
+	}
+	return s.String()
+}
+
+// AddKey adds a key to the key database
+func (kdb *KeyDatabase) AddKey(k *Key) error {
+	keyID := k.KeyID()
+	if _, ok := kdb.db[keyID]; ok {
+		return fmt.Errorf("canont add key id %s to database, key with same id already exists", keyID.Hex())
+	}
+	kdb.db[keyID] = k
+	return nil
+}
+
+// NewKeyDatabase builds an empty key database object
+func NewKeyDatabase() *KeyDatabase {
+	keydb := KeyDatabase{}
+	keydb.db = make(map[KeyID]*Key)
+	return &keydb
+}
+
+// GetKey returns a key if known to the KeyDatabase. If the key is not known, null is returned
+func (kdb *KeyDatabase) GetKey(id KeyID) *Key {
+	return nil
+}
 
 // keydbHeader represents the header pre-pended to keydb structure
 type keydbHeader struct {
@@ -148,38 +188,42 @@ func extractKeyEntry(buff *bytes.Buffer) (*Key, error) {
 	return &key, nil
 }
 
-// GetKeyDB extracts the key database signed bytes extracted from KeyDatabaseEntry from PSP Table
-func GetKeyDB(firmware amd_manifest.Firmware) error {
+// GetKeyDB extracts the key database signed bytes obtained from KeyDatabaseEntry from PSP Table
+func GetKeyDB(firmware amd_manifest.Firmware) (*KeyDatabase, error) {
 	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
 	if err != nil {
-		return fmt.Errorf("could not get key database: %w", err)
+		return nil, fmt.Errorf("could not get key database: %w", err)
 	}
 
 	amdPk, err := extractAMDPublicKey(pspFw, firmware)
 	if err != nil {
-		return fmt.Errorf("could no extract AMD public key from firmware: %w", err)
+		return nil, fmt.Errorf("could no extract AMD public key from firmware: %w", err)
 	}
 
 	keyDBBinary, err := ExtractPSPBinary(KeyDatabaseEntry, pspFw, firmware)
 	if err != nil {
-		return fmt.Errorf("could not extract KeyDatabaseEntry entry (%d) from PSP firmware: %w", KeyDatabaseEntry, err)
+		return nil, fmt.Errorf("could not extract KeyDatabaseEntry entry (%d) from PSP firmware: %w", KeyDatabaseEntry, err)
 	}
 
 	signature, signedData, err := keyDBBinary.GetSignature()
 	if err != nil {
-		return fmt.Errorf("could not extract signature information from keydb binary: %w", err)
+		return nil, fmt.Errorf("could not extract signature information from keydb binary: %w", err)
 	}
 
-	fmt.Println("=== KeyDB signature information ===")
-	fmt.Println(signature.String())
 	if err := signature.Validate(signedData, amdPk); err != nil {
-		return fmt.Errorf("could not validate KeyDB PSP Header signature with AMD Public key: %w", err)
+		return nil, fmt.Errorf("could not validate KeyDB PSP Header signature with AMD Public key: %w", err)
+	}
+
+	// build a key database and add extracted keys  to it. All keys in the database are supposed to be trusted
+	keyDB := NewKeyDatabase()
+	if err := keyDB.AddKey(amdPk); err != nil {
+		return nil, fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
 	buffer := bytes.NewBuffer(signedData.DataWithoutHeader())
 	header, err := extractKeydbHeader(buffer)
 	if err != nil {
-		return fmt.Errorf("could not extract keydb header: %w", header)
+		return nil, fmt.Errorf("could not extract keydb header: %w", header)
 	}
 
 	for {
@@ -188,10 +232,11 @@ func GetKeyDB(firmware amd_manifest.Firmware) error {
 		}
 		key, err := extractKeyEntry(buffer)
 		if err != nil {
-			return fmt.Errorf("could not extract key entry from key database: %w", err)
+			return nil, fmt.Errorf("could not extract key entry from key database: %w", err)
 		}
-		fmt.Println(key.String())
+		if err := keyDB.AddKey(key); err != nil {
+			return nil, fmt.Errorf("cannot add key to key database: %w", err)
+		}
 	}
-
-	return nil
+	return keyDB, nil
 }

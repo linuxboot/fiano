@@ -19,10 +19,20 @@ import (
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
+// KeyID is the primary identifier of a key
+type KeyID buf16B
+
+// Hex returns a hexadecimal string representation of a KeyID
+func (kid *KeyID) Hex() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "%x", kid)
+	return s.String()
+}
+
 // Key structure extracted from the firmware
 type Key struct {
 	versionID       uint32
-	keyID           buf16B
+	keyID           KeyID
 	certifyingKeyID buf16B
 	keyUsageFlag    uint32
 	reserved        buf16B
@@ -30,6 +40,11 @@ type Key struct {
 	modulusSize     uint32
 	exponent        []byte
 	modulus         []byte
+}
+
+// KeyID return the key ID of the key object
+func (k *Key) KeyID() KeyID {
+	return k.keyID
 }
 
 // String returns a string representation of the key
@@ -43,7 +58,7 @@ func (k *Key) String() string {
 	}
 
 	fmt.Fprintf(&s, "Version ID: 0x%x\n", k.versionID)
-	fmt.Fprintf(&s, "Key ID: 0x%x\n", k.keyID)
+	fmt.Fprintf(&s, "Key ID: 0x%s\n", k.keyID.Hex())
 	fmt.Fprintf(&s, "Certifying Key ID: 0x%x\n", k.certifyingKeyID)
 	fmt.Fprintf(&s, "Key Usage Flag: 0x%x\n", k.keyUsageFlag)
 	fmt.Fprintf(&s, "Exponent size: 0x%x (dec %d) \n", k.exponentSize, k.exponentSize)
