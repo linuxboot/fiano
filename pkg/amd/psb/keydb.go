@@ -55,7 +55,7 @@ func NewKeyDatabase() *KeyDatabase {
 
 // GetKey returns a key if known to the KeyDatabase. If the key is not known, null is returned
 func (kdb *KeyDatabase) GetKey(id KeyID) *Key {
-	return nil
+	return kdb.db[id]
 }
 
 // keydbHeader represents the header pre-pended to keydb structure
@@ -200,24 +200,26 @@ func GetKeyDB(firmware amd_manifest.Firmware) (*KeyDatabase, error) {
 		return nil, fmt.Errorf("could no extract AMD public key from firmware: %w", err)
 	}
 
+	// build a key database and add extracted keys to it. All keys in the database are supposed to be trusted.
+	// AMD root key is trusted as a result of being matched against a "source of truth" (the tooling does not
+	// support doing this match yet).
+	keyDB := NewKeyDatabase()
+	if err := keyDB.AddKey(amdPk); err != nil {
+		return nil, fmt.Errorf("could not add AMD key to the key database: %w", err)
+	}
+
 	keyDBBinary, err := ExtractPSPBinary(KeyDatabaseEntry, pspFw, firmware)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract KeyDatabaseEntry entry (%d) from PSP firmware: %w", KeyDatabaseEntry, err)
 	}
 
-	signature, signedData, err := keyDBBinary.GetSignature()
+	signature, signedData, err := keyDBBinary.GetSignature(keyDB)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract signature information from keydb binary: %w", err)
 	}
 
 	if err := signature.Validate(signedData, amdPk); err != nil {
 		return nil, fmt.Errorf("could not validate KeyDB PSP Header signature with AMD Public key: %w", err)
-	}
-
-	// build a key database and add extracted keys  to it. All keys in the database are supposed to be trusted
-	keyDB := NewKeyDatabase()
-	if err := keyDB.AddKey(amdPk); err != nil {
-		return nil, fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
 	buffer := bytes.NewBuffer(signedData.DataWithoutHeader())

@@ -25,7 +25,7 @@ type KeyID buf16B
 // Hex returns a hexadecimal string representation of a KeyID
 func (kid *KeyID) Hex() string {
 	var s strings.Builder
-	fmt.Fprintf(&s, "%x", kid)
+	fmt.Fprintf(&s, "%x", *kid)
 	return s.String()
 }
 
