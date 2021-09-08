@@ -10,8 +10,10 @@ import (
 
 // SignedBlob is an interface implemented by signed blobs in AMD firmware
 type SignedBlob interface {
-	// GetSignature returns signature information and an implementation of SignedData interface
-	GetSignature() (*Signature, SignedData, error)
+	// GetSignature returns signature information and an implementation of SignedData interface.
+	// It takes a KeyDB as argument, as the content of the KeyDB might determines the size of the
+	// signature.
+	GetSignature(keydb *KeyDatabase) (*Signature, SignedData, error)
 }
 
 // SignedData is an interface implemented by signed data which includes a header and raw data

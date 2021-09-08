@@ -83,7 +83,7 @@ func (b *PSPBinary) Header() *PspHeader {
 }
 
 // GetSignature implements SignatureGetter interface for PSPBinary
-func (b *PSPBinary) GetSignature() (*Signature, SignedData, error) {
+func (b *PSPBinary) GetSignature(keydb *KeyDatabase) (*Signature, SignedData, error) {
 
 	if b.header.sizeSigned == 0 {
 		return nil, nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
@@ -96,14 +96,21 @@ func (b *PSPBinary) GetSignature() (*Signature, SignedData, error) {
 		return nil, nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
 	}
 
-	// TODO: for the moment, assume the signature is 512 bytes long (RSA4096).
-	// GetSignature should be given in input the key database, so that
-	// the fingerprint of the key which signed the header can be compared
-	// with the known keys to decide the expected length of the signature.
-	// We need full support for parsing key database before being able to
-	// pass it to GetSignature().
+	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary
+	signingKeyID := KeyID(b.header.signatureParameters)
+	signingKey := keydb.GetKey(signingKeyID)
+	if signingKey == nil {
+		return nil, nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
+	}
 
-	sizeSignature := uint32(512)
+	// The recommended value for RSA exponent is 0x10001. The specification does not enforce
+	// that modulus and exponent buffer size should be the same, but so far this has been the
+	// case. This should probably be clarified with AMD and possibly be removed in the future.
+	if signingKey.modulusSize != signingKey.exponentSize {
+		return nil, nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
+	}
+
+	sizeSignature := signingKey.modulusSize / 8
 	signatureStart := b.header.sizeImage - sizeSignature
 	signatureEnd := signatureStart + sizeSignature
 	if err := checkBoundaries(uint64(signatureStart), uint64(signatureEnd), b.raw); err != nil {
