@@ -208,18 +208,18 @@ func GetKeyDB(firmware amd_manifest.Firmware) (*KeyDatabase, error) {
 		return nil, fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
-	keyDBBinary, err := ExtractPSPBinary(KeyDatabaseEntry, pspFw, firmware)
+	data, err := extractRawPSPEntry(KeyDatabaseEntry, pspFw, firmware)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract KeyDatabaseEntry entry (%d) from PSP firmware: %w", KeyDatabaseEntry, err)
+		return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", KeyDatabaseEntry, err)
 	}
 
-	signature, signedData, err := keyDBBinary.GetSignature(keyDB)
+	binary, err := newPSPBinary(data)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract signature information from keydb binary: %w", err)
+		return nil, fmt.Errorf("could not create PSB binary from raw data for entry 0x%x: %w", KeyDatabaseEntry, err)
 	}
-
-	if err := signature.Validate(signedData, amdPk); err != nil {
-		return nil, fmt.Errorf("could not validate KeyDB PSP Header signature with AMD Public key: %w", err)
+	_, _, signedData, err := binary.ValidateSignature(keyDB)
+	if err != nil {
+		return nil, fmt.Errorf("could not validate signature of PSB binary: %w", err)
 	}
 
 	buffer := bytes.NewBuffer(signedData.DataWithoutHeader())
