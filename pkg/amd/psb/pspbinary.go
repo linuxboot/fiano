@@ -9,8 +9,8 @@ import (
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
-// SizeHeader represents the size of the header pre-pended to PSP binaries
-const SizeHeader = 0x100
+// pspHeaderSize represents the size of the header pre-pended to PSP binaries
+const pspHeaderSize = 0x100
 
 // signedDataStart indicates the start address of signed data content within a PSP binary
 const signedDataStart = 0x0
@@ -83,7 +83,7 @@ func (b *PSPBinary) Header() *PspHeader {
 }
 
 // GetSignature implements SignatureGetter interface for PSPBinary
-func (b *PSPBinary) GetSignature() (*Signature, *SignedData, error) {
+func (b *PSPBinary) GetSignature() (*Signature, SignedData, error) {
 
 	if b.header.sizeSigned == 0 {
 		return nil, nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
@@ -110,17 +110,21 @@ func (b *PSPBinary) GetSignature() (*Signature, *SignedData, error) {
 		return nil, nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
 	}
 
-	signedDataEnd := signedDataStart + b.header.sizeSigned + SizeHeader
+	signedDataEnd := signedDataStart + b.header.sizeSigned + pspHeaderSize
 	if err := checkBoundaries(uint64(signedDataStart), uint64(signedDataEnd), b.raw); err != nil {
 		return nil, nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
 	}
 
 	var keyFingerprint strings.Builder
 	fmt.Fprintf(&keyFingerprint, "%x", b.header.signatureParameters)
-	signature := NewSignature(b.raw[signatureStart:signatureEnd], keyFingerprint.String())
-	signedData := NewSignedData(b.raw[signedDataStart:signedDataEnd])
 
-	return &signature, &signedData, nil
+	signature := NewSignature(b.raw[signatureStart:signatureEnd], keyFingerprint.String())
+	signedData, err := NewPspBinarySignedData(b.raw[signedDataStart:signedDataEnd])
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not extract signed data from PSP binary")
+	}
+
+	return &signature, signedData, nil
 }
 
 // NewPSPBinary creates a PSPBinary object, with associated header
