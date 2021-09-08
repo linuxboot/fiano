@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"strings"
-
-	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
 // pspHeaderSize represents the size of the header pre-pended to PSP binaries
@@ -83,59 +80,72 @@ func (b *PSPBinary) Header() *PspHeader {
 }
 
 // GetSignature implements SignatureGetter interface for PSPBinary
-func (b *PSPBinary) GetSignature(keydb *KeyDatabase) (*Signature, SignedData, error) {
+func (b *PSPBinary) getSignature(keydb *KeyDatabase) (*Signature, *Key, SignedData, error) {
 
 	if b.header.sizeSigned == 0 {
-		return nil, nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
+		return nil, nil, nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
 	}
 	if b.header.sizeImage == 0 {
-		return nil, nil, fmt.Errorf("size of image cannot be 0 for PSPBinary")
+		return nil, nil, nil, fmt.Errorf("size of image cannot be 0 for PSPBinary")
 	}
 
 	if b.header.sizeSigned > b.header.sizeImage {
-		return nil, nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
+		return nil, nil, nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
 	}
 
 	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary
 	signingKeyID := KeyID(b.header.signatureParameters)
 	signingKey := keydb.GetKey(signingKeyID)
 	if signingKey == nil {
-		return nil, nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
+		return nil, nil, nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
 	}
 
 	// The recommended value for RSA exponent is 0x10001. The specification does not enforce
 	// that modulus and exponent buffer size should be the same, but so far this has been the
 	// case. This should probably be clarified with AMD and possibly be removed in the future.
 	if signingKey.modulusSize != signingKey.exponentSize {
-		return nil, nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
+		return nil, nil, nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
 	}
 
 	sizeSignature := signingKey.modulusSize / 8
+
 	signatureStart := b.header.sizeImage - sizeSignature
 	signatureEnd := signatureStart + sizeSignature
 	if err := checkBoundaries(uint64(signatureStart), uint64(signatureEnd), b.raw); err != nil {
-		return nil, nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
+		return nil, nil, nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
 	}
 
-	signedDataEnd := signedDataStart + b.header.sizeSigned + pspHeaderSize
+	signedDataEnd := signedDataStart + pspHeaderSize + b.header.sizeSigned
 	if err := checkBoundaries(uint64(signedDataStart), uint64(signedDataEnd), b.raw); err != nil {
-		return nil, nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
+		return nil, nil, nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
 	}
 
-	var keyFingerprint strings.Builder
-	fmt.Fprintf(&keyFingerprint, "%x", b.header.signatureParameters)
-
-	signature := NewSignature(b.raw[signatureStart:signatureEnd], keyFingerprint.String())
-	signedData, err := NewPspBinarySignedData(b.raw[signedDataStart:signedDataEnd])
+	signature := NewSignature(b.raw[signatureStart:signatureEnd], signingKeyID)
+	signedData, err := NewPSBBinarySignedData(b.raw[signedDataStart:signedDataEnd])
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not extract signed data from PSP binary")
+		return nil, nil, nil, fmt.Errorf("could not extract signed data from PSP binary")
 	}
 
-	return &signature, signedData, nil
+	return &signature, signingKey, signedData, nil
 }
 
-// NewPSPBinary creates a PSPBinary object, with associated header
-func NewPSPBinary(data []byte) (*PSPBinary, error) {
+// ValidateSignature validates the signature of the PSB binary with the corresponding key looked up from the key database
+func (b *PSPBinary) ValidateSignature(keyDB *KeyDatabase) (*Signature, *Key, SignedData, error) {
+
+	signature, key, signedData, err := b.getSignature(keyDB)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("could not extract signature information from psb binary: %w", err)
+	}
+
+	if err := signature.Validate(signedData, key); err != nil {
+		return signature, key, signedData, &SignatureCheckError{signingKey: key.KeyID(), signedElement: "PSB binary", err: err}
+	}
+
+	return signature, key, signedData, nil
+}
+
+// newPSPBinary creates a PSPBinary object, with associated header
+func newPSPBinary(data []byte) (*PSPBinary, error) {
 
 	pspBinary := PSPBinary{}
 	pspBinary.raw = make([]byte, len(data), len(data))
@@ -176,35 +186,4 @@ func NewPSPBinary(data []byte) (*PSPBinary, error) {
 		return nil, fmt.Errorf("could not read sizeImage: %w", err)
 	}
 	return &pspBinary, nil
-}
-
-// ExtractPSPBinary extracts entries from the PSP directory based on entry ID. The binary
-// is supposed to have a header described by PspHeader structure. We assume to look-up for
-// the entry in the level 1 directory.
-func ExtractPSPBinary(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, firmware amd_manifest.Firmware) (*PSPBinary, error) {
-
-	if pspFw == nil {
-		panic("cannot extract key database from nil PSP Firmware")
-	}
-
-	if pspFw.PSPDirectoryLevel1 == nil {
-		return nil, fmt.Errorf("cannot extract key database without PSP Directory Level 1")
-	}
-
-	for _, entry := range pspFw.PSPDirectoryLevel1.Entries {
-		if entry.Type == id {
-			firmwareBytes := firmware.ImageBytes()
-			start := entry.LocationOrValue
-			end := start + uint64(entry.Size)
-			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
-				return nil, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
-			}
-			binary, err := NewPSPBinary(firmwareBytes[start:end])
-			if err != nil {
-				return nil, fmt.Errorf("could not construct PSP header from key database: %w", err)
-			}
-			return binary, nil
-		}
-	}
-	return nil, fmt.Errorf("could not find PSP entry %d in PSP Directory Level 1", id)
 }

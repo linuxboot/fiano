@@ -13,7 +13,7 @@ type SignedBlob interface {
 	// GetSignature returns signature information and an implementation of SignedData interface.
 	// It takes a KeyDB as argument, as the content of the KeyDB might determines the size of the
 	// signature.
-	GetSignature(keydb *KeyDatabase) (*Signature, SignedData, error)
+	GetSignature(keydb *KeyDatabase) (*Signature, *Key, SignedData, error)
 }
 
 // SignedData is an interface implemented by signed data which includes a header and raw data
@@ -22,33 +22,33 @@ type SignedData interface {
 	DataWithoutHeader() []byte
 }
 
-// PspBinarySignedData represents signed data extracted from a PSP Table entry, including header and body
-type PspBinarySignedData struct {
+// PSBBinarySignedData represents signed data extracted from a PSP Table entry, including header and body
+type PSBBinarySignedData struct {
 	signedData []byte
 }
 
 // DataWithHeader returns the whole signed data buffer, including header and body
-func (d *PspBinarySignedData) DataWithHeader() []byte {
+func (d *PSBBinarySignedData) DataWithHeader() []byte {
 	return d.signedData
 }
 
 // DataWithoutHeader returns the data help by the PSP binary without header
-func (d *PspBinarySignedData) DataWithoutHeader() []byte {
+func (d *PSBBinarySignedData) DataWithoutHeader() []byte {
 	return d.signedData[pspHeaderSize:]
 }
 
-// NewPspBinarySignedData creates a new signed data object for PSP binary
-func NewPspBinarySignedData(signedData []byte) (SignedData, error) {
+// NewPSBBinarySignedData creates a new signed data object for PSP binary
+func NewPSBBinarySignedData(signedData []byte) (SignedData, error) {
 	if len(signedData) <= pspHeaderSize {
 		return nil, fmt.Errorf("PSP binary cannot be smaller than or equal to header size")
 	}
-	return &PspBinarySignedData{signedData: signedData}, nil
+	return &PSBBinarySignedData{signedData: signedData}, nil
 }
 
 // Signature represents the raw signature bytes of a blob
 type Signature struct {
-	keyFingerprint string
-	signature      []byte
+	keyID     KeyID
+	signature []byte
 }
 
 // Validate validates the signature against the data and key provided
@@ -81,12 +81,37 @@ func (s Signature) Validate(data SignedData, key *Key) error {
 // String returns a string representation of the signature
 func (s *Signature) String() string {
 	var str strings.Builder
-	fmt.Fprintf(&str, "Key fingerprint: %s\n", s.keyFingerprint)
+	fmt.Fprintf(&str, "KeyID: %s\n", s.keyID.Hex())
 	fmt.Fprintf(&str, "Signature: 0x%x\n", s.signature)
 	return str.String()
 }
 
+// KeyID returns the KeyID which signed the data
+func (s *Signature) KeyID() KeyID {
+	return s.keyID
+}
+
 // NewSignature creates a new signature object
-func NewSignature(signature []byte, keyFingerprint string) Signature {
-	return Signature{signature: signature, keyFingerprint: keyFingerprint}
+func NewSignature(signature []byte, keyID KeyID) Signature {
+	return Signature{signature: signature, keyID: keyID}
+}
+
+// SignatureValidationResult represents the result of a signature validate
+type SignatureValidationResult struct {
+	signedElement string
+	signingKey    KeyID
+	err           error
+}
+
+// String returns a string representation of the signature validation result
+func (v *SignatureValidationResult) String() string {
+	var str strings.Builder
+	fmt.Fprintf(&str, "Signed element: %s\n", v.signedElement)
+	fmt.Fprintf(&str, "Signing key ID: 0x%s\n", v.signingKey.Hex())
+	if v.err != nil {
+		fmt.Fprintf(&str, "Signature: FAIL (%s)\n", v.err.Error())
+	} else {
+		fmt.Fprintf(&str, "Signature: OK\n")
+	}
+	return str.String()
 }
