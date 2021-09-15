@@ -217,12 +217,19 @@ func GetKeyDB(firmware amd_manifest.Firmware) (*KeyDatabase, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create PSB binary from raw data for entry 0x%x: %w", KeyDatabaseEntry, err)
 	}
-	_, _, signedData, err := binary.ValidateSignature(keyDB)
+
+	// getSignedBlob returns the whole PSP blob as a signature-validated structure. We need to strip off
+	// pspHeader to get the content which actually represents the key database
+	signedBlob, err := binary.getSignedBlob(keyDB)
 	if err != nil {
 		return nil, fmt.Errorf("could not validate signature of PSB binary: %w", err)
 	}
+	signedData := signedBlob.SignedData()
+	if len(signedData) <= pspHeaderSize {
+		return nil, fmt.Errorf("length of key database entry (%d) is less than pspHeader length (%d)", len(signedData), pspHeaderSize)
+	}
 
-	buffer := bytes.NewBuffer(signedData.DataWithoutHeader())
+	buffer := bytes.NewBuffer(signedData[pspHeaderSize:])
 	header, err := extractKeydbHeader(buffer)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract keydb header: %w", header)
