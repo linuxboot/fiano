@@ -1,6 +1,7 @@
 package psb
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_m
 		return nil, fmt.Errorf("cannot extract key database without PSP Directory Level 1")
 	}
 
+	// TODO: add support for Level 2 directory
 	for _, entry := range pspFw.PSPDirectoryLevel1.Entries {
 		if entry.Type == id {
 			firmwareBytes := firmware.ImageBytes()
@@ -60,14 +62,20 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, entries []string) ([]Sig
 		if err != nil {
 			return nil, fmt.Errorf("could not create PSB binary from raw data for entry 0x%x: %w", entry, err)
 		}
-		signature, _, _, err := binary.ValidateSignature(keyDB)
+		signedBlob, err := binary.getSignedBlob(keyDB)
 		var signedElement strings.Builder
 		fmt.Fprintf(&signedElement, "PSP entry 0x%s", entry)
 
-		if signature != nil {
-			validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.KeyID(), err: err})
+		if err != nil {
+			var sigError *SignatureCheckError
+			if errors.As(err, &sigError) {
+				validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), signingKey: sigError.SigningKey(), err: err})
+			} else {
+				validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), err: err})
+			}
 		} else {
-			validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), err: err})
+			signature := signedBlob.Signature()
+			validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.SigningKey(), err: err})
 		}
 
 	}

@@ -79,32 +79,32 @@ func (b *PSPBinary) Header() *PspHeader {
 	return &b.header
 }
 
-// GetSignature implements SignatureGetter interface for PSPBinary
-func (b *PSPBinary) getSignature(keydb *KeyDatabase) (*Signature, *Key, SignedData, error) {
+// getSignedBlob returns the PSP binary object as a signature-validated SignedBlob structure
+func (b *PSPBinary) getSignedBlob(keyDB *KeyDatabase) (*SignedBlob, error) {
 
 	if b.header.sizeSigned == 0 {
-		return nil, nil, nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
+		return nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
 	}
 	if b.header.sizeImage == 0 {
-		return nil, nil, nil, fmt.Errorf("size of image cannot be 0 for PSPBinary")
+		return nil, fmt.Errorf("size of image cannot be 0 for PSPBinary")
 	}
-
 	if b.header.sizeSigned > b.header.sizeImage {
-		return nil, nil, nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
+		return nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
 	}
 
-	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary
+	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary.
+	// We need to look-up the signing key to infer the expected size of the signature.
 	signingKeyID := KeyID(b.header.signatureParameters)
-	signingKey := keydb.GetKey(signingKeyID)
+	signingKey := keyDB.GetKey(signingKeyID)
 	if signingKey == nil {
-		return nil, nil, nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
+		return nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
 	}
 
 	// The recommended value for RSA exponent is 0x10001. The specification does not enforce
 	// that modulus and exponent buffer size should be the same, but so far this has been the
 	// case. This should probably be clarified with AMD and possibly be removed in the future.
 	if signingKey.modulusSize != signingKey.exponentSize {
-		return nil, nil, nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
+		return nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
 	}
 
 	sizeSignature := signingKey.modulusSize / 8
@@ -112,36 +112,21 @@ func (b *PSPBinary) getSignature(keydb *KeyDatabase) (*Signature, *Key, SignedDa
 	signatureStart := b.header.sizeImage - sizeSignature
 	signatureEnd := signatureStart + sizeSignature
 	if err := checkBoundaries(uint64(signatureStart), uint64(signatureEnd), b.raw); err != nil {
-		return nil, nil, nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
+		return nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
 	}
 
 	signedDataEnd := signedDataStart + pspHeaderSize + b.header.sizeSigned
 	if err := checkBoundaries(uint64(signedDataStart), uint64(signedDataEnd), b.raw); err != nil {
-		return nil, nil, nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
+		return nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
 	}
 
-	signature := NewSignature(b.raw[signatureStart:signatureEnd], signingKeyID)
-	signedData, err := NewPSBBinarySignedData(b.raw[signedDataStart:signedDataEnd])
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("could not extract signed data from PSP binary")
+	signature := b.raw[signatureStart:signatureEnd]
+
+	signedData := b.raw[signedDataStart:signedDataEnd]
+	if len(signedData) <= pspHeaderSize {
+		return nil, fmt.Errorf("PSP binary cannot be smaller than or equal to header size")
 	}
-
-	return &signature, signingKey, signedData, nil
-}
-
-// ValidateSignature validates the signature of the PSB binary with the corresponding key looked up from the key database
-func (b *PSPBinary) ValidateSignature(keyDB *KeyDatabase) (*Signature, *Key, SignedData, error) {
-
-	signature, key, signedData, err := b.getSignature(keyDB)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("could not extract signature information from psb binary: %w", err)
-	}
-
-	if err := signature.Validate(signedData, key); err != nil {
-		return signature, key, signedData, &SignatureCheckError{signingKey: key.KeyID(), signedElement: "PSB binary", err: err}
-	}
-
-	return signature, key, signedData, nil
+	return NewSignedBlob(signature, signedData, signingKey, "PSP binary")
 }
 
 // newPSPBinary creates a PSPBinary object, with associated header
