@@ -57,7 +57,6 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, entries []string) ([]Sig
 		if err != nil {
 			return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
 		}
-
 		binary, err := newPSPBinary(data)
 		if err != nil {
 			return nil, fmt.Errorf("could not create PSB binary from raw data for entry 0x%x: %w", entry, err)
