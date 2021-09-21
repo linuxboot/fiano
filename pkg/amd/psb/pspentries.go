@@ -9,6 +9,17 @@ import (
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
+const (
+	// AMDPublicKeyEntry denotes AMD public key entry in PSP Directory table
+	AMDPublicKeyEntry amd_manifest.PSPDirectoryTableEntryType = 0x00
+
+	// KeyDatabaseEntry points to region of firmware containing key database
+	KeyDatabaseEntry amd_manifest.PSPDirectoryTableEntryType = 0x50
+
+	// ABLPublicKey represents the key used to sign ABL firmware
+	ABLPublicKey amd_manifest.PSPDirectoryTableEntryType = 0x0A
+)
+
 // extractRawPSPEntry extracts data corresponding to an entry in the PSP table. We assume
 // to look-up for the entry in the level 1 directory.
 func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, firmware amd_manifest.Firmware) ([]byte, error) {
@@ -35,7 +46,7 @@ func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_m
 // ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
 func ValidatePSPEntries(firmware amd_manifest.Firmware, entries []string) ([]SignatureValidationResult, error) {
 
-	keyDB, err := GetKeyDB(firmware)
+	keyDB, err := GetKeys(firmware)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract key database: %w", err)
 	}
