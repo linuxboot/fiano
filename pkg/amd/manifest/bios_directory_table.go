@@ -178,11 +178,11 @@ func ParseBIOSDirectoryTableEntry(r io.Reader) (*BIOSDirectoryTableEntry, uint64
 	if err := readAndCountSize(r, binary.LittleEndian, &flags, &length); err != nil {
 		return nil, 0, err
 	}
-	entry.ResetImage = (flags>>7)&0x1 != 0
-	entry.CopyImage = (flags>>6)&0x1 != 0
-	entry.ReadOnly = (flags>>5)&0x1 != 0
-	entry.Compressed = (flags>>4)&0x1 != 0
-	entry.Instance = flags >> 3
+	entry.ResetImage = flags&0x1 != 0
+	entry.CopyImage = (flags>>1)&0x1 != 0
+	entry.ReadOnly = (flags>>2)&0x1 != 0
+	entry.Compressed = (flags>>3)&0x1 != 0
+	entry.Instance = flags >> 4
 
 	if err := readAndCountSize(r, binary.LittleEndian, &flags, &length); err != nil {
 		return nil, 0, err
