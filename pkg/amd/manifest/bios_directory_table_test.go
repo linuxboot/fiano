@@ -83,26 +83,36 @@ func TestBiosDirectoryTableParsing(t *testing.T) {
 		t.Fatalf("Result number of entries is incorrect: %d, expected: %d", len(table.Entries), 1)
 	}
 
-	if table.Entries[0].Type != 0x68 {
+	entry := table.Entries[0]
+	if entry.Type != 0x68 {
 		t.Errorf("Table entry [0] type is incorrect: %d, expected: %d", table.Entries[0].Type, 0x68)
 	}
-	if table.Entries[0].ResetImage {
+	if entry.ResetImage {
 		t.Errorf("Table entry [0] reset image is incorrect, expected false")
 	}
-	if table.Entries[0].CopyImage {
+	if entry.CopyImage {
 		t.Errorf("Table entry [0] copy image is incorrect, expected false")
 	}
-	if table.Entries[0].ReadOnly {
+	if entry.ReadOnly {
 		t.Errorf("Table entry [0] read only is incorrect, expected false")
 	}
-	if !table.Entries[0].Compressed {
-		t.Errorf("Table entry [0] compress is incorrect, expected true")
+	if entry.Compressed {
+		t.Errorf("Table entry [0] compress is incorrect, expected false")
 	}
-	if table.Entries[0].SourceAddress != 0x173000 {
+	if entry.Instance != 1 {
+		t.Errorf("Table entry [0] instance is incorrect, expected 1, got: %d", entry.Instance)
+	}
+	if entry.Subprogram != 1 {
+		t.Errorf("Table entry [0] subprogram is incorrect, expected 1, got: %d", entry.Subprogram)
+	}
+	if entry.RomID != 0 {
+		t.Errorf("Table entry [0] subprogram is incorrect, expected 9, got: %d", entry.RomID)
+	}
+	if entry.SourceAddress != 0x173000 {
 		t.Errorf("Table entry [0] source address is incorrect: %x, expected: 0x173000",
 			table.Entries[0].SourceAddress)
 	}
-	if table.Entries[0].DestinationAddress != 0xffffffffffffffff {
+	if entry.DestinationAddress != 0xffffffffffffffff {
 		t.Errorf("Table entry [0] destination address is incorrect: %x, expected: 0xffffffffffffffff",
 			table.Entries[0].DestinationAddress)
 	}
