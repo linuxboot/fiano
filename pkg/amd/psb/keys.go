@@ -211,7 +211,7 @@ func NewTokenKey(buff *bytes.Buffer, keySet *KeySet) (*Key, error) {
 
 	// Validate the signature of the raw token
 	if _, err := NewSignedBlob(reverse(signature), raw[:lenSigned], signingKey, "token key"); err != nil {
-		return nil, fmt.Errorf("could not validate the signature of token key: %w")
+		return nil, fmt.Errorf("could not validate the signature of token key: %w", err)
 	}
 	return key, nil
 }
@@ -370,6 +370,21 @@ func GetKeys(firmware amd_manifest.Firmware) (*KeySet, error) {
 	err = keySet.AddKey(ablPk)
 	if err != nil {
 		return nil, fmt.Errorf("could not add ABL signing key to key set: %w", err)
+	}
+
+	// Extract OEM signing key (entry 0x05 in BIOS Directory table)
+	pubKeyBytes, err = extractRawBIOSEntry(OEMSigningKeyEntry, pspFw, firmware)
+	if err != nil {
+		return nil, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key")
+	}
+	oemPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
+	if err != nil {
+		return nil, fmt.Errorf("could not extract OEM public key: %w", err)
+	}
+
+	err = keySet.AddKey(oemPk)
+	if err != nil {
+		return nil, fmt.Errorf("could not add OEM signing key to key set: %w", err)
 	}
 
 	return keySet, err
