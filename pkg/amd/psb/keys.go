@@ -85,6 +85,8 @@ type Key struct {
 // however are ultimately responsible to make sure that a KeySet is passed if a key should be validated.
 func newKey(buff *bytes.Buffer, keyType KeyType, keySet *KeySet) (*Key, error) {
 
+	raw := buff.Bytes()
+
 	if keyType == TokenKey && keySet == nil {
 		return nil, fmt.Errorf("key of type %s must have its signature validated, so a KeySet is necessary (passed nil)", keyType)
 	}
@@ -199,7 +201,38 @@ func newKey(buff *bytes.Buffer, keyType KeyType, keySet *KeySet) (*Key, error) {
 	}
 	key.modulus = modulus
 
-	// TODO: key of type TokenKey should have the signature validated
+	// If the Key is of TokenKey type, it should hold a signature at the bottom of the token
+	if keyType == TokenKey {
+		signature := make([]byte, key.modulusSize/8)
+		if err := binary.Read(buff, binary.LittleEndian, &signature); err != nil {
+			return nil, fmt.Errorf("could not parse signature from key token: %w", err)
+		}
+		signingKeyID := KeyID(key.certifyingKeyID)
+		signingKey := keySet.GetKey(signingKeyID)
+		if signingKey == nil {
+			return nil, fmt.Errorf("could not find signing key with ID %s for key of type %s", signingKeyID.Hex(), keyType)
+		}
+
+		// A key extracted from a signed token has the following structure:
+		// * 64 bytes header
+		// * exponent
+		// * modulus
+		// * signature.
+		//
+		// Exponent, modulus and signature are all of the same size. Only the latter is not signed, hence the length
+		// of the signed payload is header size + 2 * exponent/modulus size.
+		lenSigned := uint64(64 + 2*key.modulusSize/8)
+		if uint64(len(raw)) < lenSigned {
+			return nil, fmt.Errorf("length of signed token is not sufficient: expected > %d, got %d", lenSigned, len(raw))
+		}
+
+		// Validate the signature of the raw token
+		if _, err := NewSignedBlob(reverse(signature), raw[:lenSigned], signingKey, fmt.Sprintf("key of type %s", keyType)); err != nil {
+			return nil, fmt.Errorf("could not validate the signature of key type %s: %w", keyType, err)
+		}
+
+	}
+
 	return &key, nil
 }
 
@@ -279,7 +312,31 @@ func (k *Key) Get() (interface{}, error) {
 // of all the keys known to the system (e.g. additional keys might be OEM key,
 // ABL signing key, etc.).
 func GetKeys(firmware amd_manifest.Firmware) (*KeySet, error) {
+	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
+	if err != nil {
+		return nil, fmt.Errorf("could not extract PSP firmware: %w", err)
+	}
+
 	keySet := NewKeySet()
-	err := getKeysFromDatabase(firmware, keySet)
+	err = getKeysFromDatabase(firmware, keySet)
+	if err != nil {
+		return nil, fmt.Errorf("could not get key from table into KeySet: %w", err)
+	}
+
+	// Extract ABL signing key (entry 0x0A in PSP Directory), which is signed with AMD Public Key.
+	pubKeyBytes, err := extractRawPSPEntry(ABLPublicKey, pspFw, firmware)
+	if err != nil {
+		return nil, fmt.Errorf("could not extract raw PSP entry for ABL Public Key")
+	}
+	ablPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
+	if err != nil {
+		return nil, fmt.Errorf("could not extract ABL public key: %w", err)
+	}
+
+	err = keySet.AddKey(ablPk)
+	if err != nil {
+		return nil, fmt.Errorf("could not add ABL signing key to key set: %w", err)
+	}
+
 	return keySet, err
 }
