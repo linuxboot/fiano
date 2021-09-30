@@ -17,18 +17,6 @@ import (
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 )
 
-// KeyType represents the type of the key being deserialized
-type KeyType string
-
-const (
-	// TokenKey represents a key deserialized from a signed token
-	TokenKey KeyType = "TokenKey"
-	// RootKey represents the root AMD Public Key. There should be only one key of this type
-	RootKey KeyType = "RootKey"
-	// KeyDatabaseKey represents a key deserialized from a key database entry
-	KeyDatabaseKey = "KeyDatabaseKey"
-)
-
 // KeyID is the primary identifier of a key
 type KeyID buf16B
 
@@ -367,7 +355,7 @@ func GetKeys(firmware amd_manifest.Firmware) (*KeySet, error) {
 		return nil, fmt.Errorf("could not extract ABL public key: %w", err)
 	}
 
-	err = keySet.AddKey(ablPk)
+	err = keySet.AddKey(ablPk, ABLKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not add ABL signing key to key set: %w", err)
 	}
@@ -382,7 +370,7 @@ func GetKeys(firmware amd_manifest.Firmware) (*KeySet, error) {
 		return nil, fmt.Errorf("could not extract OEM public key: %w", err)
 	}
 
-	err = keySet.AddKey(oemPk)
+	err = keySet.AddKey(oemPk, OEMKey)
 	if err != nil {
 		return nil, fmt.Errorf("could not add OEM signing key to key set: %w", err)
 	}

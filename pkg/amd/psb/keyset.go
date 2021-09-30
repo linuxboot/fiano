@@ -12,9 +12,26 @@ import (
 
 const keydbHeaderSize = 80
 
+// KeyType represents the type of the key stored in KeySet
+type KeyType uint8
+
+const (
+	// OEMKey represents the OEM signing key
+	OEMKey KeyType = iota
+	// AMDRootKey represents the AMD signing key
+	AMDRootKey
+	// KeyDatabaseKey represents a key extracted from KeyDatabase
+	KeyDatabaseKey
+	// ABLKey represents the ABL signing key
+	ABLKey
+)
+
 // KeySet is a container for all keys known to the system
 type KeySet struct {
+	// db holds a mapping between keyID and key
 	db map[KeyID]*Key
+	// keyType holds a mapping betweek KeyType and KeyID
+	keyType map[KeyType][]KeyID
 }
 
 // String returns a string representation of the key in the set
@@ -29,12 +46,15 @@ func (kdb *KeySet) String() string {
 }
 
 // AddKey adds a key to the key set
-func (kdb *KeySet) AddKey(k *Key) error {
+func (kdb *KeySet) AddKey(k *Key, keyType KeyType) error {
 	keyID := k.KeyID()
 	if _, ok := kdb.db[keyID]; ok {
 		return fmt.Errorf("canont add key id %s to set, key with same id already exists", keyID.Hex())
 	}
+
 	kdb.db[keyID] = k
+	// assume the key cannot be already present in the keyType mapping
+	kdb.keyType[keyType] = append(kdb.keyType[keyType], k.KeyID())
 	return nil
 }
 
@@ -42,6 +62,7 @@ func (kdb *KeySet) AddKey(k *Key) error {
 func NewKeySet() *KeySet {
 	keydb := KeySet{}
 	keydb.db = make(map[KeyID]*Key)
+	keydb.keyType = make(map[KeyType][]KeyID)
 	return &keydb
 }
 
@@ -113,7 +134,7 @@ func getKeysFromDatabase(firmware amd_manifest.Firmware, keySet *KeySet) error {
 	// All keys which get added the KeySet are supposed to be trusted. AMD root key is trusted as a result of being matched against a
 	// "source of truth" (in hardware, this is a hash burnt into the CPU. Software tooling should check it against some external
 	// reference).
-	if err := keySet.AddKey(amdPk); err != nil {
+	if err := keySet.AddKey(amdPk, AMDRootKey); err != nil {
 		return fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
@@ -153,7 +174,7 @@ func getKeysFromDatabase(firmware amd_manifest.Firmware, keySet *KeySet) error {
 		if err != nil {
 			return fmt.Errorf("could not extract key entry from key database: %w", err)
 		}
-		if err := keySet.AddKey(key); err != nil {
+		if err := keySet.AddKey(key, KeyDatabaseKey); err != nil {
 			return fmt.Errorf("cannot add key to key database: %w", err)
 		}
 	}
