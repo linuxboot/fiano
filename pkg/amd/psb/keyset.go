@@ -13,17 +13,17 @@ import (
 const keydbHeaderSize = 80
 
 // KeyType represents the type of the key stored in KeySet
-type KeyType uint8
+type KeyType string
 
 const (
 	// OEMKey represents the OEM signing key
-	OEMKey KeyType = iota
+	OEMKey KeyType = "OEMKey"
 	// AMDRootKey represents the AMD signing key
-	AMDRootKey
+	AMDRootKey KeyType = "AMDRootKey"
 	// KeyDatabaseKey represents a key extracted from KeyDatabase
-	KeyDatabaseKey
+	KeyDatabaseKey KeyType = "KeyDatabaseKey"
 	// ABLKey represents the ABL signing key
-	ABLKey
+	ABLKey KeyType = "ALBKey"
 )
 
 // KeySet is a container for all keys known to the system
@@ -46,7 +46,7 @@ func (kdb *KeySet) String() string {
 }
 
 // AddKey adds a key to the key set
-func (kdb *KeySet) AddKey(k *Key, keyType KeyType) error {
+func (kdb KeySet) AddKey(k *Key, keyType KeyType) error {
 	keyID := k.KeyID()
 	if _, ok := kdb.db[keyID]; ok {
 		return fmt.Errorf("canont add key id %s to set, key with same id already exists", keyID.Hex())
@@ -59,16 +59,44 @@ func (kdb *KeySet) AddKey(k *Key, keyType KeyType) error {
 }
 
 // NewKeySet builds an empty key set object
-func NewKeySet() *KeySet {
-	keydb := KeySet{}
-	keydb.db = make(map[KeyID]*Key)
-	keydb.keyType = make(map[KeyType][]KeyID)
-	return &keydb
+func NewKeySet() KeySet {
+	keySet := KeySet{}
+	keySet.db = make(map[KeyID]*Key)
+	keySet.keyType = make(map[KeyType][]KeyID)
+	return keySet
 }
 
 // GetKey returns a key if known to the KeySet. If the key is not known, null is returned
-func (kdb *KeySet) GetKey(id KeyID) *Key {
+func (kdb KeySet) GetKey(id KeyID) *Key {
+	if kdb.db == nil {
+		return nil
+	}
 	return kdb.db[id]
+}
+
+// AllKeyIDs returns a list of all KeyIDs stored in the KeySet
+func (kdb KeySet) AllKeyIDs() KeyIDs {
+	keyIDs := make(KeyIDs, 0, len(kdb.db))
+	for keyID := range kdb.db {
+		keyIDs = append(keyIDs, keyID)
+	}
+	return keyIDs
+}
+
+// KeysetFromType returns a KeySet containing all KeyIDs of a specific type
+func (kdb KeySet) KeysetFromType(keyType KeyType) (KeySet, error) {
+	if _, ok := kdb.keyType[keyType]; !ok {
+		return NewKeySet(), fmt.Errorf("no key of type %s", keyType)
+	}
+	keySet := NewKeySet()
+	for _, keyID := range kdb.keyType[keyType] {
+		key := kdb.GetKey(keyID)
+		if key == nil {
+			return NewKeySet(), fmt.Errorf("KeySet in inconsistent state, no key is present with keyID %s", keyID.Hex())
+		}
+		keySet.AddKey(key, keyType)
+	}
+	return keySet, nil
 }
 
 // keydbHeader represents the header pre-pended to keydb structure
@@ -115,7 +143,7 @@ func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
 
 // getKeysFromDatabase extracts the keys in the firmware key database and adds them to the KeySet passed
 // as argument after validating the signature of the database itself
-func getKeysFromDatabase(firmware amd_manifest.Firmware, keySet *KeySet) error {
+func getKeysFromDatabase(firmware amd_manifest.Firmware, keySet KeySet) error {
 	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
 	if err != nil {
 		return fmt.Errorf("could not get key database from firmware: %w", err)

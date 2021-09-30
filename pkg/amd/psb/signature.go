@@ -47,12 +47,28 @@ func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key, descrip
 		default:
 			return nil, fmt.Errorf("signature validation for RSA key with size != 4096 bit (%d) is not supported", size)
 		}
+	}
+	return nil, fmt.Errorf("signature validation with key type != RSA is not supported")
+}
 
-	default:
-		return nil, fmt.Errorf("signature validation with key type != RSA is not supported")
+// NewMultiKeySignedBlob validates the signature of a blob against multiple possible keys stored in a KeySet,
+// returning the key which validates the signature of the blob
+func NewMultiKeySignedBlob(signature []byte, signedData []byte, keySet KeySet, description string) (*SignedBlob, *Key, error) {
+
+	allKeyIDs := keySet.AllKeyIDs()
+	for _, keyID := range allKeyIDs {
+		key := keySet.GetKey(keyID)
+		if key == nil {
+			return nil, nil, fmt.Errorf("KeySet is inconsistent, KeyID %s was returned but corresponding key is not present", keyID.Hex())
+		}
+
+		blob, err := NewSignedBlob(signature, signedData, key, description)
+		if err == nil {
+			return blob, key, nil
+		}
 	}
 
-	return nil, fmt.Errorf("coult not validate signature: unexpected configuration")
+	return nil, nil, fmt.Errorf("cannot validate signed blob with any of the %d keys available (%s)", len(allKeyIDs), allKeyIDs.String())
 }
 
 // Signature represents the raw signature bytes of a blob

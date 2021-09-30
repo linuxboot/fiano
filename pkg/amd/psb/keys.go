@@ -27,6 +27,28 @@ func (kid *KeyID) Hex() string {
 	return s.String()
 }
 
+// String returns the hexadecimal string representation of a KeyID
+func (kid *KeyID) String() string {
+	return kid.Hex()
+}
+
+// KeyIDs represents a list of KeyID
+type KeyIDs []KeyID
+
+// String returns a string representation of all KeyIDs
+func (kids KeyIDs) String() string {
+	if len(kids) == 0 {
+		return ""
+	}
+
+	var s strings.Builder
+	fmt.Fprintf(&s, "%s", kids[0].Hex())
+	for _, kid := range kids[1:] {
+		fmt.Fprintf(&s, ", %s", kid.Hex())
+	}
+	return s.String()
+}
+
 // Key structure extracted from the firmware
 type Key struct {
 	versionID       uint32
@@ -161,10 +183,7 @@ func NewRootKey(buff *bytes.Buffer) (*Key, error) {
 }
 
 // NewTokenKey create a new key object from a signed token
-func NewTokenKey(buff *bytes.Buffer, keySet *KeySet) (*Key, error) {
-	if keySet == nil {
-		return nil, fmt.Errorf("token key must have its signature validated, so a KeySet is necessary (passed nil)")
-	}
+func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 
 	raw := buff.Bytes()
 
@@ -333,46 +352,46 @@ func (k *Key) Get() (interface{}, error) {
 // The firmware itself contains a key database, but that is not comprehensive
 // of all the keys known to the system (e.g. additional keys might be OEM key,
 // ABL signing key, etc.).
-func GetKeys(firmware amd_manifest.Firmware) (*KeySet, error) {
+func GetKeys(firmware amd_manifest.Firmware) (KeySet, error) {
 	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract PSP firmware: %w", err)
+		return NewKeySet(), fmt.Errorf("could not extract PSP firmware: %w", err)
 	}
 
 	keySet := NewKeySet()
 	err = getKeysFromDatabase(firmware, keySet)
 	if err != nil {
-		return nil, fmt.Errorf("could not get key from table into KeySet: %w", err)
+		return keySet, fmt.Errorf("could not get key from table into KeySet: %w", err)
 	}
 
 	// Extract ABL signing key (entry 0x0A in PSP Directory), which is signed with AMD Public Key.
 	pubKeyBytes, err := extractRawPSPEntry(ABLPublicKey, pspFw, firmware)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract raw PSP entry for ABL Public Key")
+		return keySet, fmt.Errorf("could not extract raw PSP entry for ABL Public Key")
 	}
 	ablPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract ABL public key: %w", err)
+		return keySet, fmt.Errorf("could not extract ABL public key: %w", err)
 	}
 
 	err = keySet.AddKey(ablPk, ABLKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not add ABL signing key to key set: %w", err)
+		return keySet, fmt.Errorf("could not add ABL signing key to key set: %w", err)
 	}
 
 	// Extract OEM signing key (entry 0x05 in BIOS Directory table)
 	pubKeyBytes, err = extractRawBIOSEntry(OEMSigningKeyEntry, pspFw, firmware)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key")
+		return keySet, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key")
 	}
 	oemPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract OEM public key: %w", err)
+		return keySet, fmt.Errorf("could not extract OEM public key: %w", err)
 	}
 
 	err = keySet.AddKey(oemPk, OEMKey)
 	if err != nil {
-		return nil, fmt.Errorf("could not add OEM signing key to key set: %w", err)
+		return keySet, fmt.Errorf("could not add OEM signing key to key set: %w", err)
 	}
 
 	return keySet, err
