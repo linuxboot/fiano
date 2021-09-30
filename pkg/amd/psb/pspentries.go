@@ -18,6 +18,9 @@ const (
 
 	// ABLPublicKey represents the key used to sign ABL firmware
 	ABLPublicKey amd_manifest.PSPDirectoryTableEntryType = 0x0A
+
+	// OEMSigningKeyEntry represents the OEM signing key
+	OEMSigningKeyEntry amd_manifest.BIOSDirectoryTableEntryType = 0x05
 )
 
 // extractRawPSPEntry extracts data corresponding to an entry in the PSP table. We assume
@@ -25,7 +28,7 @@ const (
 func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, firmware amd_manifest.Firmware) ([]byte, error) {
 
 	if pspFw.PSPDirectoryLevel1 == nil {
-		return nil, fmt.Errorf("cannot extract key database without PSP Directory Level 1")
+		return nil, fmt.Errorf("cannot extract raw PSP entry without PSP Directory Level 1")
 	}
 
 	// TODO: add support for Level 2 directory
@@ -35,12 +38,34 @@ func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_m
 			start := entry.LocationOrValue
 			end := start + uint64(entry.Size)
 			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
-				return nil, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
+				return nil, fmt.Errorf("cannot extract PSP entry %x from firmware image, boundary check fail: %w", id, err)
 			}
 			return firmwareBytes[start:end], nil
 		}
 	}
-	return nil, fmt.Errorf("could not find PSP entry %d in PSP Directory Level 1", id)
+	return nil, fmt.Errorf("could not find PSP entry %x in PSP Directory Level 1", id)
+}
+
+// extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
+func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, firmware amd_manifest.Firmware) ([]byte, error) {
+
+	if pspFw.BIOSDirectoryLevel1 == nil {
+		return nil, fmt.Errorf("cannot extract raw BIOS Directory entry without BIOS Directory Level 1")
+	}
+
+	// TODO: add support for Level 2 directory
+	for _, entry := range pspFw.BIOSDirectoryLevel1.Entries {
+		if entry.Type == id {
+			firmwareBytes := firmware.ImageBytes()
+			start := entry.SourceAddress
+			end := start + uint64(entry.Size)
+			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
+				return nil, fmt.Errorf("cannot extract BIOS Directory entry from firmware image, boundary check fail: %w", err)
+			}
+			return firmwareBytes[start:end], nil
+		}
+	}
+	return nil, fmt.Errorf("could not find BIOS directory entry %x in BIOS Directory Level 1", id)
 }
 
 // ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
