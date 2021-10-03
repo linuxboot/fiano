@@ -60,10 +60,12 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, entries []string) ([]Sig
 		return nil, fmt.Errorf("could not extract key database: %w", err)
 	}
 
-	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
-		return nil, fmt.Errorf("could not get key database: %w", err)
+		return nil, fmt.Errorf("could not parse AMD Firmware: %w", err)
 	}
+
+	pspFw := amdFw.PSPFirmware()
 
 	validationResults := make([]SignatureValidationResult, 0, len(entries))
 

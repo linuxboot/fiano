@@ -31,10 +31,12 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd
 // ValidateRTM validates signature of RTM volume and BIOS directory table concatenated
 func ValidateRTM(firmware amd_manifest.Firmware) (*SignatureValidationResult, error) {
 
-	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse PSP firmware: %w", err)
 	}
+
+	pspFw := amdFw.PSPFirmware()
 
 	// extract RTM Volume and signature
 	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, pspFw, firmware)
