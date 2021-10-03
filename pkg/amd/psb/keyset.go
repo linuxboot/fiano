@@ -144,10 +144,12 @@ func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
 // getKeysFromDatabase extracts the keys in the firmware key database and adds them to the KeySet passed
 // as argument after validating the signature of the database itself
 func getKeysFromDatabase(firmware amd_manifest.Firmware, keySet KeySet) error {
-	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
-		return fmt.Errorf("could not get key database from firmware: %w", err)
+		return fmt.Errorf("could not parse AMD firmware: %w", err)
 	}
+
+	pspFw := amdFw.PSPFirmware()
 
 	// extract AMD Root Key
 	pubKeyBytes, err := extractRawPSPEntry(AMDPublicKeyEntry, pspFw, firmware)

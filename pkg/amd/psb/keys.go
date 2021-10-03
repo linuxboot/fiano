@@ -353,10 +353,12 @@ func (k *Key) Get() (interface{}, error) {
 // of all the keys known to the system (e.g. additional keys might be OEM key,
 // ABL signing key, etc.).
 func GetKeys(firmware amd_manifest.Firmware) (KeySet, error) {
-	pspFw, err := amd_manifest.ParsePSPFirmware(firmware)
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
 		return NewKeySet(), fmt.Errorf("could not extract PSP firmware: %w", err)
 	}
+
+	pspFw := amdFw.PSPFirmware()
 
 	keySet := NewKeySet()
 	err = getKeysFromDatabase(firmware, keySet)
