@@ -3,6 +3,7 @@ package psb
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -102,4 +103,107 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, entries []string) ([]Sig
 	}
 
 	return validationResults, nil
+}
+
+// DumpPSPEntry dump an entry to a file on the filesystem
+func DumpPSPEntry(firmware amd_manifest.Firmware, entry string, entryFile string) (int, error) {
+
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse AMD Firmware: %w", err)
+	}
+
+	pspFw := amdFw.PSPFirmware()
+
+	id, err := strconv.ParseInt(entry, 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse hexadecimal entry: %w", err)
+	}
+
+	data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), pspFw, firmware)
+	if err != nil {
+		return 0, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
+	}
+
+	fs, err := os.Create(entryFile)
+	if err != nil {
+		return 0, fmt.Errorf("could not create new system file :  %w", err)
+	}
+
+	defer fs.Close()
+
+	n, err := fs.Write(data)
+	if err != nil {
+		return n, fmt.Errorf("could not write entry to system file :  %w", err)
+	}
+	return n, nil
+}
+
+//PatchPSPEntry take a path on the filesystem pointing to a dump of a PSP entry and re-apply it to the firmware
+func PatchPSPEntry(firmware amd_manifest.Firmware, entry string, entryFile string, modifiedFirmwareFile string) (int, error) {
+	//read firmware
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse AMD Firmware: %w", err)
+	}
+
+	pspFw := amdFw.PSPFirmware()
+
+	id, err := strconv.ParseInt(entry, 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse hexadecimal entry: %w", err)
+	}
+
+	if pspFw.PSPDirectoryLevel1 == nil {
+		return 0, fmt.Errorf("cannot extract key database without PSP Directory Level 1")
+	}
+
+	modifiedEntry, err := os.ReadFile(entryFile)
+	if err != nil {
+		return 0, fmt.Errorf("could not read Modified entry: %w", err)
+	}
+	var n int = 0
+
+	for _, entry := range pspFw.PSPDirectoryLevel1.Entries {
+		if entry.Type == amd_manifest.PSPDirectoryTableEntryType(id) {
+			firmwareBytes := firmware.ImageBytes()
+			start := entry.LocationOrValue
+			end := start + uint64(entry.Size)
+			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
+				return 0, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
+			}
+
+			if uint64(entry.Size) != uint64(len(modifiedEntry)) {
+				return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail")
+			}
+
+			firmwareBytesFirstSection := firmwareBytes[0:start]
+			firmwareBytesSecondSection := firmwareBytes[end:]
+
+			//write the firmware to a different file
+			fs, err := os.Create(modifiedFirmwareFile)
+			if err != nil {
+				return 0, fmt.Errorf("could not create new system file :  %w", err)
+			}
+
+			defer fs.Close()
+
+			n, err := fs.Write(firmwareBytesFirstSection)
+			if err != nil {
+				return n, fmt.Errorf("could not write entry to system file :  %w", err)
+			}
+			m, err := fs.Write(modifiedEntry)
+			if err != nil {
+				return n, fmt.Errorf("could not write entry to system file :  %w", err)
+			}
+			j, err := fs.Write(firmwareBytesSecondSection)
+			if err != nil {
+				return n, fmt.Errorf("could not write entry to system file :  %w", err)
+			}
+
+			n = n + m + j
+			return n, nil
+		}
+	}
+	return n, nil
 }
