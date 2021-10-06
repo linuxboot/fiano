@@ -107,7 +107,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 		efs.BIOSDirectoryTableFamily17hModels60h3FhPointer,
 	}
 	for _, offset := range biosDirectoryOffsets {
-		if offset == 0 {
+		if offset == 0 || int(offset) > len(image) {
 			continue
 		}
 		var length uint64
