@@ -4,17 +4,24 @@ import (
 	"fmt"
 
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
+	bytes2 "github.com/9elements/converged-security-suite/pkg/bytes"
 )
 
 // extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
-func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, firmware amd_manifest.Firmware) ([]byte, error) {
+func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, biosLevel uint, firmware amd_manifest.Firmware) ([]byte, error) {
 
-	if pspFw.BIOSDirectoryLevel1 == nil {
-		return nil, fmt.Errorf("cannot extract raw BIOS Directory entry without BIOS Directory Level 1")
+	var biosDirectory *amd_manifest.BIOSDirectoryTable
+
+	switch biosLevel {
+	case 1:
+		biosDirectory = pspFw.BIOSDirectoryLevel1
+	case 2:
+		biosDirectory = pspFw.BIOSDirectoryLevel2
+	default:
+		return nil, fmt.Errorf("cannot extract key database, invalid BIOS Directory Level requested: %d", biosLevel)
 	}
 
-	// TODO: add support for Level 2 directory
-	for _, entry := range pspFw.BIOSDirectoryLevel1.Entries {
+	for _, entry := range biosDirectory.Entries {
 		if entry.Type == id {
 			firmwareBytes := firmware.ImageBytes()
 			start := entry.SourceAddress
@@ -25,11 +32,11 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd
 			return firmwareBytes[start:end], nil
 		}
 	}
-	return nil, fmt.Errorf("could not find BIOS directory entry %x in BIOS Directory Level 1", id)
+	return nil, fmt.Errorf("could not find BIOS directory entry %x in BIOS Directory Level %d", id, biosLevel)
 }
 
 // ValidateRTM validates signature of RTM volume and BIOS directory table concatenated
-func ValidateRTM(firmware amd_manifest.Firmware) (*SignatureValidationResult, error) {
+func ValidateRTM(firmware amd_manifest.Firmware, biosLevel uint) (*SignatureValidationResult, error) {
 
 	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
@@ -38,18 +45,29 @@ func ValidateRTM(firmware amd_manifest.Firmware) (*SignatureValidationResult, er
 
 	pspFw := amdFw.PSPFirmware()
 
+	// Get the byte range we'll need on the BIOS depending on the level
+	var biosDirectoryRange bytes2.Range
+	switch biosLevel {
+	case 1:
+		biosDirectoryRange = pspFw.BIOSDirectoryLevel1Range
+	case 2:
+		biosDirectoryRange = pspFw.BIOSDirectoryLevel2Range
+	default:
+		return nil, fmt.Errorf("cannot extract raw BIOS entry, invalid BIOS Directory Level requested: %d", biosLevel)
+	}
+
 	// extract RTM Volume and signature
-	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, pspFw, firmware)
+	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, pspFw, biosLevel, firmware)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
-	rtmVolumeSignature, err := extractRawBIOSEntry(BIOSRTMSignatureEntry, pspFw, firmware)
+	rtmVolumeSignature, err := extractRawBIOSEntry(BIOSRTMSignatureEntry, pspFw, biosLevel, firmware)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
 	}
 
-	keySet, err := GetKeys(firmware)
+	keySet, err := GetKeys(firmware, biosLevel)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract key from firmware: %w", err)
 	}
@@ -63,11 +81,28 @@ func ValidateRTM(firmware amd_manifest.Firmware) (*SignatureValidationResult, er
 	// BIOS directory table
 	firmwareBytes := firmware.ImageBytes()
 
-	biosDirectoryStart := pspFw.BIOSDirectoryLevel1Range.Offset
-	biosDirectoryEnd := biosDirectoryStart + pspFw.BIOSDirectoryLevel1Range.Length
+	biosDirectoryStart := biosDirectoryRange.Offset
+	biosDirectoryEnd := biosDirectoryStart + biosDirectoryRange.Length
 
 	if err := checkBoundaries(biosDirectoryStart, biosDirectoryEnd, firmwareBytes); err != nil {
-		return nil, fmt.Errorf("could not extract BIOS directory, boundary check error: %w", err)
+		return nil, fmt.Errorf("could not extract BIOS Level %d directory, boundary check error: %w", biosLevel, err)
+	}
+
+	/**
+	 * This is needed due to the fact in the Level 2 BIOS Directory Table,
+	 * instead of RTM Volume + Level 2 Header for the signed data, it's actually
+	 * RTM Volume + Level 1 Header + Level 2 Header
+	 */
+	if biosLevel == 2 {
+		biosDirectoryLevel1Start := pspFw.BIOSDirectoryLevel1Range.Offset
+		biosDirectoryLevel1End := biosDirectoryLevel1Start + pspFw.BIOSDirectoryLevel1Range.Length
+
+		if err := checkBoundaries(biosDirectoryLevel1Start, biosDirectoryLevel1End, firmwareBytes); err != nil {
+			return nil, fmt.Errorf("could not extract BIOS Level 1 directory, boundary check error: %w", err)
+		}
+
+		biosDirectoryTableBytes := firmwareBytes[biosDirectoryLevel1Start:biosDirectoryLevel1End]
+		rtmVolume = append(rtmVolume, biosDirectoryTableBytes...)
 	}
 
 	biosDirectoryTableBytes := firmwareBytes[biosDirectoryStart:biosDirectoryEnd]

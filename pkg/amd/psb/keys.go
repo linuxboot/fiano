@@ -352,7 +352,7 @@ func (k *Key) Get() (interface{}, error) {
 // The firmware itself contains a key database, but that is not comprehensive
 // of all the keys known to the system (e.g. additional keys might be OEM key,
 // ABL signing key, etc.).
-func GetKeys(firmware amd_manifest.Firmware) (KeySet, error) {
+func GetKeys(firmware amd_manifest.Firmware, level uint) (KeySet, error) {
 	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
 	if err != nil {
 		return NewKeySet(), fmt.Errorf("could not extract PSP firmware: %w", err)
@@ -361,13 +361,13 @@ func GetKeys(firmware amd_manifest.Firmware) (KeySet, error) {
 	pspFw := amdFw.PSPFirmware()
 
 	keySet := NewKeySet()
-	err = getKeysFromDatabase(firmware, keySet)
+	err = getKeysFromDatabase(firmware, level, keySet)
 	if err != nil {
 		return keySet, fmt.Errorf("could not get key from table into KeySet: %w", err)
 	}
 
 	// Extract ABL signing key (entry 0x0A in PSP Directory), which is signed with AMD Public Key.
-	pubKeyBytes, err := extractRawPSPEntry(ABLPublicKey, pspFw, firmware)
+	pubKeyBytes, err := extractRawPSPEntry(ABLPublicKey, pspFw, level, firmware)
 	if err != nil {
 		return keySet, fmt.Errorf("could not extract raw PSP entry for ABL Public Key")
 	}
@@ -382,7 +382,7 @@ func GetKeys(firmware amd_manifest.Firmware) (KeySet, error) {
 	}
 
 	// Extract OEM signing key (entry 0x05 in BIOS Directory table)
-	pubKeyBytes, err = extractRawBIOSEntry(OEMSigningKeyEntry, pspFw, firmware)
+	pubKeyBytes, err = extractRawBIOSEntry(OEMSigningKeyEntry, pspFw, level, firmware)
 	if err != nil {
 		return keySet, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key")
 	}
