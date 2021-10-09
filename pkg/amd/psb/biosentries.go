@@ -8,9 +8,11 @@ import (
 )
 
 // extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
-func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, biosLevel uint, firmware amd_manifest.Firmware) ([]byte, error) {
+func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel uint, amdFw *amd_manifest.AMDFirmware) ([]byte, error) {
 
 	var biosDirectory *amd_manifest.BIOSDirectoryTable
+
+	pspFw := amdFw.PSPFirmware()
 
 	switch biosLevel {
 	case 1:
@@ -23,7 +25,7 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd
 
 	for _, entry := range biosDirectory.Entries {
 		if entry.Type == id {
-			firmwareBytes := firmware.ImageBytes()
+			firmwareBytes := amdFw.Firmware().ImageBytes()
 			start := entry.SourceAddress
 			end := start + uint64(entry.Size)
 			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
@@ -36,12 +38,7 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, pspFw *amd
 }
 
 // ValidateRTM validates signature of RTM volume and BIOS directory table concatenated
-func ValidateRTM(firmware amd_manifest.Firmware, biosLevel uint) (*SignatureValidationResult, error) {
-
-	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse PSP firmware: %w", err)
-	}
+func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureValidationResult, error) {
 
 	pspFw := amdFw.PSPFirmware()
 
@@ -57,17 +54,17 @@ func ValidateRTM(firmware amd_manifest.Firmware, biosLevel uint) (*SignatureVali
 	}
 
 	// extract RTM Volume and signature
-	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, pspFw, biosLevel, firmware)
+	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, biosLevel, amdFw)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
-	rtmVolumeSignature, err := extractRawBIOSEntry(BIOSRTMSignatureEntry, pspFw, biosLevel, firmware)
+	rtmVolumeSignature, err := extractRawBIOSEntry(BIOSRTMSignatureEntry, biosLevel, amdFw)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
 	}
 
-	keySet, err := GetKeys(firmware, biosLevel)
+	keySet, err := GetKeys(amdFw, biosLevel)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract key from firmware: %w", err)
 	}
@@ -79,7 +76,7 @@ func ValidateRTM(firmware amd_manifest.Firmware, biosLevel uint) (*SignatureVali
 
 	// signature of RTM volume is calculated over the concatenation of RTM volume itself and
 	// BIOS directory table
-	firmwareBytes := firmware.ImageBytes()
+	firmwareBytes := amdFw.Firmware().ImageBytes()
 
 	biosDirectoryStart := biosDirectoryRange.Offset
 	biosDirectoryEnd := biosDirectoryStart + biosDirectoryRange.Length
