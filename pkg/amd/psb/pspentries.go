@@ -32,9 +32,10 @@ const (
 
 // extractRawPSPEntry extracts data corresponding to an entry in the PSP table. We assume
 // to look-up for the entry in the level 1 directory.
-func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_manifest.PSPFirmware, pspLevel uint, firmware amd_manifest.Firmware) ([]byte, error) {
-
+func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, amdFw *amd_manifest.AMDFirmware, pspLevel uint) ([]byte, error) {
 	var pspDirectory *amd_manifest.PSPDirectoryTable
+
+	pspFw := amdFw.PSPFirmware()
 
 	switch pspLevel {
 	case 1:
@@ -47,7 +48,7 @@ func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_m
 
 	for _, entry := range pspDirectory.Entries {
 		if entry.Type == id {
-			firmwareBytes := firmware.ImageBytes()
+			firmwareBytes := amdFw.Firmware().ImageBytes()
 			start := entry.LocationOrValue
 			end := start + uint64(entry.Size)
 			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
@@ -60,19 +61,12 @@ func extractRawPSPEntry(id amd_manifest.PSPDirectoryTableEntryType, pspFw *amd_m
 }
 
 // ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
-func ValidatePSPEntries(firmware amd_manifest.Firmware, pspLevel uint, entries []string) ([]SignatureValidationResult, error) {
+func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entries []string) ([]SignatureValidationResult, error) {
 
-	keyDB, err := GetKeys(firmware, pspLevel)
+	keyDB, err := GetKeys(amdFw, pspLevel)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract key database: %w", err)
 	}
-
-	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse AMD Firmware: %w", err)
-	}
-
-	pspFw := amdFw.PSPFirmware()
 
 	validationResults := make([]SignatureValidationResult, 0, len(entries))
 
@@ -82,7 +76,7 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, pspLevel uint, entries [
 			return nil, fmt.Errorf("could not parse hexadecimal entry: %w", err)
 		}
 
-		data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), pspFw, pspLevel, firmware)
+		data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), amdFw, pspLevel)
 		if err != nil {
 			return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
 		}
@@ -112,21 +106,14 @@ func ValidatePSPEntries(firmware amd_manifest.Firmware, pspLevel uint, entries [
 }
 
 // DumpPSPEntry dump an entry to a file on the filesystem
-func DumpPSPEntry(firmware amd_manifest.Firmware, pspLevel uint, entry string, entryFile string) (int, error) {
-
-	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse AMD Firmware: %w", err)
-	}
-
-	pspFw := amdFw.PSPFirmware()
+func DumpPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string, entryFile string) (int, error) {
 
 	id, err := strconv.ParseInt(entry, 16, 64)
 	if err != nil {
 		return 0, fmt.Errorf("could not parse hexadecimal entry: %w", err)
 	}
 
-	data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), pspFw, pspLevel, firmware)
+	data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), amdFw, pspLevel)
 	if err != nil {
 		return 0, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
 	}
@@ -146,14 +133,8 @@ func DumpPSPEntry(firmware amd_manifest.Firmware, pspLevel uint, entry string, e
 }
 
 //PatchPSPEntry take a path on the filesystem pointing to a dump of a PSP entry and re-apply it to the firmware
-func PatchPSPEntry(firmware amd_manifest.Firmware, pspLevel uint, entry string, entryFile string, modifiedFirmwareFile string) (int, error) {
+func PatchPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string, entryFile string, modifiedFirmwareFile string) (int, error) {
 	//read firmware
-	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse AMD Firmware: %w", err)
-	}
-
-	pspFw := amdFw.PSPFirmware()
 
 	id, err := strconv.ParseInt(entry, 16, 64)
 	if err != nil {
@@ -161,6 +142,8 @@ func PatchPSPEntry(firmware amd_manifest.Firmware, pspLevel uint, entry string, 
 	}
 
 	var pspDirectory *amd_manifest.PSPDirectoryTable
+
+	pspFw := amdFw.PSPFirmware()
 
 	switch pspLevel {
 	case 1:
@@ -179,7 +162,7 @@ func PatchPSPEntry(firmware amd_manifest.Firmware, pspLevel uint, entry string, 
 
 	for _, entry := range pspDirectory.Entries {
 		if entry.Type == amd_manifest.PSPDirectoryTableEntryType(id) {
-			firmwareBytes := firmware.ImageBytes()
+			firmwareBytes := amdFw.Firmware().ImageBytes()
 			start := entry.LocationOrValue
 			end := start + uint64(entry.Size)
 			if err := checkBoundaries(start, end, firmwareBytes); err != nil {

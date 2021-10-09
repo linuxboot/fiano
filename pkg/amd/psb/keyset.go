@@ -143,20 +143,14 @@ func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
 
 // getKeysFromDatabase extracts the keys in the firmware key database and adds them to the KeySet passed
 // as argument after validating the signature of the database itself
-func getKeysFromDatabase(firmware amd_manifest.Firmware, pspLevel uint, keySet KeySet) error {
-	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
-	if err != nil {
-		return fmt.Errorf("could not parse AMD firmware: %w", err)
-	}
-
-	pspFw := amdFw.PSPFirmware()
+func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet KeySet) error {
 
 	/**
 	 * PSP Directory Level 2 does not contain the AMD
 	 * Public Root Keys, so we are forced to use PSP Directory
 	 * Level 1 to get them, and not have it configurable
 	 */
-	pubKeyBytes, err := extractRawPSPEntry(AMDPublicKeyEntry, pspFw, uint(1), firmware)
+	pubKeyBytes, err := extractRawPSPEntry(AMDPublicKeyEntry, amdFw, uint(1))
 	if err != nil {
 		return fmt.Errorf("could not extract raw PSP entry for AMD Public Key: %w", err)
 	}
@@ -172,7 +166,7 @@ func getKeysFromDatabase(firmware amd_manifest.Firmware, pspLevel uint, keySet K
 		return fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
-	data, err := extractRawPSPEntry(KeyDatabaseEntry, pspFw, pspLevel, firmware)
+	data, err := extractRawPSPEntry(KeyDatabaseEntry, amdFw, pspLevel)
 	if err != nil {
 		return fmt.Errorf("could not extract entry 0x%x (KeyDatabaseEntry) from PSP table: %w", KeyDatabaseEntry, err)
 	}
