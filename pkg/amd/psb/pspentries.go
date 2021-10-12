@@ -170,7 +170,7 @@ func PatchPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string,
 			}
 
 			if uint64(entry.Size) != uint64(len(modifiedEntry)) {
-				return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail")
+				return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail, expected %d, modified entry is %d", uint64(entry.Size), uint64(len(modifiedEntry)))
 			}
 
 			firmwareBytesFirstSection := firmwareBytes[0:start]
