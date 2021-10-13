@@ -2,14 +2,66 @@ package psb
 
 import (
 	"fmt"
+	"os"
 
 	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
 	bytes2 "github.com/9elements/converged-security-suite/pkg/bytes"
+
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
-// extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
-func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel uint, amdFw *amd_manifest.AMDFirmware) ([]byte, error) {
+// BIOSEntryType defines the type to hold BIOS Entry Type fields
+type BIOSEntryType uint8
 
+/*
+ * Nicely output human-readable names for BIOS Entry Types
+ *
+ * This doesn't have all the entries mapped, there are still
+ * several more pages left. It does have all the types
+ * encountered in the firmware images used to test
+ * however.
+ *
+ */
+func (_type BIOSEntryType) String() string {
+	switch _type {
+	case 0x05:
+		return "BIOS_PUBLIC_KEY"
+	case 0x07:
+		return "BIOS_RTM_SIGNATURE"
+	case 0x60:
+		return "AGESA_PSP_CUSTOMIZATION_BLOCK"
+	case 0x61:
+		return "AGESA_PSP_OUTPUT_BLOCK"
+	case 0x62:
+		return "BIOS_BINARY"
+	case 0x63:
+		return "AGESA_PSP_OUTPUT_BLOCK_NV_COPY"
+	case 0x64:
+		return "PMU_FIRMWARE_INSTRUCTION_PORTION"
+	case 0x65:
+		return "PMU_FIRMWARE_DATA_PORTION"
+	case 0x66:
+		return "MICROCODE_PATCH"
+	case 0x67:
+		return "CORE_MACHINE_EXCEPTION_DATA"
+	case 0x68:
+		return "BACKUP_AGESA_PSP_CUSTOMIZATION_BLOCK"
+	case 0x69:
+		return "INTERPRETER_BINARY_VIDEO"
+	case 0x6A:
+		return "MP2_FIRMWARE_CONFIG"
+	case 0x6B:
+		return "MAIN_MEMORY"
+	case 0x6C:
+		return "MPM_CONFIG"
+	case 0x70:
+		return "BIOS_DIRECTORY_TABLE_LEVEL_2"
+	}
+	return "UNKNOWN"
+
+}
+
+func getBIOSTable(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*amd_manifest.BIOSDirectoryTable, error) {
 	var biosDirectory *amd_manifest.BIOSDirectoryTable
 
 	pspFw := amdFw.PSPFirmware()
@@ -21,6 +73,16 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel 
 		biosDirectory = pspFw.BIOSDirectoryLevel2
 	default:
 		return nil, fmt.Errorf("cannot extract key database, invalid BIOS Directory Level requested: %d", biosLevel)
+	}
+	return biosDirectory, nil
+}
+
+// extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
+func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel uint, amdFw *amd_manifest.AMDFirmware) ([]byte, error) {
+
+	biosDirectory, err := getBIOSTable(amdFw, biosLevel)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve BIOS Directory: %w", err)
 	}
 
 	for _, entry := range biosDirectory.Entries {
@@ -35,6 +97,87 @@ func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel 
 		}
 	}
 	return nil, fmt.Errorf("could not find BIOS directory entry %x in BIOS Directory Level %d", id, biosLevel)
+}
+
+// OutputBIOSEntries outputs the BIOS entries in an ASCII table format
+func OutputBIOSEntries(amdFw *amd_manifest.AMDFirmware) error {
+
+	biosDirectoryLevel1Table, err := getBIOSTable(amdFw, 1)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve BIOS Directory Level 1 Entries: %w", err)
+	}
+
+	biosDirectoryLevel2Table, err := getBIOSTable(amdFw, 2)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve BIOS Directory Level 2 Entries: %w", err)
+	}
+
+	biosDirectories := []amd_manifest.BIOSDirectoryTable{*biosDirectoryLevel1Table, *biosDirectoryLevel2Table}
+
+	for idx, directory := range biosDirectories {
+		// BIOS Header
+		h := table.NewWriter()
+		h.SetOutputMirror(os.Stdout)
+		h.SetTitle("BIOS Directory Level %d Header", idx+1)
+		biosCookie := fmt.Sprintf("0x%x", directory.BIOSCookie)
+		biosChecksum := directory.Checksum
+		biosTotalEntries := directory.TotalEntries
+		h.AppendHeader(table.Row{"BIOS Cookie", "Checksum", "Total Entries"})
+		h.AppendRow([]interface{}{biosCookie, biosChecksum, biosTotalEntries})
+		h.Render()
+
+		// BIOS Entries
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetTitle("BIOS Directory Level %d", idx+1)
+		t.AppendHeader(table.Row{
+			"Type",
+			"Type Hex",
+			"RegionType",
+			"ResetImage",
+			"CopyImage",
+			"ReadOnly",
+			"Compressed",
+			"Instance",
+			"Subprogram",
+			"RomID",
+			"Size",
+			"Source Address",
+			"Destination Address",
+		})
+		for _, entry := range directory.Entries {
+			entryType := BIOSEntryType(entry.Type)
+			entryTypeHex := fmt.Sprintf("0x%-3x", entry.Type)
+			entryRegionType := fmt.Sprintf("0x%-8x", entry.RegionType)
+			entryResetImage := fmt.Sprintf("%-10v", entry.ResetImage)
+			entryCopyImage := fmt.Sprintf("%-9v", entry.CopyImage)
+			entryReadOnly := fmt.Sprintf("%-8v", entry.ReadOnly)
+			entryCompressed := fmt.Sprintf("%-10v", entry.Compressed)
+			entryInstance := fmt.Sprintf("0x%-6x", entry.Instance)
+			entrySubprogram := fmt.Sprintf("0x%-8x", entry.Subprogram)
+			entryRomID := fmt.Sprintf("0x%-3x", entry.RomID)
+			entrySize := fmt.Sprintf("%-6d", entry.Size)
+			entrySourceAddress := fmt.Sprintf("0x%-11x", entry.SourceAddress)
+			entryDestinationAddress := fmt.Sprintf("0x%-18x", entry.DestinationAddress)
+			t.AppendRow([]interface{}{
+				entryType,
+				entryTypeHex,
+				entryRegionType,
+				entryResetImage,
+				entryCopyImage,
+				entryReadOnly,
+				entryCompressed,
+				entryInstance,
+				entrySubprogram,
+				entryRomID,
+				entrySize,
+				entrySourceAddress,
+				entryDestinationAddress,
+			})
+		}
+		t.Render()
+	}
+	return nil
 }
 
 // ValidateRTM validates signature of RTM volume and BIOS directory table concatenated
