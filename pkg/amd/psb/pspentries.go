@@ -286,17 +286,18 @@ func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entries 
 	return validationResults, nil
 }
 
-// DumpPSPEntry dump an entry to a file on the filesystem
-func DumpPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string, entryFile string) (int, error) {
+// DumpEntry dumps an entry from either PSP Directory or BIOS directory to a file on the filesystem
+func DumpEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, entryFile string) (int, error) {
 
-	id, err := strconv.ParseInt(entry, 16, 64)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse hexadecimal entry: %w", err)
+	var data []byte
+
+	if directoryType != "psp" {
+		return 0, fmt.Errorf("directory type %s not supported, supported only psp", directoryType)
 	}
 
-	data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), amdFw, pspLevel)
+	data, err := extractRawPSPEntry(amd_manifest.PSPDirectoryTableEntryType(id), amdFw, level)
 	if err != nil {
-		return 0, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
+		return 0, fmt.Errorf("could not extract entry 0x%x from BIOS table: %w", id, err)
 	}
 
 	fs, err := os.Create(entryFile)
@@ -313,74 +314,94 @@ func DumpPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string, 
 	return n, nil
 }
 
-// PatchPSPEntry take a path on the filesystem pointing to a dump of a PSP entry and re-apply it to the firmware
-func PatchPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entry string, entryFile string, modifiedFirmwareFile string) (int, error) {
-	//read firmware
-
-	id, err := strconv.ParseInt(entry, 16, 64)
-	if err != nil {
-		return 0, fmt.Errorf("could not parse hexadecimal entry: %w", err)
-	}
-
-	var pspDirectory *amd_manifest.PSPDirectoryTable
+// PatchEntry takes a path on the filesystem pointing to a dump of either a PSP entry or a BIOS entry and re-apply it to the firmware
+func PatchEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, entryFile string, modifiedFirmwareFile string) (int, error) {
 
 	pspFw := amdFw.PSPFirmware()
 
-	switch pspLevel {
-	case 1:
-		pspDirectory = pspFw.PSPDirectoryLevel1
-	case 2:
-		pspDirectory = pspFw.PSPDirectoryLevel2
+	var start, end uint64
+
+	switch directoryType {
+	case "bios":
+		var biosDirectory *amd_manifest.BIOSDirectoryTable
+		switch level {
+		case 1:
+			biosDirectory = pspFw.BIOSDirectoryLevel1
+		case 2:
+			biosDirectory = pspFw.BIOSDirectoryLevel2
+		default:
+			return 0, fmt.Errorf("cannot extract BIOS Directory of level %d", level)
+		}
+		for _, entry := range biosDirectory.Entries {
+			if entry.Type == amd_manifest.BIOSDirectoryTableEntryType(id) {
+				start = entry.SourceAddress
+				end = start + uint64(entry.Size)
+			}
+		}
+	case "psp":
+		var pspDirectory *amd_manifest.PSPDirectoryTable
+		switch level {
+		case 1:
+			pspDirectory = pspFw.PSPDirectoryLevel1
+		case 2:
+			pspDirectory = pspFw.PSPDirectoryLevel2
+		default:
+			return 0, fmt.Errorf("cannot extract PSP Directory of level %d", level)
+		}
+		for _, entry := range pspDirectory.Entries {
+			if entry.Type == amd_manifest.PSPDirectoryTableEntryType(id) {
+				start = entry.LocationOrValue
+				end = start + uint64(entry.Size)
+			}
+		}
 	default:
-		return 0, fmt.Errorf("cannot extract key database, invalid PSP Directory Level requested: %d", pspLevel)
+		return 0, fmt.Errorf("do not recognize directory type '%s'", directoryType)
+	}
+
+	if end == 0 || end-start <= 0 {
+		return 0, fmt.Errorf("entry level %d, type %s, start, end, size = (%d, %d), size cannot be zero or negative", level, directoryType, start, end)
 	}
 
 	modifiedEntry, err := os.ReadFile(entryFile)
 	if err != nil {
 		return 0, fmt.Errorf("could not read Modified entry: %w", err)
 	}
-	var n int = 0
 
-	for _, entry := range pspDirectory.Entries {
-		if entry.Type == amd_manifest.PSPDirectoryTableEntryType(id) {
-			firmwareBytes := amdFw.Firmware().ImageBytes()
-			start := entry.LocationOrValue
-			end := start + uint64(entry.Size)
-			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
-				return 0, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
-			}
+	firmwareBytes := amdFw.Firmware().ImageBytes()
 
-			if uint64(entry.Size) != uint64(len(modifiedEntry)) {
-				return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail, expected %d, modified entry is %d", uint64(entry.Size), uint64(len(modifiedEntry)))
-			}
-
-			firmwareBytesFirstSection := firmwareBytes[0:start]
-			firmwareBytesSecondSection := firmwareBytes[end:]
-
-			//write the firmware to a different file
-			fs, err := os.Create(modifiedFirmwareFile)
-			if err != nil {
-				return 0, fmt.Errorf("could not create new system file :  %w", err)
-			}
-
-			defer fs.Close()
-
-			n, err := fs.Write(firmwareBytesFirstSection)
-			if err != nil {
-				return n, fmt.Errorf("could not write entry to system file :  %w", err)
-			}
-			m, err := fs.Write(modifiedEntry)
-			if err != nil {
-				return n, fmt.Errorf("could not write entry to system file :  %w", err)
-			}
-			j, err := fs.Write(firmwareBytesSecondSection)
-			if err != nil {
-				return n, fmt.Errorf("could not write entry to system file :  %w", err)
-			}
-
-			n = n + m + j
-			return n, nil
-		}
+	if err := checkBoundaries(start, end, firmwareBytes); err != nil {
+		return 0, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
 	}
+
+	size := end - start
+	if uint64(end-start) != uint64(len(modifiedEntry)) {
+		return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail, expected %d, modified entry is %d", uint64(size), uint64(len(modifiedEntry)))
+	}
+
+	firmwareBytesFirstSection := firmwareBytes[0:start]
+	firmwareBytesSecondSection := firmwareBytes[end:]
+
+	//write the firmware to a different file
+	fs, err := os.Create(modifiedFirmwareFile)
+	if err != nil {
+		return 0, fmt.Errorf("could not create new system file :  %w", err)
+	}
+
+	defer fs.Close()
+
+	n, err := fs.Write(firmwareBytesFirstSection)
+	if err != nil {
+		return n, fmt.Errorf("could not write entry to system file :  %w", err)
+	}
+	m, err := fs.Write(modifiedEntry)
+	if err != nil {
+		return n, fmt.Errorf("could not write entry to system file :  %w", err)
+	}
+	j, err := fs.Write(firmwareBytesSecondSection)
+	if err != nil {
+		return n, fmt.Errorf("could not write entry to system file :  %w", err)
+	}
+
+	n = n + m + j
 	return n, nil
 }
