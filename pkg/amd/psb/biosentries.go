@@ -77,28 +77,6 @@ func getBIOSTable(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*amd_manifes
 	return biosDirectory, nil
 }
 
-// extractRawBIOSEntry extracts data corresponding to an entry in the BIOS table
-func extractRawBIOSEntry(id amd_manifest.BIOSDirectoryTableEntryType, biosLevel uint, amdFw *amd_manifest.AMDFirmware) ([]byte, error) {
-
-	biosDirectory, err := getBIOSTable(amdFw, biosLevel)
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve BIOS Directory: %w", err)
-	}
-
-	for _, entry := range biosDirectory.Entries {
-		if entry.Type == id {
-			firmwareBytes := amdFw.Firmware().ImageBytes()
-			start := entry.SourceAddress
-			end := start + uint64(entry.Size)
-			if err := checkBoundaries(start, end, firmwareBytes); err != nil {
-				return nil, fmt.Errorf("cannot extract BIOS Directory entry from firmware image, boundary check fail: %w", err)
-			}
-			return firmwareBytes[start:end], nil
-		}
-	}
-	return nil, fmt.Errorf("could not find BIOS directory entry %x in BIOS Directory Level %d", id, biosLevel)
-}
-
 // OutputBIOSEntries outputs the BIOS entries in an ASCII table format
 func OutputBIOSEntries(amdFw *amd_manifest.AMDFirmware) error {
 
@@ -197,12 +175,12 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 	}
 
 	// extract RTM Volume and signature
-	rtmVolume, err := extractRawBIOSEntry(BIOSRTMVolumeEntry, biosLevel, amdFw)
+	rtmVolume, err := extractRawEntry(amdFw, biosLevel, "bios", uint64(BIOSRTMVolumeEntry))
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
-	rtmVolumeSignature, err := extractRawBIOSEntry(BIOSRTMSignatureEntry, biosLevel, amdFw)
+	rtmVolumeSignature, err := extractRawEntry(amdFw, biosLevel, "bios", uint64(BIOSRTMSignatureEntry))
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
 	}
