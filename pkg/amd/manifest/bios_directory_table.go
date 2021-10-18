@@ -23,6 +23,8 @@ type BIOSDirectoryTableEntryType uint8
 const (
 	// APCBBinaryEntry denotes APCB binary entry in BIOS Directory table
 	APCBBinaryEntry BIOSDirectoryTableEntryType = 0x60
+	// APOBBinaryEntry denotes APOB binary in BIOS Directory table
+	APOBBinaryEntry BIOSDirectoryTableEntryType = 0x61
 	// BIOSRTMVolumeEntry denotes BIOS RTM Volume entry in BIOS Directory table
 	BIOSRTMVolumeEntry BIOSDirectoryTableEntryType = 0x62
 	// BIOSDirectoryTableLevel2Entry denotes an entry that points to BIOS Directory table level 2
