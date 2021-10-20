@@ -141,6 +141,33 @@ func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
 	return &header, nil
 }
 
+// parseKeyDatabase parses a raw buffer representing a key database and adds all extracted key
+// to the associated keySet. The raw buffer must be stripped off of the PSP header and the signature
+// appended at the end.
+func parseKeyDatabase(rawDB []byte, keySet KeySet) error {
+
+	buff := bytes.NewBuffer(rawDB)
+	_, err := extractKeydbHeader(buff)
+	if err != nil {
+		return fmt.Errorf("could not extract keydb header: %w", err)
+	}
+
+	for {
+		if buff.Len() == 0 {
+			break
+		}
+		key, err := NewKeyFromDatabase(buff)
+		if err != nil {
+			return fmt.Errorf("could not extract key entry from key database: %w", err)
+		}
+		if err := keySet.AddKey(key, KeyDatabaseKey); err != nil {
+			return fmt.Errorf("cannot add key to key database: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // getKeysFromDatabase extracts the keys in the firmware key database and adds them to the KeySet passed
 // as argument after validating the signature of the database itself
 func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet KeySet) error {
@@ -188,23 +215,5 @@ func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet 
 		return fmt.Errorf("length of key database entry (%d) is less than pspHeader length (%d)", len(signedData), pspHeaderSize)
 	}
 
-	buffer := bytes.NewBuffer(signedData[pspHeaderSize:])
-	_, err = extractKeydbHeader(buffer)
-	if err != nil {
-		return fmt.Errorf("could not extract keydb header: %w", err)
-	}
-
-	for {
-		if buffer.Len() == 0 {
-			break
-		}
-		key, err := NewKeyFromDatabase(buffer)
-		if err != nil {
-			return fmt.Errorf("could not extract key entry from key database: %w", err)
-		}
-		if err := keySet.AddKey(key, KeyDatabaseKey); err != nil {
-			return fmt.Errorf("cannot add key to key database: %w", err)
-		}
-	}
-	return nil
+	return parseKeyDatabase(signedData[pspHeaderSize:], keySet)
 }
