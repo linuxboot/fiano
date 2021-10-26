@@ -24,3 +24,13 @@ func (m *SignatureCheckError) Error() string {
 func (m *SignatureCheckError) SigningKey() *Key {
 	return m.signingKey
 }
+
+// UnknownSigningKeyError is an error type which indicates that the signing key is unknown
+type UnknownSigningKeyError struct {
+	keyID KeyID
+}
+
+// Error returns the string representation of the UnknownSigningKeyError
+func (s *UnknownSigningKeyError) Error() string {
+	return fmt.Sprintf("key ID %s is unknown", s.keyID.Hex())
+}

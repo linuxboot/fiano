@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
-	bytes2 "github.com/9elements/converged-security-suite/pkg/bytes"
+	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
+	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 )

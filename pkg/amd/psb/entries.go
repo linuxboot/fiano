@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
+	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
 )
 
 // extractRawEntry extracts a generic entry raw entry from either PSP Directory Table or BIOS Directory Table

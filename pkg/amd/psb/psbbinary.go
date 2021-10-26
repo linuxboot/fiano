@@ -91,7 +91,7 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 	signingKeyID := KeyID(b.header.signatureParameters)
 	signingKey := keyDB.GetKey(signingKeyID)
 	if signingKey == nil {
-		return nil, fmt.Errorf("could not find signing key with ID %s", signingKeyID.Hex())
+		return nil, &UnknownSigningKeyError{keyID: signingKeyID}
 	}
 
 	// The recommended value for RSA exponent is 0x10001. The specification does not enforce

@@ -4,13 +4,15 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"math/big"
 	"testing"
 
 	"github.com/klauspost/compress/zstd"
 
-	amd_manifest "github.com/9elements/converged-security-suite/pkg/amd/manifest"
-	"github.com/9elements/converged-security-suite/pkg/uefi"
+	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
+	"github.com/9elements/converged-security-suite/v2/pkg/uefi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,7 +61,9 @@ func (suite *PsbBinarySuite) TestPSBBinarySignedData() {
 	assert.NoError(suite.T(), err)
 
 	blob, err := psbBinary.getSignedBlob(keySet)
+
 	assert.NoError(suite.T(), err)
+
 	// verify that the signed data matches the content of the blob, excluding the final signature
 	assert.Equal(suite.T(), smuOffChipFirmware[:len(smuOffChipFirmware)-512], blob.SignedData())
 
@@ -147,6 +151,87 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryValidation() {
 	keyID := signingKey.KeyID()
 	assert.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), keyID.String())
 
+}
+
+func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongSignature() {
+
+	// Test negative validation of PSP Directory entry after corruption
+	assert.Equal(suite.T(), FirmwareLen, len(suite.firmwareImage))
+
+	firmware, err := uefi.ParseUEFIFirmwareBytes(suite.firmwareImage)
+	assert.NoError(suite.T(), err)
+
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
+	assert.NoError(suite.T(), err)
+
+	smuOffChipFirmwareType := 0x12
+
+	// obtain the ranges of entry 0x12 within PSP Directory Level 2 (SMU off-chip firmware)
+	// and corrupt the very beginning of the blob
+	pspFirmware := amdFw.PSPFirmware()
+	for _, entry := range pspFirmware.PSPDirectoryLevel2.Entries {
+		if entry.Type == amd_manifest.PSPDirectoryTableEntryType(smuOffChipFirmwareType) {
+			amdFw.Firmware().ImageBytes()[entry.LocationOrValue] = 0x0
+		}
+	}
+
+	pspLevel := uint(2)
+
+	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
+	signatureValidation, err := ValidatePSPEntries(amdFw, pspLevel, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	assert.NoError(suite.T(), err)
+
+	assert.Equal(suite.T(), 1, len(signatureValidation))
+	assert.Error(suite.T(), signatureValidation[0].err)
+	var sigErr *SignatureCheckError
+	assert.True(suite.T(), errors.As(signatureValidation[0].err, &sigErr))
+
+	assert.NotNil(suite.T(), signatureValidation[0].signingKey)
+	signingKey := signatureValidation[0].signingKey
+	keyID := signingKey.KeyID()
+	assert.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), keyID.String())
+
+}
+
+func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongKeys() {
+
+	// Test negative validation of PSP Directory entry after corruption
+	assert.Equal(suite.T(), FirmwareLen, len(suite.firmwareImage))
+
+	firmware, err := uefi.ParseUEFIFirmwareBytes(suite.firmwareImage)
+	assert.NoError(suite.T(), err)
+
+	amdFw, err := amd_manifest.NewAMDFirmware(firmware)
+	assert.NoError(suite.T(), err)
+
+	smuOffChipFirmwareType := 0x12
+
+	// signatureParameters indicates the id of the signing key and is placed at 56 bytes offset
+	// from the beginning of the blob
+	signatureParametersOffset := uint64(56)
+
+	// obtain the ranges of entry 0x12 within PSP Directory Level 2 (SMU off-chip firmware)
+	// and modify the fingerprint of the signing key for the blob so that the key becomes
+	// effectively unknown
+
+	pspFirmware := amdFw.PSPFirmware()
+	for _, entry := range pspFirmware.PSPDirectoryLevel2.Entries {
+		if entry.Type == amd_manifest.PSPDirectoryTableEntryType(smuOffChipFirmwareType) {
+			amdFw.Firmware().ImageBytes()[entry.LocationOrValue+signatureParametersOffset] = 0x99
+		}
+	}
+
+	pspLevel := uint(2)
+
+	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
+	signatureValidation, err := ValidatePSPEntries(amdFw, pspLevel, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	assert.NoError(suite.T(), err)
+
+	assert.Equal(suite.T(), 1, len(signatureValidation))
+	assert.Error(suite.T(), signatureValidation[0].err)
+
+	var unknownSigningKeyErr *UnknownSigningKeyError
+	assert.True(suite.T(), errors.As(signatureValidation[0].err, &unknownSigningKeyErr))
 }
 
 func TestPsbBinarySuite(t *testing.T) {
