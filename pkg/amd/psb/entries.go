@@ -2,9 +2,9 @@ package psb
 
 import (
 	"fmt"
-	"os"
+	"io"
 
-	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
+	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 )
 
 // extractRawEntry extracts a generic entry raw entry from either PSP Directory Table or BIOS Directory Table
@@ -51,7 +51,7 @@ func extractRawEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType 
 }
 
 // DumpEntry dumps an entry from either PSP Directory or BIOS directory to a file on the filesystem
-func DumpEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, entryFile string) (int, error) {
+func DumpEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, w io.Writer) (int, error) {
 
 	var data []byte
 
@@ -60,22 +60,12 @@ func DumpEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string
 		return 0, fmt.Errorf("could not extract entry 0x%x from BIOS table: %w", id, err)
 	}
 
-	fs, err := os.Create(entryFile)
-	if err != nil {
-		return 0, fmt.Errorf("could not create new system file :  %w", err)
-	}
-
-	defer fs.Close()
-
-	n, err := fs.Write(data)
-	if err != nil {
-		return n, fmt.Errorf("could not write entry to system file :  %w", err)
-	}
-	return n, nil
+	return w.Write(data)
 }
 
-// PatchEntry takes a path on the filesystem pointing to a dump of either a PSP entry or a BIOS entry and re-apply it to the firmware
-func PatchEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, entryFile string, modifiedFirmwareFile string) (int, error) {
+// PatchEntry takes an AmdFirmware object and modifies one entry in either the PSP or BIOS directory tables.
+// The modified entry is read from `r` reader object, while the modified firmware is written into `w` writer object.
+func PatchEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType string, id uint64, r io.Reader, w io.Writer) (int, error) {
 
 	var start, end uint64
 
@@ -110,9 +100,9 @@ func PatchEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType strin
 		return 0, fmt.Errorf("entry level %d, type %s, start, end, size = (%d, %d), size cannot be zero or negative", level, directoryType, start, end)
 	}
 
-	modifiedEntry, err := os.ReadFile(entryFile)
+	modifiedEntry, err := io.ReadAll(r)
 	if err != nil {
-		return 0, fmt.Errorf("could not read Modified entry: %w", err)
+		return 0, fmt.Errorf("could not read modified entry: %w", err)
 	}
 
 	firmwareBytes := amdFw.Firmware().ImageBytes()
@@ -129,23 +119,30 @@ func PatchEntry(amdFw *amd_manifest.AMDFirmware, level uint, directoryType strin
 	firmwareBytesFirstSection := firmwareBytes[0:start]
 	firmwareBytesSecondSection := firmwareBytes[end:]
 
-	//write the firmware to a different file
-	fs, err := os.Create(modifiedFirmwareFile)
-	if err != nil {
-		return 0, fmt.Errorf("could not create new system file :  %w", err)
-	}
-
-	defer fs.Close()
-
-	n, err := fs.Write(firmwareBytesFirstSection)
+	// Write the firmware to the writer object. firmwareBytes is not modified in place because it would segfault.
+	// The reason is the following:
+	// * We read the firmware with uefi.ParseUEFIFirmwareFile in https://github.com/9elements/converged-security-suite/blob/master/pkg/uefi/uefi.go#L43
+	// * That by default maps as read only:
+	//   https://github.com/9elements/converged-security-suite/blob/81375eac5ccc858045c91323eac8e60233dc9882/pkg/ostools/file_to_bytes.go#L25
+	// * Later, the behavior can be modified with ReadOnly flag in
+	//   https://github.com/linuxboot/fiano/blob/master/pkg/uefi/uefi.go#L24, which is in turn consumed from NewBIOSRegion.
+	// * If ReadOnly is not set, the whole slice is copied into memory from the mapped region:
+	//   https://github.com/linuxboot/fiano/blob/43cb7391010ac6cb416ab6f641a3a5465b5f524e/pkg/uefi/biosregion.go#L88
+	//
+	// Converged security suite sets read-only to true: https://github.com/9elements/converged-security-suite/blob/master/pkg/uefi/uefi.go#L30
+	// Therefore, firmwareBytes is read-only memmapped region. In order to make it read-write, we would need to enable the copy approach
+	// and set ReadOnly to false (fianoUEFI.ReadOnly = false)
+	// We take a more explicit approach and write the memory area before the corrupted region, the corrupted region itself,
+	// and the memory area after the corrupted region.
+	n, err := w.Write(firmwareBytesFirstSection)
 	if err != nil {
 		return n, fmt.Errorf("could not write entry to system file :  %w", err)
 	}
-	m, err := fs.Write(modifiedEntry)
+	m, err := w.Write(modifiedEntry)
 	if err != nil {
 		return n, fmt.Errorf("could not write entry to system file :  %w", err)
 	}
-	j, err := fs.Write(firmwareBytesSecondSection)
+	j, err := w.Write(firmwareBytesSecondSection)
 	if err != nil {
 		return n, fmt.Errorf("could not write entry to system file :  %w", err)
 	}

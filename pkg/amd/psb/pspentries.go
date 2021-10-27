@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
+	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 )
