@@ -14,7 +14,7 @@ import (
 
 	"strings"
 
-	amd_manifest "github.com/9elements/converged-security-suite/v2/pkg/amd/manifest"
+	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 )
 
 // KeyID is the primary identifier of a key
