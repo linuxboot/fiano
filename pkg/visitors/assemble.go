@@ -192,9 +192,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		}
 
 		// Otherwise, we reconstruct the entire file from the sections and the
-		// file header using data from the JSON. This means that some JSON values
-		// are now respected, including GUID changes. However file lengths and
-		// checksums will be recalculated.
+		// file header using data from the JSON/existing header struct. This means
+		// that some JSON values are now respected, including GUID changes.
+		// However file lengths and checksums will be recalculated.
 
 		// Assemble all sections so we know the final file size. We need to do this
 		// to know if we need to use the extended header.
