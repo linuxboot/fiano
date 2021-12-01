@@ -11,6 +11,7 @@ require (
 retract (
 	v6.0.0-rc
 	v6.0.1
+	v6.0.1-rc
 	v5.0.0
 	v3.0.0
 	v2.0.0
