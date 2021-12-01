@@ -7,13 +7,3 @@ require (
 	github.com/ulikunitz/xz v0.5.10
 	golang.org/x/text v0.3.6
 )
-
-retract (
-	v7.0.0
-	v7.0.1
-	v7.0.2
-	v6.0.0-rc
-	v5.0.0
-	v3.0.0
-	v2.0.0
-)
