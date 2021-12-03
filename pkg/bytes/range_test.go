@@ -1,9 +1,11 @@
+// Copyright 2019 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package bytes
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestRangesSortAndMerge(t *testing.T) {
@@ -16,7 +18,7 @@ func TestRangesSortAndMerge(t *testing.T) {
 			Length: 1,
 		}}
 		entries.SortAndMerge()
-		require.Equal(t, Ranges{{
+		assertEqualRanges(t, Ranges{{
 			Offset: 0,
 			Length: 1,
 		}, {
@@ -33,7 +35,7 @@ func TestRangesSortAndMerge(t *testing.T) {
 			Length: 3,
 		}}
 		entries.SortAndMerge()
-		require.Equal(t, Ranges{{
+		assertEqualRanges(t, Ranges{{
 			Offset: 0,
 			Length: 5,
 		}}, entries)
@@ -47,7 +49,7 @@ func TestRangesSortAndMerge(t *testing.T) {
 			Length: 2,
 		}}
 		entries.SortAndMerge()
-		require.Equal(t, Ranges{{
+		assertEqualRanges(t, Ranges{{
 			Offset: 0,
 			Length: 4,
 		}}, entries)
@@ -88,7 +90,7 @@ func TestRangesSortAndMerge(t *testing.T) {
 			},
 		}
 		entries.SortAndMerge()
-		require.Equal(t, Ranges{
+		assertEqualRanges(t, Ranges{
 			{
 				Offset: 0,
 				Length: 0,
@@ -110,7 +112,7 @@ func TestRangesSortAndMerge(t *testing.T) {
 }
 
 func TestRangeExclude(t *testing.T) {
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 0,
@@ -140,7 +142,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 1,
@@ -158,7 +160,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 0,
@@ -176,7 +178,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 11,
@@ -194,7 +196,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 0,
@@ -212,7 +214,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 0,
@@ -225,7 +227,7 @@ func TestRangeExclude(t *testing.T) {
 		}.Exclude(),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 10,
@@ -243,7 +245,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges{
 			Range{
 				Offset: 0,
@@ -261,7 +263,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges(nil),
 		Range{
 			Offset: 0,
@@ -274,7 +276,7 @@ func TestRangeExclude(t *testing.T) {
 		),
 	)
 
-	require.Equal(t,
+	assertEqualRanges(t,
 		Ranges(nil),
 		Range{
 			Offset: 10,
@@ -286,4 +288,28 @@ func TestRangeExclude(t *testing.T) {
 			},
 		),
 	)
+}
+
+func assertEqualRanges(t *testing.T, expected, actual Ranges) {
+	if len(expected) != len(actual) {
+		t.Errorf("Expected number of ranges: %d, got: %d", len(expected), len(actual))
+	}
+	if len(expected) == 0 {
+		return
+	}
+
+	for i := 0; i < len(expected); i++ {
+		expectedRange := expected[i]
+		actualRange := actual[i]
+
+		if expectedRange.Offset != actualRange.Offset || expectedRange.Length != actualRange.Length {
+			t.Errorf("Range element %d is different, expected: [%d:%d], got: [%d:%d]",
+				i,
+				expectedRange.Offset,
+				actualRange.Offset,
+				expectedRange.Length,
+				actualRange.Length,
+			)
+		}
+	}
 }
