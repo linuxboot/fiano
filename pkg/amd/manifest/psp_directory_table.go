@@ -1,12 +1,17 @@
+// Copyright 2019 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package manifest
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"io"
 	"strings"
+
+	bytes2 "github.com/linuxboot/fiano/pkg/bytes"
 )
 
 // Refer to: AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and Family 19h
