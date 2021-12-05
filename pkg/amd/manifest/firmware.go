@@ -1,10 +1,14 @@
+// Copyright 2019 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package manifest
 
 import (
 	"bytes"
 	"fmt"
 
-	bytes2 "github.com/9elements/converged-security-suite/v2/pkg/bytes"
+	bytes2 "github.com/linuxboot/fiano/pkg/bytes"
 )
 
 // Firmware is an abstraction of a firmware image, obtained for example via flashrom
