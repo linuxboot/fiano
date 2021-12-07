@@ -44,6 +44,8 @@ type PSPDirectoryTableEntry struct {
 	LocationOrValue uint64
 }
 
+const PSPDirectoryTableEntrySize = 16
+
 // PSPDirectoryTableHeader represents a BIOS Directory Table Header
 // Tables 3&4 from (1)
 type PSPDirectoryTableHeader struct {
@@ -101,7 +103,7 @@ func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, bytes2.Range, erro
 			break
 		}
 
-		table, length, err := ParsePSPDirectoryTable(bytes.NewBuffer(image[idx:]))
+		table, length, err := ParsePSPDirectoryTable(image[idx:])
 		if err != nil {
 			shift := uint64(idx + len(cookieBytes))
 			image = image[idx+len(cookieBytes):]
@@ -110,21 +112,21 @@ func FindPSPDirectoryTable(image []byte) (*PSPDirectoryTable, bytes2.Range, erro
 		}
 		return table, bytes2.Range{Offset: offset + uint64(idx), Length: length}, err
 	}
-	return nil, bytes2.Range{}, fmt.Errorf("EmbeddedFirmwareStructure is not found")
+	return nil, bytes2.Range{}, fmt.Errorf("PSPDirectoryTable is not found")
 }
 
 // ParsePSPDirectoryTable converts input bytes into PSPDirectoryTable
-func ParsePSPDirectoryTable(r io.Reader) (*PSPDirectoryTable, uint64, error) {
+func ParsePSPDirectoryTable(data []byte) (*PSPDirectoryTable, uint64, error) {
 	var table PSPDirectoryTable
 	var totalLength uint64
 
+	r := bytes.NewBuffer(data)
 	if err := readAndCountSize(r, binary.LittleEndian, &table.PSPCookie, &totalLength); err != nil {
 		return nil, 0, err
 	}
 	if table.PSPCookie != PSPDirectoryTableCookie && table.PSPCookie != PSPDirectoryTableLevel2Cookie {
 		return nil, 0, fmt.Errorf("incorrect cookie: %d", table.PSPCookie)
 	}
-
 	if err := readAndCountSize(r, binary.LittleEndian, &table.Checksum, &totalLength); err != nil {
 		return nil, 0, err
 	}
@@ -133,6 +135,11 @@ func ParsePSPDirectoryTable(r io.Reader) (*PSPDirectoryTable, uint64, error) {
 	}
 	if err := readAndCountSize(r, binary.LittleEndian, &table.AdditionalInfo, &totalLength); err != nil {
 		return nil, 0, err
+	}
+
+	sizeRequired := uint64(table.TotalEntries) * PSPDirectoryTableEntrySize
+	if uint64(r.Len()) < sizeRequired {
+		return nil, 0, fmt.Errorf("not enough data, required: %d, actual: %d", sizeRequired+totalLength, len(data))
 	}
 
 	for idx := uint32(0); idx < table.TotalEntries; idx++ {

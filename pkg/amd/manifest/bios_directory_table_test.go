@@ -5,7 +5,6 @@
 package manifest
 
 import (
-	"bytes"
 	"encoding/binary"
 	"testing"
 )
@@ -51,7 +50,7 @@ func TestFindBIOSDirectoryTable(t *testing.T) {
 	t.Run("bios_table_cookie_found", func(t *testing.T) {
 		table, r, err := FindBIOSDirectoryTable(append(firmwareChunk, biosDirectoryTableDataChunk...))
 		if err != nil {
-			t.Fatalf("Unexecpted error when finding BIOS Directory table")
+			t.Fatalf("Unexecpted error when finding BIOS Directory table: %v", err)
 		}
 		if r.Offset != uint64(len(firmwareChunk)) {
 			t.Errorf("BIOS Directory Table address is incorrect: %d, expected: %d", r.Offset, uint64(len(firmwareChunk)))
@@ -66,7 +65,7 @@ func TestFindBIOSDirectoryTable(t *testing.T) {
 }
 
 func TestBiosDirectoryTableParsing(t *testing.T) {
-	table, readBytes, err := ParseBIOSDirectoryTable(bytes.NewBuffer(append(biosDirectoryTableDataChunk, 0xff)))
+	table, readBytes, err := ParseBIOSDirectoryTable(append(biosDirectoryTableDataChunk, 0xff))
 	if err != nil {
 		t.Fatalf("Failed to parse BIOS Directory table, err: %v", err)
 	}
@@ -119,5 +118,21 @@ func TestBiosDirectoryTableParsing(t *testing.T) {
 	if entry.DestinationAddress != 0xffffffffffffffff {
 		t.Errorf("Table entry [0] destination address is incorrect: %x, expected: 0xffffffffffffffff",
 			table.Entries[0].DestinationAddress)
+	}
+}
+
+func TestBrokenTotalEntriesBiosDirectoryParsing(t *testing.T) {
+	biosDirectoryTableData := make([]byte, len(biosDirectoryTableDataChunk))
+	copy(biosDirectoryTableData, biosDirectoryTableDataChunk)
+
+	// 8 is offset of TotalEntries field
+	biosDirectoryTableData[8] = 0xff
+	biosDirectoryTableData[9] = 0xff
+	biosDirectoryTableData[10] = 0xff
+	biosDirectoryTableData[11] = 0xff
+
+	_, _, err := ParseBIOSDirectoryTable(biosDirectoryTableData)
+	if err == nil {
+		t.Errorf("expected error when parsing incorrect psp directory table contents")
 	}
 }

@@ -55,6 +55,8 @@ type BIOSDirectoryTableEntry struct {
 	DestinationAddress uint64
 }
 
+const BIOSDirectoryTableEntrySize = 16
+
 // BIOSDirectoryTableHeader represents a BIOS Directory Table Header
 // Table 11 from (1)
 type BIOSDirectoryTableHeader struct {
@@ -125,7 +127,7 @@ func FindBIOSDirectoryTable(image []byte) (*BIOSDirectoryTable, bytes2.Range, er
 			break
 		}
 
-		table, bytesRead, err := ParseBIOSDirectoryTable(bytes.NewBuffer(image[idx:]))
+		table, bytesRead, err := ParseBIOSDirectoryTable(image[idx:])
 		if err != nil {
 			shift := uint64(idx + len(cookieBytes))
 			image = image[shift:]
@@ -134,13 +136,15 @@ func FindBIOSDirectoryTable(image []byte) (*BIOSDirectoryTable, bytes2.Range, er
 		}
 		return table, bytes2.Range{Offset: offset + uint64(idx), Length: bytesRead}, err
 	}
-	return nil, bytes2.Range{}, fmt.Errorf("EmbeddedFirmwareStructure is not found")
+	return nil, bytes2.Range{}, fmt.Errorf("BIOSDirectoryTable is not found")
 }
 
 // ParseBIOSDirectoryTable converts input bytes into BIOSDirectoryTable
-func ParseBIOSDirectoryTable(r io.Reader) (*BIOSDirectoryTable, uint64, error) {
+func ParseBIOSDirectoryTable(data []byte) (*BIOSDirectoryTable, uint64, error) {
 	var table BIOSDirectoryTable
 	var totalLength uint64
+
+	r := bytes.NewBuffer(data)
 	if err := readAndCountSize(r, binary.LittleEndian, &table.BIOSCookie, &totalLength); err != nil {
 		return nil, 0, err
 	}
@@ -151,11 +155,17 @@ func ParseBIOSDirectoryTable(r io.Reader) (*BIOSDirectoryTable, uint64, error) {
 	if err := readAndCountSize(r, binary.LittleEndian, &table.Checksum, &totalLength); err != nil {
 		return nil, 0, err
 	}
+
 	if err := readAndCountSize(r, binary.LittleEndian, &table.TotalEntries, &totalLength); err != nil {
 		return nil, 0, err
 	}
 	if err := readAndCountSize(r, binary.LittleEndian, &table.Reserved, &totalLength); err != nil {
 		return nil, 0, err
+	}
+
+	sizeRequired := uint64(table.TotalEntries) * BIOSDirectoryTableEntrySize
+	if uint64(r.Len()) < sizeRequired {
+		return nil, 0, fmt.Errorf("not enough data, required: %d, actual: %d", sizeRequired+totalLength, len(data))
 	}
 
 	table.Entries = make([]BIOSDirectoryTableEntry, 0, table.TotalEntries)
