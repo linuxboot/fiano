@@ -5,7 +5,6 @@
 package manifest
 
 import (
-	"bytes"
 	"fmt"
 
 	bytes2 "github.com/linuxboot/fiano/pkg/bytes"
@@ -72,7 +71,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 	var pspDirectoryLevel1Range bytes2.Range
 	if efs.PSPDirectoryTablePointer != 0 && efs.PSPDirectoryTablePointer < uint32(len(image)) {
 		var length uint64
-		pspDirectoryLevel1, length, err = ParsePSPDirectoryTable(bytes.NewBuffer(image[efs.PSPDirectoryTablePointer:]))
+		pspDirectoryLevel1, length, err = ParsePSPDirectoryTable(image[efs.PSPDirectoryTablePointer:])
 		if err == nil {
 			pspDirectoryLevel1Range.Offset = uint64(efs.PSPDirectoryTablePointer)
 			pspDirectoryLevel1Range.Length = length
@@ -90,7 +89,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 				continue
 			}
 			if entry.LocationOrValue != 0 && entry.LocationOrValue < uint64(len(image)) {
-				pspDirectoryLevel2, length, err := ParsePSPDirectoryTable(bytes.NewBuffer(image[entry.LocationOrValue:]))
+				pspDirectoryLevel2, length, err := ParsePSPDirectoryTable(image[entry.LocationOrValue:])
 				if err == nil {
 					result.PSPDirectoryLevel2 = pspDirectoryLevel2
 					result.PSPDirectoryLevel2Range.Offset = entry.LocationOrValue
@@ -115,7 +114,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 			continue
 		}
 		var length uint64
-		biosDirectoryLevel1, length, err = ParseBIOSDirectoryTable(bytes.NewBuffer(image[offset:]))
+		biosDirectoryLevel1, length, err = ParseBIOSDirectoryTable(image[offset:])
 		if err != nil {
 			continue
 		}
@@ -137,7 +136,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 				continue
 			}
 			if entry.SourceAddress != 0 && entry.SourceAddress < uint64(len(image)) {
-				biosDirectoryLevel2, length, err := ParseBIOSDirectoryTable(bytes.NewBuffer(image[entry.SourceAddress:]))
+				biosDirectoryLevel2, length, err := ParseBIOSDirectoryTable(image[entry.SourceAddress:])
 				if err == nil {
 					result.BIOSDirectoryLevel2 = biosDirectoryLevel2
 					result.BIOSDirectoryLevel2Range.Offset = entry.SourceAddress
