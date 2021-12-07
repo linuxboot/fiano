@@ -5,7 +5,6 @@
 package manifest
 
 import (
-	"bytes"
 	"encoding/binary"
 	"testing"
 )
@@ -64,7 +63,7 @@ func TestFindPSPDirectoryTable(t *testing.T) {
 }
 
 func TestPspDirectoryTableParsing(t *testing.T) {
-	table, length, err := ParsePSPDirectoryTable(bytes.NewBuffer(append(pspDirectoryTableDataChunk, 0xff)))
+	table, length, err := ParsePSPDirectoryTable(append(pspDirectoryTableDataChunk, 0xff))
 	if err != nil {
 		t.Fatalf("Failed to parse PSP Directory table, err: %v", err)
 	}
@@ -93,5 +92,21 @@ func TestPspDirectoryTableParsing(t *testing.T) {
 	}
 	if table.Entries[0].LocationOrValue != 0x62400 {
 		t.Errorf("Table entry [0] location is incorrect: %d, expected: 0x62400", table.Entries[0].LocationOrValue)
+	}
+}
+
+func TestBrokenTotalEntriesPspDirectoryParsing(t *testing.T) {
+	pspDirectoryTableData := make([]byte, len(pspDirectoryTableDataChunk))
+	copy(pspDirectoryTableData, pspDirectoryTableDataChunk)
+
+	// 8 is offset of TotalEntries field
+	pspDirectoryTableData[8] = 0xff
+	pspDirectoryTableData[9] = 0xff
+	pspDirectoryTableData[10] = 0xff
+	pspDirectoryTableData[11] = 0xff
+
+	_, _, err := ParsePSPDirectoryTable(pspDirectoryTableData)
+	if err == nil {
+		t.Errorf("expected error when parsing incorrect psp directory table contents")
 	}
 }
