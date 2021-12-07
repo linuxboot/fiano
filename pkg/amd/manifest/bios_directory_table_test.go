@@ -11,7 +11,7 @@ import (
 
 var biosDirectoryTableDataChunk = []byte{
 	0x24, 0x42, 0x48, 0x44,
-	0xee, 0x7f, 0xd9, 0xab,
+	0xd0, 0x75, 0xc5, 0xac,
 	0x01, 0x00, 0x00, 0x00,
 	0x40, 0x04, 0x00, 0x20,
 
@@ -78,6 +78,9 @@ func TestBiosDirectoryTableParsing(t *testing.T) {
 
 	if table.BIOSCookie != BIOSDirectoryTableCookie {
 		t.Errorf("BIOSCookie is incorrect: %d, expected: %d", table.BIOSCookie, BIOSDirectoryTableCookie)
+	}
+	if table.Checksum != 0xacc575d0 {
+		t.Errorf("Checksum is incorrect: %d, expected: %d", table.Checksum, 0xacc575d0)
 	}
 	if table.TotalEntries != 1 {
 		t.Errorf("TotalEntries is incorrect: %d, expected: %d", table.TotalEntries, 1)

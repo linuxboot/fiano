@@ -11,7 +11,7 @@ import (
 
 var pspDirectoryTableDataChunk = []byte{
 	0x24, 0x50, 0x53, 0x50,
-	0xcf, 0x55, 0x73, 0x1b,
+	0x57, 0x4d, 0x3f, 0xfc,
 	0x01, 0x00, 0x00, 0x00,
 	0x10, 0x05, 0x00, 0x20,
 
@@ -63,7 +63,8 @@ func TestFindPSPDirectoryTable(t *testing.T) {
 }
 
 func TestPspDirectoryTableParsing(t *testing.T) {
-	table, length, err := ParsePSPDirectoryTable(append(pspDirectoryTableDataChunk, 0xff))
+	data := append(pspDirectoryTableDataChunk, 0xff)
+	table, length, err := ParsePSPDirectoryTable(data)
 	if err != nil {
 		t.Fatalf("Failed to parse PSP Directory table, err: %v", err)
 	}
@@ -75,7 +76,10 @@ func TestPspDirectoryTableParsing(t *testing.T) {
 	}
 
 	if table.PSPCookie != PSPDirectoryTableCookie {
-		t.Errorf("BIOSCookie is incorrect: %d, expected: %d", table.PSPCookie, PSPDirectoryTableCookie)
+		t.Errorf("PSPCookie is incorrect: %d, expected: %d", table.PSPCookie, PSPDirectoryTableCookie)
+	}
+	if table.Checksum != 0xfc3f4d57 {
+		t.Errorf("Checksum is incorrect: %d, expected: %d", table.Checksum, 0xfc3f4d57)
 	}
 	if table.TotalEntries != 1 {
 		t.Errorf("TotalEntries is incorrect: %d, expected: %d", table.TotalEntries, 1)
