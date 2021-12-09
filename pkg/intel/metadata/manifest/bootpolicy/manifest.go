@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"fmt"
 
-	pkgbytes "github.com/9elements/converged-security-suite/v2/pkg/bytes"
 	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
 	"github.com/9elements/converged-security-suite/v2/pkg/uefi/consts"
+	pkgbytes "github.com/linuxboot/fiano/pkg/bytes"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
