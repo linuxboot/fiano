@@ -36,28 +36,28 @@ type FileType uint32
 const (
 	// FOV
 	TypeDeleted2    FileType = 0xffffffff
-	TypeDeleted              = 0
-	TypeBootBlock            = 0x1
-	TypeMaster               = 0x2
-	TypeLegacyStage          = 0x10
-	TypeStage                = 0x11
-	TypeSELF                 = 0x20
-	TypeFIT                  = 0x21
-	TypeOptionRom            = 0x30
-	TypeBootSplash           = 0x40
-	TypeRaw                  = 0x50
-	TypeVSA                  = 0x51 // very, very obsolete Geode thing
-	TypeMBI                  = 0x52
-	TypeMicroCode            = 0x53
-	TypeFSP                  = 0x60
-	TypeMRC                  = 0x61
-	TypeMMA                  = 0x62
-	TypeEFI                  = 0x63
-	TypeStruct               = 0x70
-	TypeCMOS                 = 0xaa
-	TypeSPD                  = 0xab
-	TypeMRCCache             = 0xac
-	TypeCMOSLayout           = 0x1aa
+	TypeDeleted     FileType = 0
+	TypeBootBlock   FileType = 0x1
+	TypeMaster      FileType = 0x2
+	TypeLegacyStage FileType = 0x10
+	TypeStage       FileType = 0x11
+	TypeSELF        FileType = 0x20
+	TypeFIT         FileType = 0x21
+	TypeOptionRom   FileType = 0x30
+	TypeBootSplash  FileType = 0x40
+	TypeRaw         FileType = 0x50
+	TypeVSA         FileType = 0x51 // very, very obsolete Geode thing
+	TypeMBI         FileType = 0x52
+	TypeMicroCode   FileType = 0x53
+	TypeFSP         FileType = 0x60
+	TypeMRC         FileType = 0x61
+	TypeMMA         FileType = 0x62
+	TypeEFI         FileType = 0x63
+	TypeStruct      FileType = 0x70
+	TypeCMOS        FileType = 0xaa
+	TypeSPD         FileType = 0xab
+	TypeMRCCache    FileType = 0xac
+	TypeCMOSLayout  FileType = 0x1aa
 )
 
 const (
@@ -132,12 +132,12 @@ type Tag uint32
 
 const (
 	Unused     Tag = 0
-	Unused2        = 0xffffffff
-	Compressed     = 0x42435a4c
-	Hash           = 0x68736148
-	PSCB           = 0x42435350
-	ALCB           = 0x42434c41
-	SHCB           = 0x53746748
+	Unused2    Tag = 0xffffffff
+	Compressed Tag = 0x42435a4c
+	Hash       Tag = 0x68736148
+	PSCB       Tag = 0x42435350
+	ALCB       Tag = 0x42434c41
+	SHCB       Tag = 0x53746748
 )
 
 type FileAttrCompression struct {
@@ -204,7 +204,7 @@ type Architecture uint32
 
 const (
 	X86 Architecture = 1
-	ARM              = 0x10
+	ARM Architecture = 0x10
 )
 
 type StageHeader struct {
@@ -277,10 +277,10 @@ type SegmentType uint32
 
 const (
 	SegCode   SegmentType = 0x434F4445
-	SegData               = 0x44415441
-	SegBSS                = 0x42535320
-	SegParams             = 0x50415241
-	SegEntry              = 0x454E5452
+	SegData   SegmentType = 0x44415441
+	SegBSS    SegmentType = 0x42535320
+	SegParams SegmentType = 0x50415241
+	SegEntry  SegmentType = 0x454E5452
 )
 
 func (s SegmentType) String() string {
