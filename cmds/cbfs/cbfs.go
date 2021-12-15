@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/linuxboot/cbfs/pkg/cbfs"
+	"github.com/linuxboot/fiano/pkg/cbfs"
 	flag "github.com/spf13/pflag"
 )
 
