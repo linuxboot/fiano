@@ -12,8 +12,8 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 
-	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 	"github.com/9elements/converged-security-suite/v2/pkg/uefi"
+	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
