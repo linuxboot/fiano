@@ -2,6 +2,7 @@ package apcb
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -14,34 +15,95 @@ import (
 func TestParsingTokens(t *testing.T) {
 	apcbBinary, err := getFile("apcb_binary.xz")
 	require.NoError(t, err)
-	require.NotNil(t, apcbBinary)
+	require.NotEmpty(t, apcbBinary)
 
 	tokens, err := ParseAPCBBinaryTokens(apcbBinary)
 	require.NoError(t, err)
 	require.Len(t, tokens, 40)
 
-	findToken := func(tokenID TokenID) *Token {
-		for _, token := range tokens {
-			if token.ID == tokenID {
-				return &token
-			}
-		}
-		return nil
-	}
-
-	token := findToken(0x3E7D5274)
+	token := findToken(0x3E7D5274, tokens)
 	require.NotNil(t, token)
 	require.Equal(t, CreatePriorityMask(PriorityLevelMedium), token.PriorityMask)
 	require.Equal(t, uint16(0xFFFF), token.BoardMask)
 	require.Equal(t, uint32(2044), token.Value)
 	require.Equal(t, uint32(2044), token.NumValue())
 
-	token = findToken(0xE1CC135E)
+	token = findToken(0xE1CC135E, tokens)
 	require.NotNil(t, token)
 	require.Equal(t, CreatePriorityMask(PriorityLevelMedium), token.PriorityMask)
 	require.Equal(t, uint16(0xFFFF), token.BoardMask)
 	require.Equal(t, false, token.Value)
 	require.Equal(t, uint32(0), token.NumValue())
+}
+
+func TestUpsertToken(t *testing.T) {
+	t.Run("update_existing_token", func(t *testing.T) {
+		apcbBinary, err := getFile("apcb_binary.xz")
+		require.NoError(t, err)
+		require.NotEmpty(t, apcbBinary)
+
+		require.NoError(t, UpsertToken(0x3E7D5274, 0xff, 0xffff, uint32(0xffffffff), apcbBinary))
+
+		tokens, err := ParseAPCBBinaryTokens(apcbBinary)
+		require.NoError(t, err)
+		require.Len(t, tokens, 40)
+
+		token := findToken(0x3E7D5274, tokens)
+		require.NotNil(t, token)
+		require.Equal(t, uint32(0xffffffff), token.NumValue())
+	})
+
+	t.Run("insert_new_token", func(t *testing.T) {
+		apcbBinary, err := getFile("apcb_binary.xz")
+		require.NoError(t, err)
+		require.NotEmpty(t, apcbBinary)
+
+		require.NoError(t, UpsertToken(0xFFFFAAAA, 0xff, 0xffff, uint32(0xffffffff), apcbBinary))
+
+		tokens, err := ParseAPCBBinaryTokens(apcbBinary)
+		require.NoError(t, err)
+		require.Len(t, tokens, 41)
+
+		token := findToken(0xFFFFAAAA, tokens)
+		require.NotNil(t, token)
+		require.Equal(t, uint32(0xffffffff), token.NumValue())
+	})
+
+	t.Run("insert_new_token_no_type", func(t *testing.T) {
+		apcbBinary, err := getFile("apcb_binary.xz")
+		require.NoError(t, err)
+		require.NotEmpty(t, apcbBinary)
+
+		h, _, err := parseAPCBHeader(apcbBinary)
+		require.NoError(t, err)
+		h.V2Header.SizeOfAPCB = uint32(binary.Size(h))
+
+		resultBuffer := make([]byte, binary.Size(h)+1000)
+		require.NoError(t, writeFixedBuffer(resultBuffer, h))
+		tokens, err := ParseAPCBBinaryTokens(resultBuffer)
+		require.NoError(t, err)
+		require.Empty(t, tokens)
+
+		require.NoError(t, UpsertToken(0xFFFFAAAA, 0xff, 0xffff, uint32(0xffffffff), resultBuffer))
+
+		tokens, err = ParseAPCBBinaryTokens(resultBuffer)
+		require.NoError(t, err)
+		require.Len(t, tokens, 1)
+
+		require.NoError(t, UpsertToken(0xFFFFBBBB, 0xff, 0xffff, bool(true), resultBuffer))
+		tokens, err = ParseAPCBBinaryTokens(resultBuffer)
+		require.NoError(t, err)
+		require.Len(t, tokens, 2)
+	})
+}
+
+func findToken(tokenID TokenID, tokens []Token) *Token {
+	for _, token := range tokens {
+		if token.ID == tokenID {
+			return &token
+		}
+	}
+	return nil
 }
 
 func getFile(filename string) ([]byte, error) {
