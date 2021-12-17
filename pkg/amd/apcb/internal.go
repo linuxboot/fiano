@@ -10,6 +10,7 @@ const (
 	headerV2Signature       headerSignature = 0x42435041
 	headerV3Signature       headerSignature = 0x32424345
 	headerV3EndingSignature headerSignature = 0x41424342
+	tokenGroupSignature     headerSignature = 0x4E4B4F54 // NKOT
 )
 
 type headerV2 struct {
