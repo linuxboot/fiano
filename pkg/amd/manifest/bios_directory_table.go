@@ -26,12 +26,22 @@ const BIOSDirectoryTableLevel2Cookie = 0x324C4224 // $BL2
 type BIOSDirectoryTableEntryType uint8
 
 const (
-	// APCBBinaryEntry denotes APCB binary entry in BIOS Directory table
-	APCBBinaryEntry BIOSDirectoryTableEntryType = 0x60
+	// APCBDataEntry represents APCB data entry in BIOS Directory table
+	APCBDataEntry BIOSDirectoryTableEntryType = 0x60
 	// APOBBinaryEntry denotes APOB binary in BIOS Directory table
 	APOBBinaryEntry BIOSDirectoryTableEntryType = 0x61
-	// BIOSRTMVolumeEntry denotes BIOS RTM Volume entry in BIOS Directory table
+	// BIOSRTMVolumeEntry represents BIOS RTM Volume entry in BIOS Directory table
 	BIOSRTMVolumeEntry BIOSDirectoryTableEntryType = 0x62
+	// PMUFirmwareInstructionsEntry represents the instruction portion of PMU firmware
+	PMUFirmwareInstructionsEntry BIOSDirectoryTableEntryType = 0x64
+	// PMUFirmwareDataEntry represents the data portion of PMU firmware
+	PMUFirmwareDataEntry BIOSDirectoryTableEntryType = 0x65
+	// MicrocodePatchEntry represents the microcode patch file location
+	MicrocodePatchEntry BIOSDirectoryTableEntryType = 0x66
+	// APCBDataBackupEntry contains a backup copy of APCB data
+	APCBDataBackupEntry BIOSDirectoryTableEntryType = 0x68
+	// VideoInterpreterEntry interpreter binary that displays the video image
+	VideoInterpreterEntry BIOSDirectoryTableEntryType = 0x69
 	// BIOSDirectoryTableLevel2Entry denotes an entry that points to BIOS Directory table level 2
 	BIOSDirectoryTableLevel2Entry BIOSDirectoryTableEntryType = 0x70
 )
