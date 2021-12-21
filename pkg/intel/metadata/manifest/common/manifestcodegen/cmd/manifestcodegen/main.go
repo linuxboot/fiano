@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -71,25 +70,6 @@ func backupGeneratedFiles(dirPath string, isReverse bool) error {
 	return nil
 }
 
-func replaceInFiles(dirPath, oldValue, newValue string) {
-	// ugly terrible hack to workaround versioning support
-	// TODO: fix the importer to recognize `/v2/` as version, not as path
-	files, err := ioutil.ReadDir(dirPath)
-	assertNoError(err)
-
-	for _, file := range files {
-		if !strings.HasSuffix(file.Name(), ".go") {
-			continue
-		}
-		filePath := filepath.Join(dirPath, file.Name())
-		contents, err := ioutil.ReadFile(filePath)
-		assertNoError(err)
-		contents = bytes.Replace(contents, []byte(oldValue), []byte(newValue), -1)
-		err = ioutil.WriteFile(filePath, contents, 0640)
-		assertNoError(err)
-	}
-}
-
 func processPath(path string, isCheck, enableTracing bool) error {
 	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
 		err := backupGeneratedFiles(path, false)
@@ -143,17 +123,6 @@ func processPath(path string, isCheck, enableTracing bool) error {
 }
 
 func processPaths(paths []string, checkFlag, traceFlag bool) int {
-	for _, path := range paths {
-		// ugly terrible hack to workaround versioning support
-		// TODO: fix the importer to recognize `/v2/` as version, not as path
-		replaceInFiles(path, "converged-security-suite/v2/pkg", "converged-security-suite/pkg")
-	}
-	defer func() {
-		for _, path := range paths {
-			replaceInFiles(path, "converged-security-suite/pkg", "converged-security-suite/v2/pkg")
-		}
-	}()
-
 	errorCount := 0
 	for _, path := range paths {
 		err := processPath(path, checkFlag, traceFlag)
