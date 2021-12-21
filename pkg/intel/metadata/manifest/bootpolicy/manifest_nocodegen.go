@@ -11,7 +11,7 @@ package bootpolicy
 import (
 	"fmt"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/pretty"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/pretty"
 )
 
 func (bpm *Manifest) rehashedBPMH() BPMH {

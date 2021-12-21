@@ -12,8 +12,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/pkg/analyze"
 	"github.com/fatih/camelcase"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/manifestcodegen/pkg/analyze"
 )
 
 type methodsData struct {
@@ -104,7 +104,7 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 		}
 		if !bytes.Equal(b0, b1) {
 			return fmt.Errorf("file '%s' is not up-to-date; please run command: "+
-				"go run github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/manifestcodegen/cmd/manifestcodegen %s",
+				"go run github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/manifestcodegen/cmd/manifestcodegen %s",
 				generatedFile, file.Package.Path())
 		}
 	}
