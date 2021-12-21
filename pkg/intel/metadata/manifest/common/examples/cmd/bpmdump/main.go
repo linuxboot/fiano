@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/bootpolicy"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/bootpolicy"
 )
 
 func assertNoError(err error) {

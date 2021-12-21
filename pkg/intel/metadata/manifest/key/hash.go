@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest"
 )
 
 // Hash is "KM hash Structure" defined in document #575623.
