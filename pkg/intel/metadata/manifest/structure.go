@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/pretty"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/pretty"
 )
 
 var (

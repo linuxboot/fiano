@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest"
 	"github.com/stretchr/testify/require"
 )
 

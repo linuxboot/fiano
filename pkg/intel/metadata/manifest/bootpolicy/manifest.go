@@ -6,9 +6,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest"
-	"github.com/9elements/converged-security-suite/v2/pkg/uefi/consts"
 	pkgbytes "github.com/linuxboot/fiano/pkg/bytes"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -84,9 +83,22 @@ func (bpm *Manifest) IBBDataRanges(firmwareSize uint64) pkgbytes.Ranges {
 		if seg.Flags&1 == 1 {
 			continue
 		}
-		startIdx := consts.CalculateOffsetFromPhysAddr(uint64(seg.Base), firmwareSize)
+		startIdx := calculateOffsetFromPhysAddr(uint64(seg.Base), firmwareSize)
 		result = append(result, pkgbytes.Range{Offset: startIdx, Length: uint64(seg.Size)})
 	}
 
 	return result
+}
+
+// calculateOffsetFromPhysAddr calculates the offset within an image
+// of the physical address (address to a region mapped from
+// the SPI chip).
+//
+// Examples:
+//     calculateOffsetFromPhysAddr(0xffffffff, 0x1000) == 0xfff
+//     calculateOffsetFromPhysAddr(0xffffffc0, 0x1000) == 0xfc0
+func calculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
+	const basePhysAddr = 1 << 32 // "4GiB"
+	startAddr := basePhysAddr - imageSize
+	return physAddr - startAddr
 }

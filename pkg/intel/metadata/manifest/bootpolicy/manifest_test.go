@@ -3,7 +3,7 @@ package bootpolicy
 import (
 	"testing"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/common/unittest"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/unittest"
 )
 
 func TestReadWrite(t *testing.T) {
