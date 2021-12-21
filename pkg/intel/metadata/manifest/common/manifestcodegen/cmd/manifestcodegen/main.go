@@ -16,12 +16,6 @@ import (
 	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/common/manifestcodegen/pkg/analyze"
 )
 
-func assertNoError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func deleteBackupFiles(dirPath string) error {
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
