@@ -1,3 +1,7 @@
+// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package fit
 
 import (
@@ -7,9 +11,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/check"
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/fit/consts"
-	uefiConsts "github.com/9elements/converged-security-suite/v2/pkg/uefi/consts"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 )
 
 // Table is the FIT entry headers table (located by the "FIT Pointer")
@@ -87,6 +90,17 @@ func GetPointerCoordinates(firmware []byte) (startIdx, endIdx uint64) {
 	return
 }
 
+// calculateTailOffsetFromPhysAddr calculates the offset (towards down, relatively
+// to BasePhysAddr) of the physical address (address to a region mapped from
+// the SPI chip).
+//
+// Examples:
+//     calculateTailOffsetFromPhysAddr(0xffffffff) == 0x01
+//     calculateTailOffsetFromPhysAddr(0xffffffc0) == 0x40
+func calculateTailOffsetFromPhysAddr(physAddr uint64) uint64 {
+	return consts.BasePhysAddr - physAddr
+}
+
 // GetHeadersTableRange returns the starting and ending indexes of the FIT
 // headers table within the firmware image.
 func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) {
@@ -137,7 +151,7 @@ func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) 
 
 	fitPointerBytes := firmware[fitPointerStartIdx:fitPointerEndIdx]
 	fitPointerValue := binary.LittleEndian.Uint64(fitPointerBytes)
-	fitPointerOffset := uefiConsts.CalculateTailOffsetFromPhysAddr(fitPointerValue)
+	fitPointerOffset := calculateTailOffsetFromPhysAddr(fitPointerValue)
 	startIdx = uint64(len(firmware)) - fitPointerOffset
 
 	// OK, now we need to calculate the end of the headers...
