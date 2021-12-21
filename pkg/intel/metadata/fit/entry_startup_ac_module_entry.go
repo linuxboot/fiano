@@ -1,3 +1,7 @@
+// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package fit
 
 import (
@@ -9,7 +13,7 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/errors"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
 )
 
 // See the section "A.1" of the specification
@@ -385,7 +389,7 @@ func EntrySACMParseSizeFrom(r io.ReadSeeker, offset uint64) (uint32, error) {
 func EntrySACMParseSize(b []byte) (uint32, error) {
 	sizeFieldOffset := EntrySACMDataCommon{}.SizeBinaryOffset()
 	if int(sizeFieldOffset) >= len(b)-4 {
-		return 0, &errors.ErrEndLessThanStart{StartIdx: int(sizeFieldOffset), EndIdx: len(b) - 4}
+		return 0, &check.ErrEndLessThanStart{StartIdx: int(sizeFieldOffset), EndIdx: len(b) - 4}
 	}
 	return binary.LittleEndian.Uint32(b[sizeFieldOffset:]) << 2, nil
 }
