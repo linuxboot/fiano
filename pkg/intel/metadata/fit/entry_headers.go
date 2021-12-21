@@ -1,3 +1,7 @@
+// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package fit
 
 import (
@@ -8,9 +12,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/check"
-	"github.com/9elements/converged-security-suite/v2/pkg/errors"
-	uefiConsts "github.com/9elements/converged-security-suite/v2/pkg/uefi/consts"
+	"github.com/hashicorp/go-multierror"
+
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 )
 
 var (
@@ -193,8 +198,20 @@ func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker, firmwareLength uint
 	return hdr.newEntryFromReader(firmware, firmwareLength)
 }
 
+// calculateOffsetFromPhysAddr calculates the offset within an image
+// of the physical address (address to a region mapped from
+// the SPI chip).
+//
+// Examples:
+//     calculateOffsetFromPhysAddr(0xffffffff, 0x1000) == 0xfff
+//     calculateOffsetFromPhysAddr(0xffffffc0, 0x1000) == 0xfc0
+func calculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
+	startAddr := consts.BasePhysAddr - imageSize
+	return physAddr - startAddr
+}
+
 func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLength uint64) (forcedBytes []byte, startIdx *uint64, dataSize *uint32, errs []error) {
-	_startIdx := uefiConsts.CalculateOffsetFromPhysAddr(hdr.Address.Pointer(), firmwareLength)
+	_startIdx := calculateOffsetFromPhysAddr(hdr.Address.Pointer(), firmwareLength)
 
 	var _dataSize uint32
 	switch hdr.Type() {
@@ -266,7 +283,7 @@ func (hdr *EntryHeaders) newBaseFromBytes(firmware []byte) (result EntryBase) {
 	endIdx := *startIdx + uint64(*dataSize)
 
 	if err := check.BytesRange(firmware, int(*startIdx), int(endIdx)); err != nil {
-		result.HeadersErrors = append(result.HeadersErrors, err.(errors.MultiError)...)
+		result.HeadersErrors = append(result.HeadersErrors, err.(*multierror.Error).Errors...)
 		return
 	}
 

@@ -1,10 +1,14 @@
+// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package fit
 
 import (
 	"bytes"
 	"fmt"
 
-	"github.com/9elements/converged-security-suite/v2/pkg/intel/metadata/manifest/bootpolicy"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/bootpolicy"
 )
 
 // ParseData creates EntryKeyManifestRecord from EntryKeyManifest
