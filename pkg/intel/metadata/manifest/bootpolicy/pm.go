@@ -1,0 +1,9 @@
+//go:generate manifestcodegen
+
+package bootpolicy
+
+type PM struct {
+	StructInfo `id:"__PMDA__" version:"0x20" var0:"0" var1:"uint16(s.TotalSize())"`
+	Reserved0  [2]byte `require:"0" json:"pc_Reserved0,omitempty"`
+	Data       []byte  `json:"pc_Data"`
+}
