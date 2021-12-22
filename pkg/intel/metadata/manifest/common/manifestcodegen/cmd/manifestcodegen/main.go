@@ -76,10 +76,6 @@ func processPath(path string, isCheck, enableTracing bool) error {
 		}
 	}
 
-	// ugly terrible hack to workaround versioning support
-	// TODO: fix the importer to recognize `/v2/` as version, not as path
-	os.Setenv("GO111MODULE", "off")
-
 	var goPaths []string
 	if gopathEnv := os.Getenv("GOPATH"); gopathEnv != "" {
 		goPaths = filepath.SplitList(gopathEnv)
