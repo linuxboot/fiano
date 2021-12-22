@@ -4,6 +4,13 @@
 
 package fit
 
+import (
+	"fmt"
+	"reflect"
+	"sort"
+	"strings"
+)
+
 // EntryType is a 7 bit field containing the type code for the component
 // registered in the FIT table.
 type EntryType uint8
@@ -28,35 +35,80 @@ const (
 
 // String implements fmt.Stringer
 func (_type EntryType) String() string {
-	switch _type {
-	case EntryTypeFITHeaderEntry:
-		return "FIT_header_entry"
-	case EntryTypeMicrocodeUpdateEntry:
-		return "microcode_update_entry"
-	case EntryTypeStartupACModuleEntry:
-		return "startup_ACM_entry"
-	case EntryTypeDiagnosticACModuleEntry:
-		return "diagnostic_ACM_entry"
-	case EntryTypeBIOSStartupModuleEntry:
-		return "BIOS_startup_module_entry"
-	case EntryTypeTPMPolicyRecord:
-		return "TPM_policy_record"
-	case EntryTypeBIOSPolicyRecord:
-		return "BIOS_policy_record"
-	case EntryTypeTXTPolicyRecord:
-		return "TXT_policy_record"
-	case EntryTypeKeyManifestRecord:
-		return "key_manifest_record"
-	case EntryTypeBootPolicyManifest:
-		return "boot_policy_manifest"
-	case EntryTypeCSESecureBoot:
-		return "CSE_SecureBoot"
-	case EntryTypeFeaturePolicyDeliveryRecord:
-		return "feature_policy_delivery_record"
-	case EntryTypeJMPDebugPolicy:
-		return "JMP_debug_policy"
-	case EntryTypeSkip:
-		return "skip_entry"
+	if goType, ok := entryTypeIDToGo[_type]; ok {
+		name := goType.Name()
+		if strings.HasPrefix(name, "Entry") {
+			return name[len("Entry"):]
+		}
+		return name
 	}
-	return "unknown_entry"
+
+	return fmt.Sprintf("unknown_entry_0x%X", uint8(_type))
+}
+
+var (
+	entryTypeIDToGo = map[EntryType]reflect.Type{}
+	entryTypeGoToID = map[reflect.Type]EntryType{}
+)
+
+func goTypeOfEntry(entry Entry) reflect.Type {
+	return reflect.Indirect(reflect.ValueOf(entry)).Type()
+}
+
+// RegisterEntryType adds a new FIT entry type to the registry of known entry types.
+func RegisterEntryType(entryTypeID EntryType, entryGoType Entry) {
+	if _, ok := entryTypeIDToGo[entryTypeID]; ok {
+		panic(fmt.Errorf("entry type %d is already registered", entryTypeID))
+	}
+
+	goType := goTypeOfEntry(entryGoType)
+	entryTypeIDToGo[entryTypeID] = goType
+	entryTypeGoToID[goType] = entryTypeID
+}
+
+func init() {
+	RegisterEntryType(EntryTypeFITHeaderEntry, &EntryFITHeaderEntry{})
+	RegisterEntryType(EntryTypeMicrocodeUpdateEntry, &EntryMicrocodeUpdateEntry{})
+	RegisterEntryType(EntryTypeStartupACModuleEntry, &EntrySACM{})
+	RegisterEntryType(EntryTypeDiagnosticACModuleEntry, &EntryDiagnosticACM{})
+	RegisterEntryType(EntryTypeBIOSStartupModuleEntry, &EntryBIOSStartupModuleEntry{})
+	RegisterEntryType(EntryTypeTPMPolicyRecord, &EntryTPMPolicyRecord{})
+	RegisterEntryType(EntryTypeBIOSPolicyRecord, &EntryBIOSPolicyRecord{})
+	RegisterEntryType(EntryTypeTXTPolicyRecord, &EntryTXTPolicyRecord{})
+	RegisterEntryType(EntryTypeKeyManifestRecord, &EntryKeyManifestRecord{})
+	RegisterEntryType(EntryTypeBootPolicyManifest, &EntryBootPolicyManifestRecord{})
+	RegisterEntryType(EntryTypeCSESecureBoot, &EntryCSESecureBoot{})
+	RegisterEntryType(EntryTypeFeaturePolicyDeliveryRecord, &EntryFeaturePolicyDeliveryRecord{})
+	RegisterEntryType(EntryTypeJMPDebugPolicy, &EntryJMPDebugPolicy{})
+	RegisterEntryType(EntryTypeSkip, &EntrySkip{})
+}
+
+// NewEntry returns an entry given EntryBase.
+func (_type EntryType) NewEntry(entryBase EntryBase) Entry {
+	goType, ok := entryTypeIDToGo[_type]
+	if !ok {
+		return &EntryUnknown{entryBase}
+	}
+
+	entry := reflect.New(goType).Interface().(Entry)
+	entry.SetEntryBase(entryBase)
+	return entry
+}
+
+// EntryTypeOf returns EntryType based on variable type (in contrast to
+// reading it from the headers).
+func EntryTypeOf(entry Entry) (EntryType, bool) {
+	entryTypeID, ok := entryTypeGoToID[goTypeOfEntry(entry)]
+	return entryTypeID, ok
+}
+
+func AllEntryTypes() []EntryType {
+	result := make([]EntryType, 0, len(entryTypeIDToGo))
+	for entryType := range entryTypeIDToGo {
+		result = append(result, entryType)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
+	return result
 }

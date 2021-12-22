@@ -73,6 +73,13 @@ func (size Uint24) Uint32() uint32 {
 	return binary.LittleEndian.Uint32(b)
 }
 
+// SetUint32 sets the value. See also Uint32.
+func (size *Uint24) SetUint32(newValue uint32) {
+	b := make([]byte, 4)
+	binary.LittleEndian.PutUint32(b, newValue)
+	copy(size.Value[:], b[:])
+}
+
 // Address64 is a 64bit address type
 type Address64 uint64
 
@@ -158,6 +165,28 @@ func (f TypeAndIsChecksumValid) String() string {
 	return string(b)
 }
 
+// SetType sets the value of field EntryType ("TYPE" of the FIT entry in terms of
+// the specification).
+func (f *TypeAndIsChecksumValid) SetType(newType EntryType) {
+	if uint(newType) & ^uint(0x7f) != 0 {
+		panic(fmt.Errorf("invalid type: 0x%X", newType))
+	}
+	otherBits := TypeAndIsChecksumValid(uint(*f) & ^uint(0x7f))
+	*f = TypeAndIsChecksumValid(newType) | otherBits
+}
+
+// SetIsChecksumValid sets the value of field IsChecksumValid ("C_V" of the FIT entry in terms of
+// the specification).
+func (f *TypeAndIsChecksumValid) SetIsChecksumValid(newValue bool) {
+	valueBits := TypeAndIsChecksumValid(0)
+	if newValue {
+		valueBits = TypeAndIsChecksumValid(0x80)
+	}
+
+	otherBits := TypeAndIsChecksumValid(uint(*f) & uint(0x7f))
+	*f = valueBits | otherBits
+}
+
 type typeAndIsChecksumValidStruct struct {
 	Type            EntryType `json:"type"`
 	IsChecksumValid bool      `json:"isChecksumValid,omitempty"`
@@ -214,10 +243,13 @@ func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLeng
 	_startIdx := calculateOffsetFromPhysAddr(hdr.Address.Pointer(), firmwareLength)
 
 	var _dataSize uint32
+
+	// Keep this consistent with Rehash()
+	// TODO: make these handlers modular
 	switch hdr.Type() {
 	case EntryTypeFITHeaderEntry:
 		// See "1.2.2" of the specification.
-		// FITHeaderEntry contains "_FIT_  " string instead of an address.
+		// FITHeaderEntry contains "_FIT_   " string instead of an address.
 		// And we shouldn't do anything in this case.
 		return nil, nil, nil, nil
 	case EntryTypeStartupACModuleEntry:
@@ -257,9 +289,10 @@ func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLeng
 // Panics if the entry type does not allow to know the size without parsing
 // the data itself.
 func (hdr *EntryHeaders) DataSize() uint32 {
+	// TODO: make these handlers modular
 	switch hdr.Type() {
 	case EntryTypeStartupACModuleEntry, EntryTypeDiagnosticACModuleEntry, EntryTypeTPMPolicyRecord, EntryTypeTXTPolicyRecord:
-		panic(fmt.Sprintf("method DataSize should not be used for an entry type %v", hdr.Type()))
+		panic(fmt.Errorf("method DataSize should not be used for an entry type %v", hdr.Type()))
 	case EntryTypeBIOSPolicyRecord, EntryTypeBootPolicyManifest, EntryTypeKeyManifestRecord:
 		return hdr.Size.Uint32()
 	default:
@@ -333,38 +366,7 @@ func (hdr *EntryHeaders) newEntryFromBytes(firmware []byte) Entry {
 }
 
 func (hdr *EntryHeaders) newEntryFromBase(entryBase EntryBase) Entry {
-	switch hdr.Type() {
-	case EntryTypeFITHeaderEntry:
-		return &EntryFITHeaderEntry{entryBase}
-	case EntryTypeMicrocodeUpdateEntry:
-		return &EntryMicrocodeUpdateEntry{entryBase}
-	case EntryTypeStartupACModuleEntry:
-		return &EntrySACM{entryBase}
-	case EntryTypeDiagnosticACModuleEntry:
-		return &EntryDiagnosticACM{entryBase}
-	case EntryTypeBIOSStartupModuleEntry:
-		return &EntryBIOSStartupModuleEntry{entryBase}
-	case EntryTypeTPMPolicyRecord:
-		return &EntryTPMPolicyRecord{entryBase}
-	case EntryTypeBIOSPolicyRecord:
-		return &EntryBIOSPolicyRecord{entryBase}
-	case EntryTypeTXTPolicyRecord:
-		return &EntryTXTPolicyRecord{entryBase}
-	case EntryTypeKeyManifestRecord:
-		return &EntryKeyManifestRecord{entryBase}
-	case EntryTypeBootPolicyManifest:
-		return &EntryBootPolicyManifestRecord{entryBase}
-	case EntryTypeCSESecureBoot:
-		return &EntryCSESecureBoot{entryBase}
-	case EntryTypeFeaturePolicyDeliveryRecord:
-		return &EntryFeaturePolicyDeliveryRecord{entryBase}
-	case EntryTypeJMPDebugPolicy:
-		return &EntryJMPDebugPolicy{entryBase}
-	case EntryTypeSkip:
-		return &EntrySkip{entryBase}
-	default:
-		return &EntryUnknown{entryBase}
-	}
+	return hdr.Type().NewEntry(entryBase)
 }
 
 // Type returns the type of the FIT entry
@@ -379,4 +381,45 @@ func (hdr *EntryHeaders) IsChecksumValid() bool {
 
 func (hdr *EntryHeaders) String() string {
 	return fmt.Sprintf("&%+v", *hdr)
+}
+
+var _ io.Writer = (*EntryHeaders)(nil)
+
+// Write implements io.Writer. It writes the headers in a binary format to `b`.
+func (hdr *EntryHeaders) Write(b []byte) (int, error) {
+	n, err := hdr.WriteTo(bytes.NewBuffer(b))
+	return int(n), err
+}
+
+var _ io.WriterTo = (*EntryHeaders)(nil)
+
+// WriteTo implements io.WriterTo. It writes the headers in a binary format to `w`.
+func (hdr *EntryHeaders) WriteTo(w io.Writer) (int64, error) {
+	if hdr == nil {
+		return 0, nil
+	}
+
+	err := binary.Write(w, binary.LittleEndian, hdr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to write headers %#+v: %w", *hdr, err)
+	}
+
+	return int64(binary.Size(*hdr)), nil
+}
+
+// CalculateChecksum calculates the checksum ("CHKSUM")
+// according to point 4.0 of the FIT specification.
+func (hdr *EntryHeaders) CalculateChecksum() uint8 {
+	_copy := *hdr
+	_copy.Checksum = 0
+
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, _copy)
+
+	result := uint8(0)
+	for _, _byte := range buf.Bytes() {
+		result += _byte
+	}
+
+	return result
 }

@@ -5,14 +5,19 @@
 package fit
 
 import (
+	"encoding/binary"
 	"fmt"
+	"io"
 )
 
 // Entry is the interface common to any FIT entry
 type Entry interface {
 	fmt.GoStringer
 
-	// GetType returns the type of the FIT entry
+	// SetEntryBase sets EntryBase (which contains metadata of the Entry).
+	SetEntryBase(base EntryBase)
+
+	// GetType returns the type of the FIT entry from the headers.
 	GetType() EntryType
 
 	// GetHeaders returns the FIT entry headers.
@@ -48,6 +53,11 @@ type EntryBase struct {
 	HeadersErrors []error `json:",omitempty"`
 }
 
+// SetEntryBase sets EntryBase (which contains metadata of the Entry).
+func (entry *EntryBase) SetEntryBase(base EntryBase) {
+	*entry = base
+}
+
 // GetType returns the type of the FIT entry
 func (entry *EntryBase) GetType() EntryType {
 	return entry.Headers.Type()
@@ -81,6 +91,129 @@ func (entry *EntryBase) GetHeadersErrors() []error {
 // GoString implements fmt.GoStringer
 func (entry *EntryBase) GoString() string {
 	return entry.Headers.GoString()
+}
+
+// RehashEntry recalculates metadata to be consistent with data. For example, it fixes checksum, data size,
+// entry type and so on.
+func RehashEntry(entry Entry) error {
+	if rehasher, ok := entry.(interface{ Rehash() error }); ok {
+		err := rehasher.Rehash()
+		if err != nil {
+			return fmt.Errorf("type-specific Rehash() returned error: %w", err)
+		}
+	}
+
+	entryType, foundEntryType := EntryTypeOf(entry)
+	if !foundEntryType {
+		return fmt.Errorf("type %T is not known", entry)
+	}
+
+	hdr := entry.GetHeaders()
+
+	// Set Type and IsChecksumValid
+
+	hdr.TypeAndIsChecksumValid.SetType(entryType)
+	hdr.TypeAndIsChecksumValid.SetIsChecksumValid(true)
+
+	// Set Version
+
+	switch entryType {
+	case EntryTypeTPMPolicyRecord,
+		EntryTypeTXTPolicyRecord:
+		// See 4.7.4 and 4.9.4 of the FIT specification.
+		// noop
+	case EntryTypeFITHeaderEntry,
+		EntryTypeStartupACModuleEntry,
+		EntryTypeDiagnosticACModuleEntry,
+		EntryTypeBIOSStartupModuleEntry,
+		EntryTypeBIOSPolicyRecord,
+		EntryTypeKeyManifestRecord,
+		EntryTypeBootPolicyManifest,
+		EntryTypeCSESecureBoot,
+		EntryTypeFeaturePolicyDeliveryRecord:
+		// See 4.2.6, 4.4.8, 4.5.5, 4.6.12, 4.8.4, 4.10.2, 4.11.3, 4.12.4, 4.13.6 of the FIT specification
+		hdr.Version = EntryVersion(0x0100)
+	}
+
+	// Set Address, Size and TypeAndIsChecksumValid
+
+	// Keep this consistent with getDataCoordinates()
+	// TODO: make these handlers modular
+	switch entryType {
+	case EntryTypeFITHeaderEntry:
+		// See 4.2 of the FIT specification.
+		hdr.Address = Address64(binary.LittleEndian.Uint64([]byte("_FIT_   ")))
+	case EntryTypeStartupACModuleEntry:
+		// See 4.4.7 of the FIT specification.
+		hdr.Size.SetUint32(0)
+	case EntryTypeTXTPolicyRecord:
+		// See 4.9.10 of the FIT specification.
+		hdr.TypeAndIsChecksumValid.SetIsChecksumValid(false)
+		// See 4.9.11 of the FIT specification.
+		hdr.Size.SetUint32(0)
+	case EntryTypeDiagnosticACModuleEntry, EntryTypeTPMPolicyRecord:
+		return fmt.Errorf("support of %s is not implemented, yet", entryType)
+	case EntryTypeBIOSPolicyRecord, EntryTypeKeyManifestRecord, EntryTypeBootPolicyManifest:
+		hdr.Size.SetUint32(uint32(len(entry.GetDataBytes())))
+	default:
+		hdr.Size.SetUint32(uint32(len(entry.GetDataBytes()) >> 4))
+	}
+
+	// Set Checksum
+
+	if hdr.TypeAndIsChecksumValid.IsChecksumValid() {
+		hdr.Checksum = hdr.CalculateChecksum()
+	}
+
+	return nil
+}
+
+// Entries are a slice of multiple parsed FIT entries (headers + data)
+type Entries []Entry
+
+// Rehash recalculates metadata to be consistent with data. For example, it fixes checksum, data size,
+// entry type and so on.
+//
+// Supposed to be used before Inject or/and InjectTo. Since it is possible to prepare data in entries, then
+// call Rehash (to prepare headers consistent with data).
+func (entries Entries) Rehash() error {
+	if len(entries) == 0 {
+		return nil
+	}
+
+	beginEntry, ok := entries[0].(*EntryFITHeaderEntry)
+	if !ok {
+		return fmt.Errorf("the first entry is not a EntryFITHeaderEntry, but %T", entries[0])
+	}
+
+	// See point 4.2.5 of the FIT specification
+	beginEntry.GetHeaders().Size.SetUint32(uint32(len(entries)))
+
+	for idx, entry := range entries {
+		err := RehashEntry(entry)
+		if err != nil {
+			return fmt.Errorf("unable to rehash FIT entry #%d (%#+v): %w", idx, entry, err)
+		}
+	}
+
+	return nil
+}
+
+// Inject writes FIT headers and data to a firmware image.
+//
+// What will happen:
+// 1. The FIT headers will be written by offset headersOffset.
+// 2. The FIT pointer will be written at consts.FITPointerOffset offset from the end of the image.
+// 3. Data referenced by FIT headers will be written at offsets accordingly to Address fields (in the headers).
+//
+// Consider calling Rehash() before Inject()/InjectTo()
+func (entries Entries) Inject(b []byte, headersOffset uint64) error {
+	return entries.InjectTo(newWriteSeekerWrapper(b), headersOffset)
+}
+
+// InjectTo does the same as Inject, but for io.WriteSeeker.
+func (entries Entries) InjectTo(r io.WriteSeeker, headersOffset uint64) error {
+	return fmt.Errorf("not implemented, yet")
 }
 
 // Each of these types are extendable, see files "entry_*.go":

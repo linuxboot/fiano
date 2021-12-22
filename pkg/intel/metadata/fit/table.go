@@ -15,11 +15,12 @@ import (
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 )
 
-// Table is the FIT entry headers table (located by the "FIT Pointer")
+// Table is the FIT entry headers table (located by the "FIT Pointer"), without
+// data this headers reference to.
 type Table []EntryHeaders
 
 // GetEntries returns parsed FIT-entries
-func (table Table) GetEntries(firmware []byte) (result []Entry) {
+func (table Table) GetEntries(firmware []byte) (result Entries) {
 	for _, headers := range table {
 		result = append(result, headers.GetEntry(firmware))
 	}
@@ -55,6 +56,33 @@ func (table Table) First(entryType EntryType) *EntryHeaders {
 		}
 	}
 	return nil
+}
+
+// Write compiles FIT headers into a binary representation and writes to "b". If len(b)
+// is less than required, then io.ErrUnexpectedEOF is returned.
+func (table Table) Write(b []byte) (n int, err error) {
+	for idx, entryHeaders := range table {
+		addN, err := entryHeaders.Write(b)
+		if err != nil {
+			return n, fmt.Errorf("unable to write headers #%d (%#+v): %w", idx, entryHeaders, err)
+		}
+		n += addN
+	}
+
+	return n, nil
+}
+
+// WriteTo does the same as Write, but for io.Writer
+func (table Table) WriteTo(w io.Writer) (n int64, err error) {
+	for idx, entryHeaders := range table {
+		addN, err := entryHeaders.WriteTo(w)
+		if err != nil {
+			return n, fmt.Errorf("unable to write headers #%d (%#+v): %w", idx, entryHeaders, err)
+		}
+		n += addN
+	}
+
+	return n, nil
 }
 
 // ParseEntryHeadersFrom parses a single entry headers entry.
