@@ -12,10 +12,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
-
-	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
-	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
+	"github.com/xaionaro-go/bytesextra"
 )
 
 var (
@@ -43,6 +40,10 @@ type EntryHeaders struct {
 	TypeAndIsChecksumValid TypeAndIsChecksumValid
 
 	Checksum uint8 `json:",omitempty"`
+}
+
+func (hdr EntryHeaders) copy() *EntryHeaders {
+	return &hdr
 }
 
 // GoString implements fmt.GoStringer.
@@ -85,7 +86,23 @@ type Address64 uint64
 
 // Pointer returns the pointer which could be used for pointer arithmetics.
 func (addr Address64) Pointer() uint64 { return uint64(addr) }
-func (addr Address64) String() string  { return fmt.Sprintf("0x%x", addr.Pointer()) }
+
+// Offset returns an offset from the beginning of a firmware of a defined size.
+func (addr Address64) Offset(firmwareSize uint64) uint64 {
+	return calculateOffsetFromPhysAddr(addr.Pointer(), firmwareSize)
+}
+
+// SetOffset sets the value to a physical address corresponding to
+// an offset from the beginning of the firmware.
+//
+// See also the description of calculatePhysAddrFromOffset.
+func (addr *Address64) SetOffset(offset, firmwareSize uint64) {
+	physAddr := calculatePhysAddrFromOffset(offset, firmwareSize)
+	*addr = Address64(physAddr)
+}
+
+// String implements fmt.Stringer
+func (addr Address64) String() string { return fmt.Sprintf("0x%x", addr.Pointer()) }
 
 // EntryVersion contains the component's version number in binary
 // coded decimal (BCD) format. For the FIT header entry, the value in this
@@ -219,154 +236,12 @@ func (f *TypeAndIsChecksumValid) UnmarshalJSON(b []byte) error {
 
 // GetEntry returns a full entry (headers + data)
 func (hdr EntryHeaders) GetEntry(firmware []byte) Entry {
-	return hdr.newEntryFromBytes(firmware)
+	return hdr.GetEntryFrom(bytesextra.NewReadWriteSeeker(firmware))
 }
 
 // GetEntryFrom returns a full entry (headers + data)
-func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker, firmwareLength uint64) Entry {
-	return hdr.newEntryFromReader(firmware, firmwareLength)
-}
-
-// calculateOffsetFromPhysAddr calculates the offset within an image
-// of the physical address (address to a region mapped from
-// the SPI chip).
-//
-// Examples:
-//     calculateOffsetFromPhysAddr(0xffffffff, 0x1000) == 0xfff
-//     calculateOffsetFromPhysAddr(0xffffffc0, 0x1000) == 0xfc0
-func calculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
-	startAddr := consts.BasePhysAddr - imageSize
-	return physAddr - startAddr
-}
-
-func (hdr *EntryHeaders) getDataCoordinates(firmware io.ReadSeeker, firmwareLength uint64) (forcedBytes []byte, startIdx *uint64, dataSize *uint32, errs []error) {
-	_startIdx := calculateOffsetFromPhysAddr(hdr.Address.Pointer(), firmwareLength)
-
-	var _dataSize uint32
-
-	// Keep this consistent with Rehash()
-	// TODO: make these handlers modular
-	switch hdr.Type() {
-	case EntryTypeFITHeaderEntry:
-		// See "1.2.2" of the specification.
-		// FITHeaderEntry contains "_FIT_   " string instead of an address.
-		// And we shouldn't do anything in this case.
-		return nil, nil, nil, nil
-	case EntryTypeStartupACModuleEntry:
-		// See point "7" of "2.7" of the specification: the size field is
-		// always zero. So we parsing the size from it's data right now:
-		var err error
-		_dataSize, err = EntrySACMParseSizeFrom(firmware, _startIdx)
-		if err != nil {
-			return nil, nil, nil, []error{err}
-		}
-	case EntryTypeDiagnosticACModuleEntry:
-		return nil, nil, nil, []error{fmt.Errorf("support of EntryTypeDiagnosticACModuleEntry is not implemented, yet")}
-	case EntryTypeTPMPolicyRecord:
-		return nil, nil, nil, []error{fmt.Errorf("support of EntryTypeTPMPolicyRecord is not implemented, yet")}
-	case EntryTypeTXTPolicyRecord:
-		// See "1.2.8" of the specification.
-		// The "Address" field is actually the structure in this case :(
-		var buf bytes.Buffer
-		err := binary.Write(&buf, binary.LittleEndian, &hdr.Address)
-		if err != nil {
-			return nil, nil, nil, []error{err}
-		}
-		return buf.Bytes(), nil, nil, nil
-	default:
-		_dataSize = hdr.DataSize()
-	}
-
-	if _dataSize == 0 {
-		return nil, nil, nil, []error{fmt.Errorf("data size is zero")}
-	}
-
-	return nil, &_startIdx, &_dataSize, nil
-}
-
-// DataSize returns the size of the data referenced by the FIT entry.
-//
-// Panics if the entry type does not allow to know the size without parsing
-// the data itself.
-func (hdr *EntryHeaders) DataSize() uint32 {
-	// TODO: make these handlers modular
-	switch hdr.Type() {
-	case EntryTypeStartupACModuleEntry, EntryTypeDiagnosticACModuleEntry, EntryTypeTPMPolicyRecord, EntryTypeTXTPolicyRecord:
-		panic(fmt.Errorf("method DataSize should not be used for an entry type %v", hdr.Type()))
-	case EntryTypeBIOSPolicyRecord, EntryTypeBootPolicyManifest, EntryTypeKeyManifestRecord:
-		return hdr.Size.Uint32()
-	default:
-		// See description of "FIT Entry Format", it says:
-		// > SIZE - Size is the span of the component in multiple of 16 bytes.
-		return hdr.Size.Uint32() << 4
-	}
-}
-
-func (hdr *EntryHeaders) newBaseFromBytes(firmware []byte) (result EntryBase) {
-	forcedData, startIdx, dataSize, errs := hdr.getDataCoordinates(bytes.NewReader(firmware), uint64(len(firmware)))
-	result = EntryBase{
-		Headers:       hdr,
-		DataOffset:    startIdx,
-		DataBytes:     forcedData,
-		HeadersErrors: errs,
-	}
-	if forcedData != nil || errs != nil || startIdx == nil || dataSize == nil {
-		return
-	}
-	endIdx := *startIdx + uint64(*dataSize)
-
-	if err := check.BytesRange(firmware, int(*startIdx), int(endIdx)); err != nil {
-		result.HeadersErrors = append(result.HeadersErrors, err.(*multierror.Error).Errors...)
-		return
-	}
-
-	result.DataBytes = firmware[*startIdx:endIdx]
-	return
-}
-
-func (hdr *EntryHeaders) newBaseFromReader(firmware io.ReadSeeker, firmwareLength uint64) (result EntryBase) {
-	forcedData, startIdx, dataSize, errs := hdr.getDataCoordinates(firmware, firmwareLength)
-	result = EntryBase{
-		Headers:       hdr,
-		DataOffset:    startIdx,
-		DataBytes:     forcedData,
-		HeadersErrors: errs,
-	}
-	if forcedData != nil || errs != nil || startIdx == nil || dataSize == nil {
-		return
-	}
-
-	_, err := firmware.Seek(int64(*startIdx), io.SeekStart)
-	if err != nil {
-		result.HeadersErrors = append(result.HeadersErrors, fmt.Errorf("unable to seek(%d): %w", *startIdx, err))
-		return
-	}
-
-	forcedData = make([]byte, *dataSize)
-	n, err := firmware.Read(forcedData)
-	if err != nil {
-		result.HeadersErrors = append(result.HeadersErrors, fmt.Errorf("unable to read %d bytes at %d: %w", *dataSize, *startIdx, err))
-		return
-	}
-	if n != int(*dataSize) {
-		result.HeadersErrors = append(result.HeadersErrors, fmt.Errorf("read length != expected length: %d != %d", n, *dataSize))
-		return
-	}
-	result.DataBytes = forcedData
-
-	return
-}
-
-func (hdr *EntryHeaders) newEntryFromReader(firmware io.ReadSeeker, firmwareLength uint64) Entry {
-	return hdr.newEntryFromBase(hdr.newBaseFromReader(firmware, firmwareLength))
-}
-
-func (hdr *EntryHeaders) newEntryFromBytes(firmware []byte) Entry {
-	return hdr.newEntryFromBase(hdr.newBaseFromBytes(firmware))
-}
-
-func (hdr *EntryHeaders) newEntryFromBase(entryBase EntryBase) Entry {
-	return hdr.Type().NewEntry(entryBase)
+func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker) Entry {
+	return NewEntry(hdr.copy(), firmware)
 }
 
 // Type returns the type of the FIT entry
@@ -422,4 +297,24 @@ func (hdr *EntryHeaders) CalculateChecksum() uint8 {
 	}
 
 	return result
+}
+
+// getDataSegmentCoordinates returns the offset of the data segment
+// associated with the entry.
+func (hdr *EntryHeaders) getDataSegmentOffset(firmware io.Seeker) (uint64, error) {
+	firmwareSize, err := firmware.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, fmt.Errorf("unable to get the size of the firmware: %w", err)
+	}
+
+	return hdr.Address.Offset(uint64(firmwareSize)), nil
+}
+
+// mostCommonGetDataSegmentCoordinates returns the length of the data segment
+// associated with the entry using the most common rule:
+// * The size equals to "Size" multiplied by 16.
+//
+// This is considered the most common rule for the most FIT entry types. But different types may break it.
+func (hdr *EntryHeaders) mostCommonGetDataSegmentSize() uint64 {
+	return uint64(hdr.Size.Uint32()) << 4
 }

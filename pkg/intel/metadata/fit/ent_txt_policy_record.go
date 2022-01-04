@@ -8,7 +8,36 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 )
+
+// EntryTXTPolicyRecord represents a FIT entry of type "TXT Policy Record" (0x0A)
+type EntryTXTPolicyRecord struct{ EntryBase }
+
+var _ EntryCustomGetDataSegmentSizer = (*EntryTXTPolicyRecord)(nil)
+
+// Init initializes the entry using EntryHeaders and firmware image.
+func (entry *EntryTXTPolicyRecord) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64, error) {
+	// TXT policy record has no data section and the Address field is used to store the data.
+	return 0, nil
+}
+
+var _ EntryCustomRecalculateHeaderser = (*EntryTXTPolicyRecord)(nil)
+
+// CustomRecalculateHeaders recalculates metadata to be consistent with data.
+// For example, it fixes checksum, data size, entry type and so on.
+func (entry *EntryTXTPolicyRecord) CustomRecalculateHeaders() error {
+	entryBase := entry.GetEntryBase()
+	entryBase.DataSegmentBytes = nil
+	hdr := &entryBase.Headers
+	hdr.TypeAndIsChecksumValid.SetType(EntryTypeTXTPolicyRecord)
+
+	// See 4.9.10 of the FIT specification.
+	hdr.TypeAndIsChecksumValid.SetIsChecksumValid(false)
+	// See 4.9.11 of the FIT specification.
+	hdr.Size.SetUint32(0)
+	return nil
+}
 
 // EntryTXTPolicyRecordDataInterface is a parsed TXT Policy Record entry
 type EntryTXTPolicyRecordDataInterface interface {
@@ -48,12 +77,13 @@ func (entryData EntryTXTPolicyRecordDataFlatPointer) IsTXTEnabled() bool {
 func (entry *EntryTXTPolicyRecord) Parse() (EntryTXTPolicyRecordDataInterface, error) {
 	switch entry.Headers.Version {
 	case 0:
-		ptr := binary.LittleEndian.Uint64(entry.DataBytes)
-		result := EntryTXTPolicyRecordDataFlatPointer(ptr)
+		result := EntryTXTPolicyRecordDataFlatPointer(entry.Headers.Address.Pointer())
 		return result, nil
 	case 1:
+		var b [8]byte
+		binary.LittleEndian.PutUint64(b[:], entry.Headers.Address.Pointer())
 		var dataParsed EntryTXTPolicyRecordDataIndexedIO
-		err := binary.Read(bytes.NewReader(entry.DataBytes), binary.LittleEndian, &dataParsed)
+		err := binary.Read(bytes.NewReader(b[:]), binary.LittleEndian, &dataParsed)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse EntryTXTPolicyRecordDataIndexedIO: %w", err)
 		}
