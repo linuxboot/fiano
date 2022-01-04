@@ -63,7 +63,7 @@ func TestRehashEntry(t *testing.T) {
 
 func TestEntriesInject(t *testing.T) {
 
-	getEntries := func() Entries {
+	getEntries := func(t *testing.T) Entries {
 		var entries Entries
 		headerEntry := &EntryFITHeaderEntry{}
 		skipEntry := &EntrySkip{}
@@ -72,7 +72,8 @@ func TestEntriesInject(t *testing.T) {
 		{
 			km := key.NewManifest()
 			var buf bytes.Buffer
-			km.WriteTo(&buf)
+			_, err := km.WriteTo(&buf)
+			require.NoError(t, err)
 			kmEntry.DataSegmentBytes = buf.Bytes()
 		}
 		kmEntry.Headers.Address.SetOffset(256, 1024)
@@ -84,7 +85,7 @@ func TestEntriesInject(t *testing.T) {
 	}
 
 	testResult := func(t *testing.T, b []byte) {
-		entries := getEntries()
+		entries := getEntries(t)
 
 		parsedEntries, err := GetEntries(b)
 		require.NoError(t, err)
@@ -95,20 +96,22 @@ func TestEntriesInject(t *testing.T) {
 	}
 
 	t.Run("Inject", func(t *testing.T) {
-		entries := getEntries()
-		entries.RecalculateHeaders()
+		entries := getEntries(t)
+		err := entries.RecalculateHeaders()
+		require.NoError(t, err)
 		b := make([]byte, 1024)
-		err := entries.Inject(b, 512)
+		err = entries.Inject(b, 512)
 		require.NoError(t, err)
 
 		testResult(t, b)
 	})
 
 	t.Run("InjectTo", func(t *testing.T) {
-		entries := getEntries()
-		entries.RecalculateHeaders()
+		entries := getEntries(t)
+		err := entries.RecalculateHeaders()
+		require.NoError(t, err)
 		b := make([]byte, 1024)
-		err := entries.InjectTo(bytesextra.NewReadWriteSeeker(b), 512)
+		err = entries.InjectTo(bytesextra.NewReadWriteSeeker(b), 512)
 		require.NoError(t, err)
 
 		testResult(t, b)
