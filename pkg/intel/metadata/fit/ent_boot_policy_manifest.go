@@ -7,14 +7,35 @@ package fit
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/bootpolicy"
 )
 
+// EntryBootPolicyManifestRecord represents a FIT entry of type "Boot Policy Manifest" (0x0C)
+type EntryBootPolicyManifestRecord struct{ EntryBase }
+
+var _ EntryCustomGetDataSegmentSizer = (*EntryBootPolicyManifestRecord)(nil)
+
+func (entry *EntryBootPolicyManifestRecord) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64, error) {
+	return uint64(entry.Headers.Size.Uint32()), nil
+}
+
+var _ EntryCustomRecalculateHeaderser = (*EntryBootPolicyManifestRecord)(nil)
+
+// CustomRecalculateHeaders recalculates metadata to be consistent with data.
+// For example, it fixes checksum, data size, entry type and so on.
+func (entry *EntryBootPolicyManifestRecord) CustomRecalculateHeaders() error {
+	mostCommonRecalculateHeadersOfEntry(entry)
+
+	entry.Headers.Size.SetUint32(uint32(len(entry.DataSegmentBytes)))
+	return nil
+}
+
 // ParseData creates EntryKeyManifestRecord from EntryKeyManifest
 func (entry *EntryBootPolicyManifestRecord) ParseData() (*bootpolicy.Manifest, error) {
 	var bpManifest bootpolicy.Manifest
-	_, err := bpManifest.ReadFrom(bytes.NewReader(entry.GetDataBytes()))
+	_, err := bpManifest.ReadFrom(bytes.NewReader(entry.DataSegmentBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse KeyManifest, err: %v", err)
 	}

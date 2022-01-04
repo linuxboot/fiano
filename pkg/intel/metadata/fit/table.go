@@ -112,21 +112,10 @@ func ParseTable(b []byte) (Table, error) {
 
 // GetPointerCoordinates returns the position of the FIT pointer within
 // the firmware.
-func GetPointerCoordinates(firmware []byte) (startIdx, endIdx uint64) {
-	startIdx = uint64(len(firmware)) - consts.FITPointerOffset
+func GetPointerCoordinates(firmwareSize uint64) (startIdx, endIdx int64) {
+	startIdx = int64(firmwareSize) - consts.FITPointerOffset
 	endIdx = startIdx + consts.FITPointerSize
 	return
-}
-
-// calculateTailOffsetFromPhysAddr calculates the offset (towards down, relatively
-// to BasePhysAddr) of the physical address (address to a region mapped from
-// the SPI chip).
-//
-// Examples:
-//     calculateTailOffsetFromPhysAddr(0xffffffff) == 0x01
-//     calculateTailOffsetFromPhysAddr(0xffffffc0) == 0x40
-func calculateTailOffsetFromPhysAddr(physAddr uint64) uint64 {
-	return consts.BasePhysAddr - physAddr
 }
 
 // GetHeadersTableRange returns the starting and ending indexes of the FIT
@@ -171,7 +160,7 @@ func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) 
 		 * headersStartIdx <- 0x2000000 - 0x450000 == 0x1bb0000
 	*/
 
-	fitPointerStartIdx, fitPointerEndIdx := GetPointerCoordinates(firmware)
+	fitPointerStartIdx, fitPointerEndIdx := GetPointerCoordinates(uint64(len(firmware)))
 
 	if err := check.BytesRange(firmware, int(fitPointerStartIdx), int(fitPointerEndIdx)); err != nil {
 		return 0, 0, fmt.Errorf("invalid fit pointer bytes range: %w", err)
@@ -217,7 +206,7 @@ func GetHeadersTableRange(firmware []byte) (startIdx, endIdx uint64, err error) 
 	// OK, it's correct. Now we know the size of the table and we can
 	// parseHeaders it.
 
-	endIdx = startIdx + uint64(tableMeta.DataSize())
+	endIdx = startIdx + uint64(tableMeta.Size.Uint32()<<4) // See 4.2.5
 	if err = check.BytesRange(firmware, int(startIdx), int(endIdx)); err != nil {
 		err = fmt.Errorf("invalid entries bytes range: %w", err)
 		return
