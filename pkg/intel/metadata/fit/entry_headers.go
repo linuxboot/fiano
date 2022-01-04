@@ -289,7 +289,9 @@ func (hdr *EntryHeaders) CalculateChecksum() uint8 {
 	_copy.Checksum = 0
 
 	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, _copy)
+	if err := binary.Write(&buf, binary.LittleEndian, _copy); err != nil {
+		panic(err)
+	}
 
 	result := uint8(0)
 	for _, _byte := range buf.Bytes() {
