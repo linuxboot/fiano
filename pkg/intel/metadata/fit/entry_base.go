@@ -7,8 +7,6 @@ package fit
 import (
 	"fmt"
 	"io"
-
-	"github.com/xaionaro-go/bytesextra"
 )
 
 // EntryBase is the common information for any FIT entry
@@ -37,12 +35,6 @@ func (entry *EntryBase) GetEntryBase() *EntryBase {
 // GoString implements fmt.GoStringer
 func (entry *EntryBase) GoString() string {
 	return entry.Headers.GoString()
-}
-
-// injectDataSection writes data referenced by this entry to a firmware
-// image by the offset accordingly to Address field value.
-func (entry EntryBase) injectDataSection(b []byte) error {
-	return entry.injectDataSectionTo(bytesextra.NewReadWriteSeeker(b))
 }
 
 // injectDataSectionTo does the same as InjectData, but for io.WriteSeeker.
