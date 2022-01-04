@@ -1,22 +1,34 @@
+// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package fit
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/key"
 	"github.com/stretchr/testify/require"
+	"github.com/xaionaro-go/bytesextra"
 )
 
 func TestRehashEntry(t *testing.T) {
 	for _, entryType := range AllEntryTypes() {
-		entryBase := EntryBase{
-			Headers:       &EntryHeaders{},
-			DataOffset:    &[]uint64{1}[0],
-			DataBytes:     make([]byte, 0x20),
-			HeadersErrors: nil,
+		switch entryType {
+		case EntryTypeDiagnosticACModuleEntry,
+			EntryTypeTPMPolicyRecord:
+			// not supported yet
+			continue
 		}
-		entry := entryType.NewEntry(entryBase)
+
+		entry := entryType.newEntry()
+		*entry.GetEntryBase() = EntryBase{
+			DataSegmentBytes: make([]byte, 0x20),
+			HeadersErrors:    nil,
+		}
 		func() {
 			defer func() {
 				_r := recover()
@@ -31,42 +43,74 @@ func TestRehashEntry(t *testing.T) {
 			}()
 
 			// Validating there is no errors
-			err := RehashEntry(entry)
-			if err != nil && !strings.Contains(err.Error(), "not implemented, yet") {
+			err := EntryRecalculateHeaders(entry)
+			if err != nil {
 				// Not all entry types are fully implemented, see RehashEntry()
 				t.Errorf("%v", err)
 			}
 
 			// Validating that DataSize() calculates sizes consistently with RehashEntry()
-			dataSize := entry.GetHeaders().DataSize()
-			if dataSize != 0 && dataSize != uint32(len(entryBase.DataBytes)) {
-				t.Errorf("wrong DataSize 0x%X for type %s", dataSize, entryType)
+			if entryType != EntryTypeStartupACModuleEntry {
+				dataSize, err := EntryDataSegmentSize(entry, nil)
+				require.NoError(t, err)
+				if dataSize != 0 && dataSize != uint64(len(entry.GetEntryBase().DataSegmentBytes)) {
+					t.Errorf("wrong DataSize 0x%X for type %s", dataSize, entryType)
+				}
 			}
 		}()
 	}
 }
 
 func TestEntriesInject(t *testing.T) {
-	var entries Entries
 
-	headerEntry := &EntryFITHeaderEntry{}
-	skipEntry := &EntrySkip{}
-	kmEntry := &EntryKeyManifestRecord{}
-	entries = append(entries, headerEntry)
-	entries = append(entries, skipEntry)
-	entries = append(entries, kmEntry)
+	getEntries := func() Entries {
+		var entries Entries
+		headerEntry := &EntryFITHeaderEntry{}
+		skipEntry := &EntrySkip{}
+
+		kmEntry := &EntryKeyManifestRecord{}
+		{
+			km := key.NewManifest()
+			var buf bytes.Buffer
+			km.WriteTo(&buf)
+			kmEntry.DataSegmentBytes = buf.Bytes()
+		}
+		kmEntry.Headers.Address.SetOffset(256, 1024)
+
+		entries = append(entries, headerEntry)
+		entries = append(entries, skipEntry)
+		entries = append(entries, kmEntry)
+		return entries
+	}
+
+	testResult := func(t *testing.T, b []byte) {
+		entries := getEntries()
+
+		parsedEntries, err := GetEntries(b)
+		require.NoError(t, err)
+		require.Equal(t, len(entries), len(parsedEntries))
+		for idx, parsedEntry := range parsedEntries {
+			require.Equal(t, entries[idx].GetEntryBase().DataSegmentBytes, parsedEntry.GetEntryBase().DataSegmentBytes)
+		}
+	}
 
 	t.Run("Inject", func(t *testing.T) {
+		entries := getEntries()
+		entries.RecalculateHeaders()
 		b := make([]byte, 1024)
 		err := entries.Inject(b, 512)
 		require.NoError(t, err)
-		require.Equal(t, nil, b)
+
+		testResult(t, b)
 	})
 
 	t.Run("InjectTo", func(t *testing.T) {
+		entries := getEntries()
+		entries.RecalculateHeaders()
 		b := make([]byte, 1024)
-		err := entries.InjectTo(newWriteSeekerWrapper(b), 512)
+		err := entries.InjectTo(bytesextra.NewReadWriteSeeker(b), 512)
 		require.NoError(t, err)
-		require.Equal(t, nil, b)
+
+		testResult(t, b)
 	})
 }

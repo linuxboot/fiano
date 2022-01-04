@@ -8,177 +8,94 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
+	"github.com/xaionaro-go/bytesextra"
 )
 
 // Entry is the interface common to any FIT entry
 type Entry interface {
-	fmt.GoStringer
+	// GetEntryBase returns EntryBase (which contains metadata of the Entry).
+	GetEntryBase() *EntryBase
+}
 
-	// SetEntryBase sets EntryBase (which contains metadata of the Entry).
-	SetEntryBase(base EntryBase)
+// EntryCustomGetDataSegmentSizer is an extension of Entry which overrides the default
+// procedure of calculating the data segment size.
+type EntryCustomGetDataSegmentSizer interface {
+	// CustomGetDataSegmentSize returns the size of the data segment associates with the entry.
+	CustomGetDataSegmentSize(firmwareImage io.ReadSeeker) (uint64, error)
+}
 
-	// GetType returns the type of the FIT entry from the headers.
-	GetType() EntryType
-
-	// GetHeaders returns the FIT entry headers.
-	//
-	// See "Table 1-1" in "1.2 Firmware Interface Table" in "Firmware Interface Table" specification:
-	//  * https://www.intel.com/content/dam/www/public/us/en/documents/guides/fit-bios-specification.pdf
-	GetHeaders() *EntryHeaders
-
-	// GetDataOffset returns the offset of the data of the entry
-	// relatively to the beginning of the firmware image.
-	GetDataOffset() uint64
-
-	// GetDataBytes returns the data of the entry.
-	GetDataBytes() []byte
-
-	// GetHeadersErrors returns the errors were received while processing
-	// the headers of the entry.
-	GetHeadersErrors() []error
+// CustomRecalculateHeaderser is an extension of Entry which overrides the default
+// procedure of recalculating EntryHeaders.
+type EntryCustomRecalculateHeaderser interface {
+	// CustomRecalculateHeaders recalculates metadata to be consistent with data.
+	// For example, it fixes checksum, data size, entry type and so on.
+	CustomRecalculateHeaders() error
 }
 
 // EntriesByType is a helper to sort a slice of `Entry`-ies by their type/class.
 type EntriesByType []Entry
 
-func (entries EntriesByType) Less(i, j int) bool { return entries[i].GetType() < entries[j].GetType() }
-func (entries EntriesByType) Swap(i, j int)      { entries[i], entries[j] = entries[j], entries[i] }
-func (entries EntriesByType) Len() int           { return len(entries) }
-
-// EntryBase is the common information for any FIT entry
-type EntryBase struct {
-	Headers       *EntryHeaders
-	DataOffset    *uint64 `json:",omitempty"`
-	DataBytes     []byte  `json:",omitempty"`
-	HeadersErrors []error `json:",omitempty"`
+func (entries EntriesByType) Less(i, j int) bool {
+	return entries[i].GetEntryBase().Headers.Type() < entries[j].GetEntryBase().Headers.Type()
 }
+func (entries EntriesByType) Swap(i, j int) { entries[i], entries[j] = entries[j], entries[i] }
+func (entries EntriesByType) Len() int      { return len(entries) }
 
-// SetEntryBase sets EntryBase (which contains metadata of the Entry).
-func (entry *EntryBase) SetEntryBase(base EntryBase) {
-	*entry = base
-}
-
-// GetType returns the type of the FIT entry
-func (entry *EntryBase) GetType() EntryType {
-	return entry.Headers.Type()
-}
-
-// GetHeaders returns the FIT entry headers.
+// mostCommonRecalculateHeadersOfEntry recalculates entry headers using headers data using the most common rules:
+// * Set "Version" to 0x0100.
+// * Set "IsChecksumValid" to true.
+// * Set "Type" to the type of the entry.
+// * Set "Checksum" to the calculated checksum value of the headers
+// * Set "Size" to a multiple of 16 of the data size (in other words: len(data) >> 4).
 //
-// See "Table 1-1" in "1.2 Firmware Interface Table" in "Firmware Interface Table" specification:
-//  * https://www.intel.com/content/dam/www/public/us/en/documents/guides/fit-bios-specification.pdf
-func (entry *EntryBase) GetHeaders() *EntryHeaders {
-	return entry.Headers
-}
-
-// GetDataOffset returns the offset of the data of the entry
-// relatively to the beginning of the firmware image.
-func (entry *EntryBase) GetDataOffset() uint64 {
-	return *entry.DataOffset
-}
-
-// GetDataBytes returns the data of the entry.
-func (entry *EntryBase) GetDataBytes() []byte {
-	return entry.DataBytes
-}
-
-// GetHeadersErrors returns the errors were received while processing
-// the headers of the entry.
-func (entry *EntryBase) GetHeadersErrors() []error {
-	return entry.HeadersErrors
-}
-
-// GoString implements fmt.GoStringer
-func (entry *EntryBase) GoString() string {
-	return entry.Headers.GoString()
-}
-
-// RehashEntry recalculates metadata to be consistent with data. For example, it fixes checksum, data size,
-// entry type and so on.
-func RehashEntry(entry Entry) error {
-	if rehasher, ok := entry.(interface{ Rehash() error }); ok {
-		err := rehasher.Rehash()
-		if err != nil {
-			return fmt.Errorf("type-specific Rehash() returned error: %w", err)
-		}
-	}
-
-	entryType, foundEntryType := EntryTypeOf(entry)
+// This is considered the most common set of rules for the most FIT entry types. But different types may break
+// different rules.
+func mostCommonRecalculateHeadersOfEntry(entry Entry) {
+	entryType, foundEntryType := entryTypeOf(entry)
 	if !foundEntryType {
-		return fmt.Errorf("type %T is not known", entry)
+		panic(fmt.Errorf("type %T is not known", entry))
 	}
 
-	hdr := entry.GetHeaders()
-
-	// Set Type and IsChecksumValid
-
+	entryBase := entry.GetEntryBase()
+	hdr := &entryBase.Headers
 	hdr.TypeAndIsChecksumValid.SetType(entryType)
 	hdr.TypeAndIsChecksumValid.SetIsChecksumValid(true)
+	hdr.Checksum = hdr.CalculateChecksum()
+	hdr.Version = EntryVersion(0x0100)
+	hdr.Size.SetUint32(uint32(len(entryBase.DataSegmentBytes) >> 4))
+}
 
-	// Set Version
-
-	switch entryType {
-	case EntryTypeTPMPolicyRecord,
-		EntryTypeTXTPolicyRecord:
-		// See 4.7.4 and 4.9.4 of the FIT specification.
-		// noop
-	case EntryTypeFITHeaderEntry,
-		EntryTypeStartupACModuleEntry,
-		EntryTypeDiagnosticACModuleEntry,
-		EntryTypeBIOSStartupModuleEntry,
-		EntryTypeBIOSPolicyRecord,
-		EntryTypeKeyManifestRecord,
-		EntryTypeBootPolicyManifest,
-		EntryTypeCSESecureBoot,
-		EntryTypeFeaturePolicyDeliveryRecord:
-		// See 4.2.6, 4.4.8, 4.5.5, 4.6.12, 4.8.4, 4.10.2, 4.11.3, 4.12.4, 4.13.6 of the FIT specification
-		hdr.Version = EntryVersion(0x0100)
+// EntryRecalculateHeaders recalculates headers of the entry based on its data.
+func EntryRecalculateHeaders(entry Entry) error {
+	if recalcer, ok := entry.(EntryCustomRecalculateHeaderser); ok {
+		return recalcer.CustomRecalculateHeaders()
 	}
 
-	// Set Address, Size and TypeAndIsChecksumValid
-
-	// Keep this consistent with getDataCoordinates()
-	// TODO: make these handlers modular
-	switch entryType {
-	case EntryTypeFITHeaderEntry:
-		// See 4.2 of the FIT specification.
-		hdr.Address = Address64(binary.LittleEndian.Uint64([]byte("_FIT_   ")))
-	case EntryTypeStartupACModuleEntry:
-		// See 4.4.7 of the FIT specification.
-		hdr.Size.SetUint32(0)
-	case EntryTypeTXTPolicyRecord:
-		// See 4.9.10 of the FIT specification.
-		hdr.TypeAndIsChecksumValid.SetIsChecksumValid(false)
-		// See 4.9.11 of the FIT specification.
-		hdr.Size.SetUint32(0)
-	case EntryTypeDiagnosticACModuleEntry, EntryTypeTPMPolicyRecord:
-		return fmt.Errorf("support of %s is not implemented, yet", entryType)
-	case EntryTypeBIOSPolicyRecord, EntryTypeKeyManifestRecord, EntryTypeBootPolicyManifest:
-		hdr.Size.SetUint32(uint32(len(entry.GetDataBytes())))
-	default:
-		hdr.Size.SetUint32(uint32(len(entry.GetDataBytes()) >> 4))
-	}
-
-	// Set Checksum
-
-	if hdr.TypeAndIsChecksumValid.IsChecksumValid() {
-		hdr.Checksum = hdr.CalculateChecksum()
-	}
-
+	mostCommonRecalculateHeadersOfEntry(entry)
 	return nil
 }
 
 // Entries are a slice of multiple parsed FIT entries (headers + data)
 type Entries []Entry
 
-// Rehash recalculates metadata to be consistent with data. For example, it fixes checksum, data size,
+// RecalculateHeaders recalculates metadata to be consistent with data. For example, it fixes checksum, data size,
 // entry type and so on.
 //
 // Supposed to be used before Inject or/and InjectTo. Since it is possible to prepare data in entries, then
 // call Rehash (to prepare headers consistent with data).
-func (entries Entries) Rehash() error {
+func (entries Entries) RecalculateHeaders() error {
 	if len(entries) == 0 {
 		return nil
+	}
+
+	for idx, entry := range entries {
+		err := EntryRecalculateHeaders(entry)
+		if err != nil {
+			return fmt.Errorf("unable to recalculate headers of FIT entry #%d (%#+v): %w", idx, entry, err)
+		}
 	}
 
 	beginEntry, ok := entries[0].(*EntryFITHeaderEntry)
@@ -187,19 +104,21 @@ func (entries Entries) Rehash() error {
 	}
 
 	// See point 4.2.5 of the FIT specification
-	beginEntry.GetHeaders().Size.SetUint32(uint32(len(entries)))
-
-	for idx, entry := range entries {
-		err := RehashEntry(entry)
-		if err != nil {
-			return fmt.Errorf("unable to rehash FIT entry #%d (%#+v): %w", idx, entry, err)
-		}
-	}
+	beginEntry.GetEntryBase().Headers.Size.SetUint32(uint32(len(entries)))
 
 	return nil
 }
 
-// Inject writes FIT headers and data to a firmware image.
+// Table returns a table of headers of all entries of the slice.
+func (entries Entries) Table() Table {
+	result := make(Table, 0, len(entries))
+	for _, entry := range entries {
+		result = append(result, entry.GetEntryBase().Headers)
+	}
+	return result
+}
+
+// Inject writes complete FIT (headers + data + pointer) to a firmware image.
 //
 // What will happen:
 // 1. The FIT headers will be written by offset headersOffset.
@@ -208,57 +127,139 @@ func (entries Entries) Rehash() error {
 //
 // Consider calling Rehash() before Inject()/InjectTo()
 func (entries Entries) Inject(b []byte, headersOffset uint64) error {
-	return entries.InjectTo(newWriteSeekerWrapper(b), headersOffset)
+	return entries.InjectTo(bytesextra.NewReadWriteSeeker(b), headersOffset)
 }
 
 // InjectTo does the same as Inject, but for io.WriteSeeker.
-func (entries Entries) InjectTo(r io.WriteSeeker, headersOffset uint64) error {
-	return fmt.Errorf("not implemented, yet")
+func (entries Entries) InjectTo(w io.WriteSeeker, headersOffset uint64) error {
+
+	// Detect image size
+
+	imageSize, err := w.Seek(0, io.SeekEnd)
+	if err != nil {
+		return fmt.Errorf("unable to detect the end of the image: %w", err)
+	}
+	if imageSize < 0 {
+		panic(fmt.Errorf("negative image size: %d", imageSize))
+	}
+
+	// Write FIT pointer
+
+	if _, err := w.Seek(-consts.FITPointerOffset, io.SeekEnd); err != nil {
+		return fmt.Errorf("unable to Seek(%d, %d) to write FIT pointer: %w", headersOffset, io.SeekStart, err)
+	}
+	pointerValue := calculatePhysAddrFromOffset(headersOffset, uint64(imageSize))
+	if err := binary.Write(w, binary.LittleEndian, pointerValue); err != nil {
+		return fmt.Errorf("unable to FIT pointer: %w", err)
+	}
+
+	// Write headers
+
+	if _, err := w.Seek(int64(headersOffset), io.SeekStart); err != nil {
+		return fmt.Errorf("unable to Seek(%d, %d) to write headers: %w", headersOffset, io.SeekStart, err)
+	}
+
+	table := entries.Table()
+	if _, err := table.WriteTo(w); err != nil {
+		return fmt.Errorf("unable to write %d headers to offset %d: %w", len(table), headersOffset, err)
+	}
+
+	// Write data sections
+
+	for idx, entry := range entries {
+		if err := entry.GetEntryBase().injectDataSectionTo(w); err != nil {
+			return fmt.Errorf("unable to inject data section of entry %d: %w", idx, err)
+		}
+	}
+
+	return nil
 }
 
-// Each of these types are extendable, see files "entry_*.go":
+func copyBytesFrom(r io.ReadSeeker, offset, size uint64) ([]byte, error) {
+	_, err := r.Seek(int64(offset), io.SeekStart)
+	if err != nil {
+		return nil, fmt.Errorf("unable to Seek(%d, io.SeekStart): %w", int64(offset), err)
+	}
 
-// EntryFITHeaderEntry represents a FIT entry of type "FIT Header Entry" (0x00)
-type EntryFITHeaderEntry struct{ EntryBase }
+	result := make([]byte, size)
+	written, err := io.CopyN(bytesextra.NewReadWriteSeeker(result), r, int64(size))
+	if err != nil {
+		return nil, fmt.Errorf("unable to copy %d bytes: %w", int64(size), err)
+	}
+	if written != int64(size) {
+		return nil, fmt.Errorf("invalid amount of bytes copied: %d != %d", written, int64(size))
+	}
 
-// EntryMicrocodeUpdateEntry represents a FIT entry of type "Microcode Update Entry" (0x01)
-type EntryMicrocodeUpdateEntry struct{ EntryBase }
+	return result, nil
+}
 
-// EntrySACM represents a FIT entry of type "Startup AC Module Entry" (0x02)
-type EntrySACM struct{ EntryBase }
+// EntryDataSegmentSize returns the coordinates of the data segment size associates with the entry.
+func EntryDataSegmentSize(entry Entry, firmware io.ReadSeeker) (uint64, error) {
+	if sizeGetter, ok := entry.(EntryCustomGetDataSegmentSizer); ok {
+		return sizeGetter.CustomGetDataSegmentSize(firmware)
+	} else {
+		return entry.GetEntryBase().Headers.mostCommonGetDataSegmentSize(), nil
+	}
+}
 
-// EntryDiagnosticACM represents a FIT entry of type "Diagnostic ACM" (0x03)
-type EntryDiagnosticACM struct{ EntryBase }
+// EntryDataSegmentCoordinates returns the coordinates of the data segment coordinates associates with the entry.
+func EntryDataSegmentCoordinates(entry Entry, firmware io.ReadSeeker) (uint64, uint64, error) {
+	var err error
 
-// EntryBIOSStartupModuleEntry represents a FIT entry of type "BIOS Startup Module Entry" (0x07)
-type EntryBIOSStartupModuleEntry struct{ EntryBase }
+	offset, addErr := entry.GetEntryBase().Headers.getDataSegmentOffset(firmware)
+	if addErr != nil {
+		err = multierror.Append(err, fmt.Errorf("unable to get data segment offset: %w", err))
+	}
 
-// EntryTPMPolicyRecord represents a FIT entry of type "TPM Policy Record" (0x08)
-type EntryTPMPolicyRecord struct{ EntryBase }
+	size, addErr := EntryDataSegmentSize(entry, firmware)
+	if addErr != nil {
+		err = multierror.Append(err, fmt.Errorf("unable to get data segment size: %w", err))
+	}
 
-// EntryBIOSPolicyRecord represents a FIT entry of type "BIOS Policy Record" (0x09)
-type EntryBIOSPolicyRecord struct{ EntryBase }
+	return offset, size, err
+}
 
-// EntryKeyManifestRecord represents a FIT entry of type "Key Manifest Record" (0x0B)
-type EntryKeyManifestRecord struct{ EntryBase }
+func entryInitDataSegmentBytes(entry Entry, firmware io.ReadSeeker) error {
+	dataSegmentOffset, dataSegmentSize, err := EntryDataSegmentCoordinates(entry, firmware)
+	if err != nil {
+		return fmt.Errorf("unable to get data segment coordinates of entry %T: %w", entry, err)
+	}
 
-// EntryTXTPolicyRecord represents a FIT entry of type "TXT Policy Record" (0x0A)
-type EntryTXTPolicyRecord struct{ EntryBase }
+	if dataSegmentSize == 0 {
+		return nil
+	}
 
-// EntryBootPolicyManifestRecord represents a FIT entry of type "Boot Policy Manifest" (0x0C)
-type EntryBootPolicyManifestRecord struct{ EntryBase }
+	base := entry.GetEntryBase()
 
-// EntryCSESecureBoot represents a FIT entry of type "CSE Secure Boot" (0x10)
-type EntryCSESecureBoot struct{ EntryBase }
+	// If possible then just make a slice of existing data
+	switch firmware := firmware.(type) {
+	case *bytesextra.ReadWriteSeeker:
+		fmt.Printf("%T 0x%X %d %d\n", entry, entry.GetEntryBase().Headers.Address, dataSegmentOffset, dataSegmentOffset+dataSegmentSize)
+		base.DataSegmentBytes = firmware.Storage[dataSegmentOffset : dataSegmentOffset+dataSegmentSize]
+	default:
+		var err error
+		base.DataSegmentBytes, err = copyBytesFrom(firmware, dataSegmentOffset, dataSegmentSize)
+		if err != nil {
+			return fmt.Errorf("unable to copy data segment bytes from the firmware image (offset:%d, size:%d): %w", dataSegmentOffset, dataSegmentSize, err)
+		}
+	}
 
-// EntryFeaturePolicyDeliveryRecord represents a FIT entry of type "Feature Policy Delivery Record" (0x2D)
-type EntryFeaturePolicyDeliveryRecord struct{ EntryBase }
+	return nil
+}
 
-// EntryJMPDebugPolicy represents a FIT entry of type "JMP $ Debug Policy" (0x2F)
-type EntryJMPDebugPolicy struct{ EntryBase }
+// NewEntry returns a new entry using headers and firmware image
+func NewEntry(hdr *EntryHeaders, firmware io.ReadSeeker) Entry {
+	entry := hdr.Type().newEntry()
+	if entry == nil {
+		return nil
+	}
+	base := entry.GetEntryBase()
+	base.Headers = *hdr
 
-// EntrySkip represents a FIT entry of type "Unused Entry (skip)" (0x7F)
-type EntrySkip struct{ EntryBase }
+	err := entryInitDataSegmentBytes(entry, firmware)
+	if err != nil {
+		base.HeadersErrors = append(base.HeadersErrors, err)
+	}
 
-// EntryUnknown represents an unknown FIT entry type.
-type EntryUnknown struct{ EntryBase }
+	return entry
+}

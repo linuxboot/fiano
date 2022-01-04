@@ -57,8 +57,9 @@ func goTypeOfEntry(entry Entry) reflect.Type {
 
 // RegisterEntryType adds a new FIT entry type to the registry of known entry types.
 func RegisterEntryType(entryTypeID EntryType, entryGoType Entry) {
-	if _, ok := entryTypeIDToGo[entryTypeID]; ok {
-		panic(fmt.Errorf("entry type %d is already registered", entryTypeID))
+	if goType, ok := entryTypeIDToGo[entryTypeID]; ok {
+		delete(entryTypeIDToGo, entryTypeID)
+		delete(entryTypeGoToID, goType)
 	}
 
 	goType := goTypeOfEntry(entryGoType)
@@ -83,21 +84,20 @@ func init() {
 	RegisterEntryType(EntryTypeSkip, &EntrySkip{})
 }
 
-// NewEntry returns an entry given EntryBase.
-func (_type EntryType) NewEntry(entryBase EntryBase) Entry {
+// newEntry returns a new empty entry instance of a registered type.
+func (_type EntryType) newEntry() Entry {
 	goType, ok := entryTypeIDToGo[_type]
 	if !ok {
-		return &EntryUnknown{entryBase}
+		return nil
 	}
 
 	entry := reflect.New(goType).Interface().(Entry)
-	entry.SetEntryBase(entryBase)
 	return entry
 }
 
-// EntryTypeOf returns EntryType based on variable type (in contrast to
+// entryTypeOf returns EntryType based on variable type (in contrast to
 // reading it from the headers).
-func EntryTypeOf(entry Entry) (EntryType, bool) {
+func entryTypeOf(entry Entry) (EntryType, bool) {
 	entryTypeID, ok := entryTypeGoToID[goTypeOfEntry(entry)]
 	return entryTypeID, ok
 }

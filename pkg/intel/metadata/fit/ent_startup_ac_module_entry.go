@@ -16,6 +16,35 @@ import (
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
 )
 
+// EntrySACM represents a FIT entry of type "Startup AC Module Entry" (0x02)
+type EntrySACM struct{ EntryBase }
+
+var _ EntryCustomGetDataSegmentSizer = (*EntrySACM)(nil)
+
+func (entry *EntrySACM) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64, error) {
+	offset, err := entry.Headers.getDataSegmentOffset(firmware)
+	if err != nil {
+		return 0, fmt.Errorf("unable to detect data segment offset: %w", err)
+	}
+
+	// See point "7" of "2.7" of the specification: the size field is
+	// always zero. So we parsing the size from it's data right now:
+	var size uint32
+	size, err = EntrySACMParseSizeFrom(firmware, offset)
+	if err != nil {
+		return 0, fmt.Errorf("unable to detect data segment size: %w", err)
+	}
+	return uint64(size), nil
+}
+
+var _ EntryCustomRecalculateHeaderser = (*EntrySACM)(nil)
+
+func (entry *EntrySACM) CustomRecalculateHeaders() error {
+	// See 4.4.7 of the FIT specification.
+	entry.Headers.Size.SetUint32(0)
+	return nil
+}
+
 // See the section "A.1" of the specification
 // "Intel ® Trusted Execution Technology (Intel ® TXT)"
 // https://www.intel.com/content/www/us/en/software-developers/txt-software-development-guide.html
@@ -397,7 +426,7 @@ func EntrySACMParseSize(b []byte) (uint32, error) {
 // ParseData parses SACM entry and returns EntrySACMData.
 func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 	common := EntrySACMDataCommon{}
-	if err := binary.Read(bytes.NewReader(entry.DataBytes), binary.LittleEndian, &common); err != nil {
+	if err := binary.Read(bytes.NewReader(entry.DataSegmentBytes), binary.LittleEndian, &common); err != nil {
 		return nil, fmt.Errorf("unable to parse startup AC module entry: %w", err)
 	}
 	result := &EntrySACMData{EntrySACMDataInterface: &common, UserArea: nil}
@@ -418,7 +447,7 @@ func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 		return result, &ErrACMInvalidKeySize{ExpectedKeySize: requiredKeySize, RealKeySize: common.KeySize.Size()}
 	}
 
-	if err := binary.Read(bytes.NewReader(entry.DataBytes), binary.LittleEndian, result.EntrySACMDataInterface); err != nil {
+	if err := binary.Read(bytes.NewReader(entry.DataSegmentBytes), binary.LittleEndian, result.EntrySACMDataInterface); err != nil {
 		return result, fmt.Errorf("cannot parse AC header of version %v: %w", common.HeaderVersion, err)
 	}
 
@@ -428,7 +457,7 @@ func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 	// EntrySACMData0/EntrySACMData3.
 	userAreaStartIdx := binary.Size(result.EntrySACMDataInterface)
 	userAreaEndIdx := result.EntrySACMDataInterface.GetSize().Size()
-	result.UserArea = entry.DataBytes[userAreaStartIdx:userAreaEndIdx]
+	result.UserArea = entry.DataSegmentBytes[userAreaStartIdx:userAreaEndIdx]
 
 	return result, nil
 }
@@ -444,11 +473,10 @@ type entrySACMJSON struct {
 // MarshalJSON implements json.Marshaler
 func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
 	result := entrySACMJSON{}
-	result.Headers = entry.Headers
 	result.DataParsed, result.DataParseError = entry.ParseData()
 	result.HeadersErrors = make([]error, len(entry.HeadersErrors))
 	copy(result.HeadersErrors, entry.HeadersErrors)
-	result.DataNotParsed = entry.DataBytes
+	result.DataNotParsed = entry.DataSegmentBytes
 	return json.Marshal(&result)
 }
 
@@ -459,8 +487,7 @@ func (entry *EntrySACM) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	entry.Headers = result.Headers
 	entry.HeadersErrors = result.HeadersErrors
-	entry.DataBytes = result.DataNotParsed
+	entry.DataSegmentBytes = result.DataNotParsed
 	return nil
 }
