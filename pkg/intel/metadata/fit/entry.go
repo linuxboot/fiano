@@ -234,7 +234,6 @@ func entryInitDataSegmentBytes(entry Entry, firmware io.ReadSeeker) error {
 	// If possible then just make a slice of existing data
 	switch firmware := firmware.(type) {
 	case *bytesextra.ReadWriteSeeker:
-		fmt.Printf("%T 0x%X %d %d\n", entry, entry.GetEntryBase().Headers.Address, dataSegmentOffset, dataSegmentOffset+dataSegmentSize)
 		base.DataSegmentBytes = firmware.Storage[dataSegmentOffset : dataSegmentOffset+dataSegmentSize]
 	default:
 		var err error
