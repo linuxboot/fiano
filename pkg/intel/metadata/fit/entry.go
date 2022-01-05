@@ -175,12 +175,17 @@ func (entries Entries) InjectTo(w io.WriteSeeker, headersOffset uint64) error {
 	return nil
 }
 
-func copyBytesFrom(r io.ReadSeeker, offset, size uint64) ([]byte, error) {
-	_, err := r.Seek(int64(offset), io.SeekStart)
+func copyBytesFrom(r io.ReadSeeker, startIdx, endIdx uint64) ([]byte, error) {
+	_, err := r.Seek(int64(startIdx), io.SeekStart)
 	if err != nil {
-		return nil, fmt.Errorf("unable to Seek(%d, io.SeekStart): %w", int64(offset), err)
+		return nil, fmt.Errorf("unable to Seek(%d, io.SeekStart): %w", int64(startIdx), err)
 	}
 
+	if endIdx < startIdx {
+		return nil, fmt.Errorf("endIdx < startIdx: %d < %d", endIdx, startIdx)
+	}
+
+	size := endIdx - startIdx
 	result := make([]byte, size)
 	written, err := io.CopyN(bytesextra.NewReadWriteSeeker(result), r, int64(size))
 	if err != nil {
@@ -219,6 +224,16 @@ func EntryDataSegmentCoordinates(entry Entry, firmware io.ReadSeeker) (uint64, u
 	return offset, size, err
 }
 
+// If possible then make a slice of existing data; if not then copy.
+func sliceOrCopyBytesFrom(r io.ReadSeeker, startIdx, endIdx uint64) ([]byte, error) {
+	switch r := r.(type) {
+	case *bytesextra.ReadWriteSeeker:
+		return r.Storage[startIdx:endIdx], nil
+	default:
+		return copyBytesFrom(r, startIdx, endIdx)
+	}
+}
+
 func entryInitDataSegmentBytes(entry Entry, firmware io.ReadSeeker) error {
 	dataSegmentOffset, dataSegmentSize, err := EntryDataSegmentCoordinates(entry, firmware)
 	if err != nil {
@@ -231,16 +246,9 @@ func entryInitDataSegmentBytes(entry Entry, firmware io.ReadSeeker) error {
 
 	base := entry.GetEntryBase()
 
-	// If possible then just make a slice of existing data
-	switch firmware := firmware.(type) {
-	case *bytesextra.ReadWriteSeeker:
-		base.DataSegmentBytes = firmware.Storage[dataSegmentOffset : dataSegmentOffset+dataSegmentSize]
-	default:
-		var err error
-		base.DataSegmentBytes, err = copyBytesFrom(firmware, dataSegmentOffset, dataSegmentSize)
-		if err != nil {
-			return fmt.Errorf("unable to copy data segment bytes from the firmware image (offset:%d, size:%d): %w", dataSegmentOffset, dataSegmentSize, err)
-		}
+	base.DataSegmentBytes, err = sliceOrCopyBytesFrom(firmware, dataSegmentOffset, dataSegmentOffset+dataSegmentSize)
+	if err != nil {
+		return fmt.Errorf("unable to copy data segment bytes from the firmware image (offset:%d, size:%d): %w", dataSegmentOffset, dataSegmentSize, err)
 	}
 
 	return nil
