@@ -28,6 +28,6 @@ func bounds(length uint, startIdx, endIdx int) error {
 // * 0 <= startIdx
 // * startIdx <= endIdx
 // * endIdx < len(b)
-func BytesRange(b []byte, startIdx, endIdx int) error {
-	return bounds(uint(len(b)), startIdx, endIdx)
+func BytesRange(length uint, startIdx, endIdx int) error {
+	return bounds(length, startIdx, endIdx)
 }
