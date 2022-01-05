@@ -6,14 +6,22 @@ package fit
 
 import (
 	"fmt"
+	"io"
+
+	"github.com/xaionaro-go/bytesextra"
 )
 
 // GetEntries returns parsed FIT-entries
 func GetEntries(firmware []byte) (Entries, error) {
-	table, err := GetTable(firmware)
+	return GetEntriesFrom(bytesextra.NewReadWriteSeeker(firmware))
+}
+
+// GetEntriesFrom returns parsed FIT-entries
+func GetEntriesFrom(firmware io.ReadSeeker) (Entries, error) {
+	table, err := GetTableFrom(firmware)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get FIT table: %w", err)
 	}
 
-	return table.GetEntries(firmware), nil
+	return table.GetEntriesFrom(firmware), nil
 }
