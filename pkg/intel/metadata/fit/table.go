@@ -37,20 +37,18 @@ func (table Table) GetEntriesFrom(firmware io.ReadSeeker) (result Entries) {
 func (table Table) String() string {
 	var s strings.Builder
 	// PrintFit prints the Firmware Interface Table in a tabular human readable form.
-	s.WriteString("Firmware Interface Table\n")
-	s.WriteString("------------------------\n")
-	fmt.Fprintf(&s, "%-25s | %-20s | %-8s | %-10s | %-15s | %-10s\n", "Type", "Address", "Size", "Version", "Checksum valid", "Checksum")
-	s.WriteString("-----------------------------------------------------------------------------------------------------\n")
-	for _, entry := range table {
-		fmt.Fprintf(&s, "%-25s | %-20s | %-8d | %-10s | %-15v | %-10d\n",
-			entry.Type().String(),
+	fmt.Fprintf(&s, "%-3s | %-32s | %-20s | %-8s | %-6s | %-15s | %-10s\n", "#", "Type", "Address", "Size", "Version", "Checksum valid", "Checksum")
+	s.WriteString("---------------------------------------------------------------------------------------------------------------\n")
+	for idx, entry := range table {
+		fmt.Fprintf(&s, "%-3d | %-25s (0x%02X) | %-20s | %-8d | 0x%04x  | %-15v | %-10d\n",
+			idx,
+			entry.Type(), uint8(entry.Type()),
 			entry.Address.String(),
 			entry.Size.Uint32(),
-			entry.Version.String(),
+			uint16(entry.Version),
 			entry.IsChecksumValid(),
 			entry.Checksum)
 	}
-	s.WriteString("\n")
 	return s.String()
 }
 
@@ -89,6 +87,20 @@ func (table Table) WriteTo(w io.Writer) (n int64, err error) {
 	}
 
 	return n, nil
+}
+
+// WriteToFirmwareImage finds the position of FIT in a firmware image and writes the table there.
+func (table Table) WriteToFirmwareImage(w io.ReadWriteSeeker) (n int64, err error) {
+	startIdx, _, err := GetHeadersTableRangeFrom(w)
+	if err != nil {
+		return 0, fmt.Errorf("unable to find the beginning of the FIT: %w", err)
+	}
+
+	if _, err := w.Seek(int64(startIdx), io.SeekStart); err != nil {
+		return 0, fmt.Errorf("unable to Seek(%d, io.SeekStart): %w", int64(startIdx), err)
+	}
+
+	return table.WriteTo(w)
 }
 
 // ParseEntryHeadersFrom parses a single entry headers entry.
@@ -182,7 +194,7 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 		return 0, 0, fmt.Errorf("unable to get FIT pointer value: %w", err)
 	}
 	fitPointerValue := binary.LittleEndian.Uint64(fitPointerBytes)
-	fitPointerOffset := calculateTailOffsetFromPhysAddr(fitPointerValue)
+	fitPointerOffset := CalculateTailOffsetFromPhysAddr(fitPointerValue)
 	startIdx = uint64(firmwareSize) - fitPointerOffset
 
 	// OK, now we need to calculate the end of the headers...
@@ -243,7 +255,7 @@ func GetTable(firmware []byte) (Table, error) {
 func GetTableFrom(firmware io.ReadSeeker) (Table, error) {
 	startIdx, endIdx, err := GetHeadersTableRangeFrom(firmware)
 	if err != nil {
-		return nil, fmt.Errorf("unable to locate the table coordinates: %w", err)
+		return nil, fmt.Errorf("unable to locate the table coordinates (does the image contain FIT?): %w", err)
 	}
 
 	tableBytes, err := sliceOrCopyBytesFrom(firmware, startIdx, endIdx)

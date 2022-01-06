@@ -30,16 +30,16 @@ type EntryHeaders struct {
 	// Must be aligned on 16 byte boundary.
 	Address Address64
 
-	Size Uint24 `json:"Size"`
+	Size Uint24
 
 	// Reserved should always be equal to zero.
-	Reserved uint8 `json:",omitempty"`
+	Reserved uint8
 
 	Version EntryVersion
 
 	TypeAndIsChecksumValid TypeAndIsChecksumValid
 
-	Checksum uint8 `json:",omitempty"`
+	Checksum uint8
 }
 
 func (hdr EntryHeaders) copy() *EntryHeaders {
@@ -55,6 +55,48 @@ func (hdr *EntryHeaders) GoString() string {
 	result.WriteString(fmt.Sprintf("   Type: 0x%x\n", uint8(hdr.TypeAndIsChecksumValid)))
 	result.WriteString(fmt.Sprintf("   Checksum: 0x%x\n", hdr.Checksum))
 	return result.String()
+}
+
+type entryHeadersForJSON struct {
+	Address         uint64
+	Size            uint32
+	Reserved        uint8 `json:",omitempty"`
+	Version         EntryVersion
+	Type            EntryType
+	IsChecksumValid bool
+	Checksum        uint8
+}
+
+// MarshalJSON just implements encoding/json.Marshaler
+func (hdr EntryHeaders) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&entryHeadersForJSON{
+		Address:         hdr.Address.Pointer(),
+		Size:            hdr.Size.Uint32(),
+		Reserved:        hdr.Reserved,
+		Version:         hdr.Version,
+		Type:            hdr.Type(),
+		IsChecksumValid: hdr.IsChecksumValid(),
+		Checksum:        hdr.Checksum,
+	})
+}
+
+// UnmarshalJSON just implements encoding/json.Unmarshaler
+func (hdr *EntryHeaders) UnmarshalJSON(b []byte) error {
+	var parsed entryHeadersForJSON
+	err := json.Unmarshal(b, &parsed)
+	if err != nil {
+		return err
+	}
+	*hdr = EntryHeaders{
+		Address:  Address64(parsed.Address),
+		Reserved: parsed.Reserved,
+		Version:  parsed.Version,
+		Checksum: parsed.Checksum,
+	}
+	hdr.Size.SetUint32(parsed.Size)
+	hdr.TypeAndIsChecksumValid.SetType(parsed.Type)
+	hdr.TypeAndIsChecksumValid.SetIsChecksumValid(parsed.IsChecksumValid)
+	return nil
 }
 
 // Uint24 is a 24 bit unsigned little-endian integer value.
@@ -76,9 +118,31 @@ func (size Uint24) Uint32() uint32 {
 
 // SetUint32 sets the value. See also Uint32.
 func (size *Uint24) SetUint32(newValue uint32) {
+	if newValue >= 1<<24 {
+		panic(fmt.Errorf("too big integer: %d >= %d", newValue, 1<<24))
+	}
 	b := make([]byte, 4)
 	binary.LittleEndian.PutUint32(b, newValue)
 	copy(size.Value[:], b[:])
+}
+
+// MarshalJSON just implements encoding/json.Marshaler
+func (size Uint24) MarshalJSON() ([]byte, error) {
+	return json.Marshal(size.Uint32())
+}
+
+// UnmarshalJSON just implements encoding/json.Unmarshaler
+func (size *Uint24) UnmarshalJSON(b []byte) error {
+	var parsed uint32
+	err := json.Unmarshal(b, &parsed)
+	if err != nil {
+		return err
+	}
+	if parsed >= 1<<24 {
+		return fmt.Errorf("too big integer: %d >= %d", parsed, 1<<24)
+	}
+	size.SetUint32(parsed)
+	return nil
 }
 
 // Address64 is a 64bit address type
@@ -89,7 +153,7 @@ func (addr Address64) Pointer() uint64 { return uint64(addr) }
 
 // Offset returns an offset from the beginning of a firmware of a defined size.
 func (addr Address64) Offset(firmwareSize uint64) uint64 {
-	return calculateOffsetFromPhysAddr(addr.Pointer(), firmwareSize)
+	return CalculateOffsetFromPhysAddr(addr.Pointer(), firmwareSize)
 }
 
 // SetOffset sets the value to a physical address corresponding to
@@ -97,7 +161,7 @@ func (addr Address64) Offset(firmwareSize uint64) uint64 {
 //
 // See also the description of calculatePhysAddrFromOffset.
 func (addr *Address64) SetOffset(offset, firmwareSize uint64) {
-	physAddr := calculatePhysAddrFromOffset(offset, firmwareSize)
+	physAddr := CalculatePhysAddrFromOffset(offset, firmwareSize)
 	*addr = Address64(physAddr)
 }
 

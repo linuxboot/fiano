@@ -474,6 +474,7 @@ type entrySACMJSON struct {
 func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
 	result := entrySACMJSON{}
 	result.DataParsed, result.DataParseError = entry.ParseData()
+	result.Headers = &entry.Headers
 	result.HeadersErrors = make([]error, len(entry.HeadersErrors))
 	copy(result.HeadersErrors, entry.HeadersErrors)
 	result.DataNotParsed = entry.DataSegmentBytes
@@ -487,6 +488,7 @@ func (entry *EntrySACM) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
+	entry.Headers = *result.Headers
 	entry.HeadersErrors = result.HeadersErrors
 	entry.DataSegmentBytes = result.DataNotParsed
 	return nil
