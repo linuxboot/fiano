@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
@@ -118,6 +119,27 @@ func (entries Entries) Table() Table {
 	return result
 }
 
+// String implements fmt.Stringer
+func (entries Entries) String() string {
+	var result strings.Builder
+	for idx, entry := range entries {
+		hdr := entry.GetEntryBase().Headers
+		result.WriteString(fmt.Sprintf("Entry #%d\n\tType: %s (0x%X)\n\tVersion: 0x%04X\n\tAddr: 0x%X\n\tSize: 0x%06X\n\tChecksum: 0x%X\n\tChecksum is valid: %v\n",
+			idx,
+			hdr.Type(), uint(hdr.Type()),
+			uint16(hdr.Version),
+			hdr.Address.Pointer(),
+			hdr.Size.Uint32(),
+			hdr.Checksum,
+			hdr.IsChecksumValid(),
+		))
+		if data := entry.GetEntryBase().DataSegmentBytes; len(data) > 0 {
+			result.WriteString(fmt.Sprintf("\tData: 0x%X\n", data))
+		}
+	}
+	return result.String()
+}
+
 // Inject writes complete FIT (headers + data + pointer) to a firmware image.
 //
 // What will happen:
@@ -148,9 +170,9 @@ func (entries Entries) InjectTo(w io.WriteSeeker, headersOffset uint64) error {
 	if _, err := w.Seek(-consts.FITPointerOffset, io.SeekEnd); err != nil {
 		return fmt.Errorf("unable to Seek(%d, %d) to write FIT pointer: %w", headersOffset, io.SeekStart, err)
 	}
-	pointerValue := calculatePhysAddrFromOffset(headersOffset, uint64(imageSize))
+	pointerValue := CalculatePhysAddrFromOffset(headersOffset, uint64(imageSize))
 	if err := binary.Write(w, binary.LittleEndian, pointerValue); err != nil {
-		return fmt.Errorf("unable to FIT pointer: %w", err)
+		return fmt.Errorf("unable to write FIT pointer: %w", err)
 	}
 
 	// Write headers
