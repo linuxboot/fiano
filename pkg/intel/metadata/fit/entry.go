@@ -114,6 +114,9 @@ func (entries Entries) RecalculateHeaders() error {
 func (entries Entries) Table() Table {
 	result := make(Table, 0, len(entries))
 	for _, entry := range entries {
+		if entry.GetEntryBase() == nil {
+			panic(fmt.Sprintf("%T", entry))
+		}
 		result = append(result, entry.GetEntryBase().Headers)
 	}
 	return result
@@ -280,7 +283,7 @@ func entryInitDataSegmentBytes(entry Entry, firmware io.ReadSeeker) error {
 func NewEntry(hdr *EntryHeaders, firmware io.ReadSeeker) Entry {
 	entry := hdr.Type().newEntry()
 	if entry == nil {
-		return nil
+		entry = &EntryUnknown{}
 	}
 	base := entry.GetEntryBase()
 	base.Headers = *hdr
