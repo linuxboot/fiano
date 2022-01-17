@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -17,21 +18,26 @@ type InsertType int
 
 // Insert Types
 const (
-	// These first two specify a firmware volume.
+	// InsertPad* inserts a pad file.
+	// non-Pad Insert* inserts a regular file.
 
 	// InsertFront inserts a file at the beginning of the firmware volume,
 	// which is specified by 1) FVname GUID, or (File GUID/File name) of a file
 	// inside that FV.
 	InsertFront InsertType = iota
+	InsertPadFront
 	// InsertEnd inserts a file at the end of the specified firmware volume.
 	InsertEnd
+	InsertPadEnd
 
 	// These two specify a File to insert before or after
 	// InsertAfter inserts after the specified file,
 	// which is specified by a File GUID or File name.
 	InsertAfter
+	InsertPadAfter
 	// InsertBefore inserts before the specified file.
 	InsertBefore
+	InsertPadBefore
 	// InsertDXE inserts into the Dxe Firmware Volume. This works by searching
 	// for the DxeCore first to identify the Dxe Firmware Volume.
 	InsertDXE
@@ -44,12 +50,16 @@ const (
 )
 
 var insertTypeNames = map[InsertType]string{
-	InsertFront:  "insert_front",
-	InsertEnd:    "insert_end",
-	InsertAfter:  "insert_after",
-	InsertBefore: "insert_before",
-	InsertDXE:    "insert_dxe",
-	ReplaceFFS:   "replace_ffs",
+	InsertFront:     "insert_front",
+	InsertPadFront:  "insert_pad_front",
+	InsertEnd:       "insert_end",
+	InsertPadEnd:    "insert_pad_end",
+	InsertAfter:     "insert_after",
+	InsertPadAfter:  "insert_pad_after",
+	InsertBefore:    "insert_before",
+	InsertPadBefore: "insert_pad_before",
+	InsertDXE:       "insert_dxe",
+	ReplaceFFS:      "replace_ffs",
 }
 
 // String creates a string representation for the insert type.
@@ -116,15 +126,15 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 		for i := 0; i < len(f.Files); i++ {
 			if f.Files[i] == v.FileMatch {
 				switch v.InsertType {
-				case InsertFront:
+				case InsertFront, InsertPadFront:
 					f.Files = append([]*uefi.File{v.NewFile}, f.Files...)
 				case InsertDXE:
 					fallthrough
-				case InsertEnd:
+				case InsertEnd, InsertPadEnd:
 					f.Files = append(f.Files, v.NewFile)
-				case InsertAfter:
+				case InsertAfter, InsertPadAfter:
 					f.Files = append(f.Files[:i+1], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
-				case InsertBefore:
+				case InsertBefore, InsertPadBefore:
 					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i:]...)...)
 				case ReplaceFFS:
 					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
@@ -173,6 +183,32 @@ func genInsertCLI(iType InsertType) func(args []string) (uefi.Visitor, error) {
 	}
 }
 
+func genInsertPadCLI(iType InsertType) func(args []string) (uefi.Visitor, error) {
+	return func(args []string) (uefi.Visitor, error) {
+		pred, err := FindFileFVPredicate(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse the predicate parameters '%s': %w", args[0], err)
+		}
+
+		padSize, err := strconv.ParseUint(args[1], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse pad file size '%s': %w", args[1], err)
+		}
+
+		file, err := uefi.CreatePadFile(padSize)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create a pad file of size %d: %w", padSize, err)
+		}
+
+		// Insert File.
+		return &Insert{
+			Predicate:  pred,
+			NewFile:    file,
+			InsertType: iType,
+		}, nil
+	}
+}
+
 func init() {
 	RegisterCLI(insertTypeNames[InsertFront],
 		"insert a file at the beginning of a firmware volume", 2, genInsertCLI(InsertFront))
@@ -186,4 +222,12 @@ func init() {
 		"insert a file before another file", 2, genInsertCLI(InsertBefore))
 	RegisterCLI(insertTypeNames[ReplaceFFS],
 		"replace a file with another file", 2, genInsertCLI(ReplaceFFS))
+	RegisterCLI(insertTypeNames[InsertPadFront],
+		"insert a pad file at the beginning of a firmware volume", 2, genInsertPadCLI(InsertFront))
+	RegisterCLI(insertTypeNames[InsertPadEnd],
+		"insert a pad file at the end of a firmware volume", 2, genInsertPadCLI(InsertEnd))
+	RegisterCLI(insertTypeNames[InsertPadAfter],
+		"insert a pad file after another file", 2, genInsertPadCLI(InsertPadAfter))
+	RegisterCLI(insertTypeNames[InsertPadBefore],
+		"insert a pad file before another file", 2, genInsertPadCLI(InsertPadBefore))
 }
