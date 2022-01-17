@@ -56,23 +56,62 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/linuxboot/fiano/pkg/log"
+	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/linuxboot/fiano/pkg/utk"
 	"github.com/linuxboot/fiano/pkg/visitors"
 )
 
-func init() {
+type config struct {
+	ErasePolarity *byte
+}
+
+func parseArguments() (config, []string, error) {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: utk [flags] <file name> [0 or more operations]\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(flag.CommandLine.Output(), "\nOperations:\n%s", visitors.ListCLI())
 	}
+	erasePolarityFlag := flag.String("erase-polarity", "", "set erase polarity; possible values: '', '0x00', '0xFF'")
+	flag.Parse()
+
+	var cfg config
+
+	switch {
+	case *erasePolarityFlag == "":
+	case strings.HasPrefix(*erasePolarityFlag, "0x"):
+		erasePolarity, err := strconv.ParseUint((*erasePolarityFlag)[2:], 16, 8)
+		if err != nil {
+			return config{}, nil, fmt.Errorf("unable to parse erase polarity '%s': %w", (*erasePolarityFlag)[2:], err)
+		}
+		cfg.ErasePolarity = &[]uint8{uint8(erasePolarity)}[0]
+	default:
+		erasePolarity, err := strconv.ParseUint(*erasePolarityFlag, 10, 8)
+		if err != nil {
+			return config{}, nil, fmt.Errorf("unable to parse erase polarity '%s': %w", *erasePolarityFlag, err)
+		}
+		cfg.ErasePolarity = &[]uint8{uint8(erasePolarity)}[0]
+	}
+
+	return cfg, flag.Args(), nil
 }
 
 func main() {
-	flag.Parse()
-	if err := utk.Run(flag.Args()...); err != nil {
+	cfg, args, err := parseArguments()
+	if err != nil {
+		panic(err)
+	}
+
+	if cfg.ErasePolarity != nil {
+		if err := uefi.SetErasePolarity(*cfg.ErasePolarity); err != nil {
+			panic(fmt.Errorf("unable to set erase polarity 0x%X: %w", *cfg.ErasePolarity, err))
+		}
+	}
+
+	if err := utk.Run(args...); err != nil {
 		log.Fatalf("%v", err)
 	}
 }
