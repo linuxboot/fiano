@@ -53,7 +53,7 @@ func (v *CreateFV) Visit(f uefi.Firmware) error {
 		if v.AbsOffset < offset {
 			return fmt.Errorf("cannot create FV at %#x, BIOS region starts at %#x", v.AbsOffset, offset)
 		}
-		if v.AbsOffset+v.Size >= end {
+		if v.AbsOffset+v.Size > end {
 			return fmt.Errorf("cannot create FV ending at %#x (%#x + %#x), BIOS region ends at %#x", v.AbsOffset+v.Size, v.AbsOffset, v.Size, end)
 		}
 
