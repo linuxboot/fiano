@@ -13,7 +13,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
-func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Insert, error) {
+func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Inserter, error) {
 	file, err := ioutil.ReadFile("../../integration/roms/testfile.ffs")
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUI
 	} else {
 		pred = FindFileGUIDPredicate(testGUID)
 	}
-	insert := &Insert{
+	insert := &Inserter{
 		Predicate:  pred,
 		NewFile:    ffs,
 		InsertType: insertType,
