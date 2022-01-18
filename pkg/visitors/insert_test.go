@@ -13,8 +13,12 @@ import (
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
-func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Insert, error) {
-	file, err := ioutil.ReadFile("../../integration/roms/testfile.ffs")
+const (
+	insertTestFile = "../../integration/roms/testfile.ffs"
+)
+
+func testRunObsoleteInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Insert, error) {
+	file, err := ioutil.ReadFile(insertTestFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +43,7 @@ func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUI
 	return insert, insert.Run(f)
 }
 
-func TestInsert(t *testing.T) {
+func TestObsoleteInsert(t *testing.T) {
 	var tests = []struct {
 		name string
 		InsertType
@@ -54,7 +58,7 @@ func TestInsert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			f := parseImage(t)
 
-			_, err := testRunInsert(t, f, test.InsertType, *testGUID)
+			_, err := testRunObsoleteInsert(t, f, test.InsertType, *testGUID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,6 +78,82 @@ func TestInsert(t *testing.T) {
 	}
 }
 
+func testInsertCLI(t *testing.T, whatType InsertWhatType, wherePreposition InsertWherePreposition) {
+	f := parseImage(t)
+
+	args := []string{
+		whatType.String(),
+	}
+	switch whatType {
+	case InsertWhatTypeFile:
+		args = append(args, insertTestFile)
+	case InsertWhatTypePadFile:
+		args = append(args, "256")
+	default:
+		t.Fatalf("unknown what-type '%s'", whatType)
+	}
+
+	args = append(args, wherePreposition.String(), testGUID.String())
+
+	visitor, err := genInsertFileCLI()(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := visitor.Run(f); err != nil {
+		t.Fatal(err)
+	}
+
+	switch whatType {
+	case InsertWhatTypeFile:
+		find := &Find{
+			Predicate: FindFileGUIDPredicate(*testGUID),
+		}
+		if err = find.Run(f); err != nil {
+			t.Fatal(err)
+		}
+		if len(find.Matches) != 2 {
+			t.Errorf("incorrect number of matches after insertion! expected 2, got %v", len(find.Matches))
+		}
+	case InsertWhatTypePadFile:
+		find := &Find{
+			Predicate: func(f uefi.Firmware) bool {
+				file, ok := f.(*uefi.File)
+				if !ok {
+					return false
+				}
+				if file.Header.GUID.String() != "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF" {
+					return false
+				}
+				if len(file.Buf()) != 256 {
+					return false
+				}
+				return true
+			},
+		}
+		if err = find.Run(f); err != nil {
+			t.Fatal(err)
+		}
+		if len(find.Matches) != 1 {
+			t.Errorf("incorrect number of matches after insertion! expected 1, got %v", len(find.Matches))
+		}
+	default:
+		t.Fatalf("unknown what-type '%s'", whatType)
+	}
+}
+
+func TestInsert(t *testing.T) {
+	for whatType := InsertWhatTypeUndefined + 1; whatType < EndOfInsertWhatType; whatType++ {
+		t.Run(whatType.String(), func(t *testing.T) {
+			for wherePreposition := InsertWherePrepositionUndefined + 1; wherePreposition < EndOfInsertWherePreposition; wherePreposition++ {
+				t.Run(wherePreposition.String(), func(t *testing.T) {
+					testInsertCLI(t, whatType, wherePreposition)
+				})
+			}
+		})
+	}
+}
+
 func TestDoubleFindInsert(t *testing.T) {
 	var tests = []struct {
 		name string
@@ -85,7 +165,7 @@ func TestDoubleFindInsert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			f := parseImage(t)
 
-			insert, err := testRunInsert(t, f, test.InsertType, *testGUID)
+			insert, err := testRunObsoleteInsert(t, f, test.InsertType, *testGUID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -113,7 +193,7 @@ func TestNoFindInsert(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			f := parseImage(t)
 
-			_, err := testRunInsert(t, f, test.InsertType,
+			_, err := testRunObsoleteInsert(t, f, test.InsertType,
 				*guid.MustParse("DECAFBAD-0000-0000-0000-000000000000"))
 			// It should fail due to no such file
 			if err == nil {
