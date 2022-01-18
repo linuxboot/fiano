@@ -57,7 +57,6 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -80,16 +79,8 @@ func parseArguments() (config, []string, error) {
 
 	var cfg config
 
-	switch {
-	case *erasePolarityFlag == "":
-	case strings.HasPrefix(*erasePolarityFlag, "0x"):
-		erasePolarity, err := strconv.ParseUint((*erasePolarityFlag)[2:], 16, 8)
-		if err != nil {
-			return config{}, nil, fmt.Errorf("unable to parse erase polarity '%s': %w", (*erasePolarityFlag)[2:], err)
-		}
-		cfg.ErasePolarity = &[]uint8{uint8(erasePolarity)}[0]
-	default:
-		erasePolarity, err := strconv.ParseUint(*erasePolarityFlag, 10, 8)
+	if *erasePolarityFlag != "" {
+		erasePolarity, err := strconv.ParseUint(*erasePolarityFlag, 0, 8)
 		if err != nil {
 			return config{}, nil, fmt.Errorf("unable to parse erase polarity '%s': %w", *erasePolarityFlag, err)
 		}
