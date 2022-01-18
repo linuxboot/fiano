@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 	"github.com/xaionaro-go/bytesextra"
 )
@@ -253,6 +254,9 @@ func EntryDataSegmentCoordinates(entry Entry, firmware io.ReadSeeker) (uint64, u
 func sliceOrCopyBytesFrom(r io.ReadSeeker, startIdx, endIdx uint64) ([]byte, error) {
 	switch r := r.(type) {
 	case *bytesextra.ReadWriteSeeker:
+		if err := check.BytesRange(uint(len(r.Storage)), int(startIdx), int(endIdx)); err != nil {
+			return nil, err
+		}
 		return r.Storage[startIdx:endIdx], nil
 	default:
 		return copyBytesFrom(r, startIdx, endIdx)
