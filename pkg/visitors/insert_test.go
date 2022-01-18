@@ -13,7 +13,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
-func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Inserter, error) {
+func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Insert, error) {
 	file, err := ioutil.ReadFile("../../integration/roms/testfile.ffs")
 	if err != nil {
 		t.Fatal(err)
@@ -25,12 +25,12 @@ func testRunInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUI
 	}
 	// Apply the visitor.
 	var pred FindPredicate
-	if insertType == InsertDXE {
+	if insertType == InsertTypeDXE {
 		pred = FindFileTypePredicate(uefi.FVFileTypeDXECore)
 	} else {
 		pred = FindFileGUIDPredicate(testGUID)
 	}
-	insert := &Inserter{
+	insert := &Insert{
 		Predicate:  pred,
 		NewFile:    ffs,
 		InsertType: insertType,
@@ -44,11 +44,11 @@ func TestInsert(t *testing.T) {
 		name string
 		InsertType
 	}{
-		{InsertFront.String(), InsertFront},
-		{InsertEnd.String(), InsertEnd},
-		{InsertAfter.String(), InsertAfter},
-		{InsertBefore.String(), InsertBefore},
-		{InsertDXE.String(), InsertDXE},
+		{InsertTypeFront.String(), InsertTypeFront},
+		{InsertTypeEnd.String(), InsertTypeEnd},
+		{InsertTypeAfter.String(), InsertTypeAfter},
+		{InsertTypeBefore.String(), InsertTypeBefore},
+		{InsertTypeDXE.String(), InsertTypeDXE},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -79,7 +79,7 @@ func TestDoubleFindInsert(t *testing.T) {
 		name string
 		InsertType
 	}{
-		{"insert_after double result", InsertAfter},
+		{"insert_after double result", InsertTypeAfter},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestNoFindInsert(t *testing.T) {
 		name string
 		InsertType
 	}{
-		{"insert_after no file", InsertAfter},
+		{"insert_after no file", InsertTypeAfter},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
