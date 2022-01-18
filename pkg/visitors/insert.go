@@ -24,32 +24,32 @@ const (
 
 	// These first two specify a firmware volume.
 
-	// InsertFront inserts a file at the beginning of the firmware volume,
+	// InsertTypeFront inserts a file at the beginning of the firmware volume,
 	// which is specified by 1) FVname GUID, or (File GUID/File name) of a file
 	// inside that FV.
-	InsertFront InsertType = iota
-	// InsertEnd inserts a file at the end of the specified firmware volume.
-	InsertEnd
+	InsertTypeFront InsertType = iota
+	// InsertTypeEnd inserts a file at the end of the specified firmware volume.
+	InsertTypeEnd
 
 	// These two specify a File to insert before or after
-	// InsertAfter inserts after the specified file,
+	// InsertTypeAfter inserts after the specified file,
 	// which is specified by a File GUID or File name.
-	InsertAfter
-	// InsertBefore inserts before the specified file.
-	InsertBefore
-	// InsertDXE inserts into the Dxe Firmware Volume. This works by searching
+	InsertTypeAfter
+	// InsertTypeBefore inserts before the specified file.
+	InsertTypeBefore
+	// InsertTypeDXE inserts into the Dxe Firmware Volume. This works by searching
 	// for the DxeCore first to identify the Dxe Firmware Volume.
-	InsertDXE
+	InsertTypeDXE
 
 	// == Not deprecated ==
 
-	// ReplaceFFS replaces the found file with the new FFS. This is used
+	// InsertTypeReplaceFFS replaces the found file with the new FFS. This is used
 	// as a shortcut for remove and insert combined, but also when we want to make
 	// sure that the starting offset of the new file is the same as the old.
-	ReplaceFFS
+	InsertTypeReplaceFFS
 	// TODO: Add InsertIn
 
-	// Insert is generalization of all Insert* above. Arguments:
+	// InsertTypeInsert is generalization of all InsertTypeInsert* above. Arguments:
 	// * The first argument specifies the type of what to insert (possible values: "file" or "pad_file")
 	// * The second argument specifies the content of what to insert:
 	//     - If the first argument is "file" then a path to the file content is expected.
@@ -61,19 +61,19 @@ const (
 	//
 	// A complete example: "pad_file 256 after FC510EE7-FFDC-11D4-BD41-0080C73C8881" means to insert a pad file
 	// of size 256 bytes after file with GUID "FC510EE7-FFDC-11D4-BD41-0080C73C8881".
-	Insert
+	InsertTypeInsert
 )
 
 var insertTypeNames = map[InsertType]string{
-	Insert:     "insert",
-	ReplaceFFS: "replace_ffs",
+	InsertTypeInsert:     "insert",
+	InsertTypeReplaceFFS: "replace_ffs",
 
 	// Deprecated:
-	InsertFront:  "insert_front",
-	InsertEnd:    "insert_end",
-	InsertAfter:  "insert_after",
-	InsertBefore: "insert_before",
-	InsertDXE:    "insert_dxe",
+	InsertTypeFront:  "insert_front",
+	InsertTypeEnd:    "insert_end",
+	InsertTypeAfter:  "insert_after",
+	InsertTypeBefore: "insert_before",
+	InsertTypeDXE:    "insert_dxe",
 }
 
 // String creates a string representation for the insert type.
@@ -164,8 +164,8 @@ func ParseInsertWherePreposition(s string) InsertWherePreposition {
 	return InsertWherePrepositionUndefined
 }
 
-// Inserter inserts a firmware file into an FV
-type Inserter struct {
+// Insert inserts a firmware file into an FV
+type Insert struct {
 	// TODO: use InsertWherePreposition to define the location, instead of InsertType
 
 	// Input
@@ -178,7 +178,7 @@ type Inserter struct {
 }
 
 // Run wraps Visit and performs some setup and teardown tasks.
-func (v *Inserter) Run(f uefi.Firmware) error {
+func (v *Insert) Run(f uefi.Firmware) error {
 	// First run "find" to generate a position to insert into.
 	find := Find{
 		Predicate: v.Predicate,
@@ -197,9 +197,9 @@ func (v *Inserter) Run(f uefi.Firmware) error {
 	// edit the FV directly.
 	if fvMatch, ok := find.Matches[0].(*uefi.FirmwareVolume); ok {
 		switch v.InsertType {
-		case InsertFront:
+		case InsertTypeFront:
 			fvMatch.Files = append([]*uefi.File{v.NewFile}, fvMatch.Files...)
-		case InsertEnd:
+		case InsertTypeEnd:
 			fvMatch.Files = append(fvMatch.Files, v.NewFile)
 		default:
 			return fmt.Errorf("matched FV but insert operation was %s, which only matches Files",
@@ -216,24 +216,24 @@ func (v *Inserter) Run(f uefi.Firmware) error {
 }
 
 // Visit applies the Insert visitor to any Firmware type.
-func (v *Inserter) Visit(f uefi.Firmware) error {
+func (v *Insert) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {
 	case *uefi.FirmwareVolume:
 		for i := 0; i < len(f.Files); i++ {
 			if f.Files[i] == v.FileMatch {
 				// TODO: use InsertWherePreposition to define the location, instead of InsertType
 				switch v.InsertType {
-				case InsertFront:
+				case InsertTypeFront:
 					f.Files = append([]*uefi.File{v.NewFile}, f.Files...)
-				case InsertDXE:
+				case InsertTypeDXE:
 					fallthrough
-				case InsertEnd:
+				case InsertTypeEnd:
 					f.Files = append(f.Files, v.NewFile)
-				case InsertAfter:
+				case InsertTypeAfter:
 					f.Files = append(f.Files[:i+1], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
-				case InsertBefore:
+				case InsertTypeBefore:
 					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i:]...)...)
-				case ReplaceFFS:
+				case InsertTypeReplaceFFS:
 					f.Files = append(f.Files[:i], append([]*uefi.File{v.NewFile}, f.Files[i+1:]...)...)
 				}
 				return nil
@@ -264,7 +264,7 @@ func genInsertRegularFileCLI(iType InsertType) func(args []string) (uefi.Visitor
 		var err error
 		var filename string
 
-		if iType == InsertDXE {
+		if iType == InsertTypeDXE {
 			pred = FindFileTypePredicate(uefi.FVFileTypeDXECore)
 			filename = args[0]
 		} else {
@@ -281,7 +281,7 @@ func genInsertRegularFileCLI(iType InsertType) func(args []string) (uefi.Visitor
 		}
 
 		// Insert File.
-		return &Inserter{
+		return &Insert{
 			Predicate:  pred,
 			NewFile:    file,
 			InsertType: iType,
@@ -331,19 +331,19 @@ func genInsertFileCLI() func(args []string) (uefi.Visitor, error) {
 		var insertType InsertType
 		switch wherePreposition {
 		case InsertWherePrepositionFront:
-			insertType = InsertFront
+			insertType = InsertTypeFront
 		case InsertWherePrepositionEnd:
-			insertType = InsertEnd
+			insertType = InsertTypeEnd
 		case InsertWherePrepositionAfter:
-			insertType = InsertAfter
+			insertType = InsertTypeAfter
 		case InsertWherePrepositionBefore:
-			insertType = InsertBefore
+			insertType = InsertTypeBefore
 		default:
 			return nil, fmt.Errorf("where-preposition '%s' is not supported, yet", wherePreposition)
 		}
 
 		// Insert File.
-		return &Inserter{
+		return &Insert{
 			Predicate: pred,
 			NewFile:   file,
 			// TODO: use InsertWherePreposition to define the location, instead of InsertType
@@ -353,18 +353,18 @@ func genInsertFileCLI() func(args []string) (uefi.Visitor, error) {
 }
 
 func init() {
-	RegisterCLI(insertTypeNames[Insert],
+	RegisterCLI(insertTypeNames[InsertTypeInsert],
 		"insert a file", 4, genInsertFileCLI())
-	RegisterCLI(insertTypeNames[ReplaceFFS],
-		"replace a file with another file", 2, genInsertRegularFileCLI(ReplaceFFS))
-	RegisterCLI(insertTypeNames[InsertFront],
-		"(deprecated) insert a file at the beginning of a firmware volume", 2, genInsertRegularFileCLI(InsertFront))
-	RegisterCLI(insertTypeNames[InsertEnd],
-		"(deprecated) insert a file at the end of a firmware volume", 2, genInsertRegularFileCLI(InsertEnd))
-	RegisterCLI(insertTypeNames[InsertDXE],
-		"(deprecated) insert a file at the end of the DXE firmware volume", 1, genInsertRegularFileCLI(InsertDXE))
-	RegisterCLI(insertTypeNames[InsertAfter],
-		"(deprecated) insert a file after another file", 2, genInsertRegularFileCLI(InsertAfter))
-	RegisterCLI(insertTypeNames[InsertBefore],
-		"(deprecated) insert a file before another file", 2, genInsertRegularFileCLI(InsertBefore))
+	RegisterCLI(insertTypeNames[InsertTypeReplaceFFS],
+		"replace a file with another file", 2, genInsertRegularFileCLI(InsertTypeReplaceFFS))
+	RegisterCLI(insertTypeNames[InsertTypeFront],
+		"(deprecated) insert a file at the beginning of a firmware volume", 2, genInsertRegularFileCLI(InsertTypeFront))
+	RegisterCLI(insertTypeNames[InsertTypeEnd],
+		"(deprecated) insert a file at the end of a firmware volume", 2, genInsertRegularFileCLI(InsertTypeEnd))
+	RegisterCLI(insertTypeNames[InsertTypeDXE],
+		"(deprecated) insert a file at the end of the DXE firmware volume", 1, genInsertRegularFileCLI(InsertTypeDXE))
+	RegisterCLI(insertTypeNames[InsertTypeAfter],
+		"(deprecated) insert a file after another file", 2, genInsertRegularFileCLI(InsertTypeAfter))
+	RegisterCLI(insertTypeNames[InsertTypeBefore],
+		"(deprecated) insert a file before another file", 2, genInsertRegularFileCLI(InsertTypeBefore))
 }
