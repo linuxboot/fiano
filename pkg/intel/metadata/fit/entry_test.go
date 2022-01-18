@@ -61,31 +61,32 @@ func TestRehashEntry(t *testing.T) {
 	}
 }
 
-func TestEntriesInject(t *testing.T) {
+func getSampleEntries(t *testing.T) Entries {
+	var entries Entries
+	headerEntry := &EntryFITHeaderEntry{}
+	skipEntry := &EntrySkip{}
 
-	getEntries := func(t *testing.T) Entries {
-		var entries Entries
-		headerEntry := &EntryFITHeaderEntry{}
-		skipEntry := &EntrySkip{}
-
-		kmEntry := &EntryKeyManifestRecord{}
-		{
-			km := key.NewManifest()
-			var buf bytes.Buffer
-			_, err := km.WriteTo(&buf)
-			require.NoError(t, err)
-			kmEntry.DataSegmentBytes = buf.Bytes()
-		}
-		kmEntry.Headers.Address.SetOffset(256, 1024)
-
-		entries = append(entries, headerEntry)
-		entries = append(entries, skipEntry)
-		entries = append(entries, kmEntry)
-		return entries
+	kmEntry := &EntryKeyManifestRecord{}
+	{
+		km := key.NewManifest()
+		var buf bytes.Buffer
+		_, err := km.WriteTo(&buf)
+		require.NoError(t, err)
+		kmEntry.DataSegmentBytes = buf.Bytes()
 	}
+	kmEntry.Headers.Address.SetOffset(256, 1024)
 
+	entries = append(entries, headerEntry)
+	entries = append(entries, skipEntry)
+	entries = append(entries, kmEntry)
+	err := entries.RecalculateHeaders()
+	require.NoError(t, err)
+	return entries
+}
+
+func TestEntriesInject(t *testing.T) {
 	testResult := func(t *testing.T, b []byte) {
-		entries := getEntries(t)
+		entries := getSampleEntries(t)
 
 		parsedEntries, err := GetEntries(b)
 		require.NoError(t, err)
@@ -96,22 +97,18 @@ func TestEntriesInject(t *testing.T) {
 	}
 
 	t.Run("Inject", func(t *testing.T) {
-		entries := getEntries(t)
-		err := entries.RecalculateHeaders()
-		require.NoError(t, err)
+		entries := getSampleEntries(t)
 		b := make([]byte, 1024)
-		err = entries.Inject(b, 512)
+		err := entries.Inject(b, 512)
 		require.NoError(t, err)
 
 		testResult(t, b)
 	})
 
 	t.Run("InjectTo", func(t *testing.T) {
-		entries := getEntries(t)
-		err := entries.RecalculateHeaders()
-		require.NoError(t, err)
+		entries := getSampleEntries(t)
 		b := make([]byte, 1024)
-		err = entries.InjectTo(bytesextra.NewReadWriteSeeker(b), 512)
+		err := entries.InjectTo(bytesextra.NewReadWriteSeeker(b), 512)
 		require.NoError(t, err)
 
 		testResult(t, b)
