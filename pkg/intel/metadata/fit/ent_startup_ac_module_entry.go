@@ -128,8 +128,9 @@ type BCDDate uint32
 type SizeM4 uint32
 
 // Size return the size in bytes
-func (size SizeM4) Size() uint64   { return uint64(size) << 2 }
-func (size SizeM4) String() string { return fmt.Sprintf("%d*4", uint32(size)) }
+func (size SizeM4) Size() uint64      { return uint64(size) << 2 }
+func (size SizeM4) String() string    { return fmt.Sprintf("%d*4", uint32(size)) }
+func (size *SizeM4) SetSize(v uint64) { *size = SizeM4(v >> 2) }
 
 // TXTSVN is the TXT Security Version Number
 type TXTSVN uint16
