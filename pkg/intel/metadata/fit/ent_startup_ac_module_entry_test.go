@@ -5,6 +5,7 @@
 package fit
 
 import (
+	"bytes"
 	"encoding/binary"
 	"math/rand"
 	"testing"
@@ -36,6 +37,25 @@ func TestEntrySACM_ParseData(t *testing.T) {
 		},
 	}
 
+	testPositive := func(t *testing.T, headersSize int) {
+		data, err := entry.ParseData()
+		require.NoError(t, err)
+
+		_ = data.GetRSAPubKey()
+		require.Zero(t, len(data.UserArea))
+		require.Zero(t, len(entry.DataSegmentBytes)-headersSize)
+		require.NotZero(t, data.GetKeySize())
+
+		var buf bytes.Buffer
+		_, err = data.WriteTo(&buf)
+		require.NoError(t, err)
+
+		dataCopy, err := ParseSACMData(&buf)
+		require.NoError(t, err)
+
+		require.Equal(t, data, dataCopy)
+	}
+
 	t.Run("SACMv0", func(t *testing.T) {
 		binary.LittleEndian.PutUint32(entry.DataSegmentBytes[versionOffset:versionEndOffset], uint32(ACHeaderVersion0))
 		binary.LittleEndian.PutUint32(entry.DataSegmentBytes[sizeOffset:sizeEndOffset], uint32(entrySACMData0Size)>>2)
@@ -44,13 +64,7 @@ func TestEntrySACM_ParseData(t *testing.T) {
 		entry.DataSegmentBytes = entry.DataSegmentBytes[:dataSize]
 		t.Run("positive", func(t *testing.T) {
 			binary.LittleEndian.PutUint32(entry.DataSegmentBytes[keySizeOffset:keySizeEndOffset], 256>>2)
-
-			data, err := entry.ParseData()
-			require.NoError(t, err)
-
-			_ = data.GetRSAPubKey()
-			require.Zero(t, len(data.UserArea))
-			require.Zero(t, len(entry.DataSegmentBytes)-int(entrySACMData0Size))
+			testPositive(t, int(entrySACMData0Size))
 		})
 	})
 
@@ -62,13 +76,7 @@ func TestEntrySACM_ParseData(t *testing.T) {
 		entry.DataSegmentBytes = entry.DataSegmentBytes[:dataSize]
 		t.Run("positive", func(t *testing.T) {
 			binary.LittleEndian.PutUint32(entry.DataSegmentBytes[keySizeOffset:keySizeEndOffset], 384>>2)
-
-			data, err := entry.ParseData()
-			require.NoError(t, err)
-
-			_ = data.GetRSAPubKey()
-			require.Zero(t, len(data.UserArea))
-			require.Zero(t, len(entry.DataSegmentBytes)-int(entrySACMData3Size))
+			testPositive(t, int(entrySACMData3Size))
 		})
 		t.Run("negative_keySize", func(t *testing.T) {
 			binary.LittleEndian.PutUint32(entry.DataSegmentBytes[keySizeOffset:keySizeEndOffset], 256>>2)
