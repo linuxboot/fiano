@@ -80,7 +80,7 @@ func (m *Signature) SetSignatureByData(sig SignatureDataInterface, hashAlgo Algo
 	case SignatureRSAPSS:
 		m.SigScheme = AlgRSAPSS
 		if hashAlgo.IsNull() {
-			m.HashAlg = AlgSHA256
+			m.HashAlg = AlgSHA384
 		} else {
 			m.HashAlg = hashAlgo
 		}
