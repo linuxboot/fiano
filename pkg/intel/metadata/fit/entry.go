@@ -211,7 +211,10 @@ func copyBytesFrom(r io.ReadSeeker, startIdx, endIdx uint64) ([]byte, error) {
 		return nil, fmt.Errorf("endIdx < startIdx: %d < %d", endIdx, startIdx)
 	}
 
-	size := endIdx - startIdx
+	return readBytesFromReader(r, endIdx-startIdx)
+}
+
+func readBytesFromReader(r io.Reader, size uint64) ([]byte, error) {
 	result := make([]byte, size)
 	written, err := io.CopyN(bytesextra.NewReadWriteSeeker(result), r, int64(size))
 	if err != nil {
