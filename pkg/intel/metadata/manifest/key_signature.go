@@ -28,7 +28,7 @@ func (s *KeySignature) Verify(signedData []byte) error {
 	if err != nil {
 		return fmt.Errorf("invalid public key: %w", err)
 	}
-	err = sig.Verify(pk, signedData)
+	err = sig.Verify(pk, s.Signature.HashAlg, signedData)
 	if err != nil {
 		return fmt.Errorf("verification failed: %w", err)
 	}
