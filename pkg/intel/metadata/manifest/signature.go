@@ -157,14 +157,14 @@ func (m *Signature) SetSignatureData(sig SignatureDataInterface) error {
 //
 // if signAlgo is zero then it is detected automatically, based on the type
 // of the provided private key.
-func (m *Signature) SetSignature(signAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
+func (m *Signature) SetSignature(signAlgo Algorithm, hashAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
 	m.Version = 0x10
+	m.HashAlg = hashAlgo
 	signData, err := NewSignatureData(signAlgo, privKey, signedData)
 	if err != nil {
 		return fmt.Errorf("unable to construct the signature data: %w", err)
 	}
-
-	err = m.SetSignatureByData(signData, AlgNull)
+	err = m.SetSignatureByData(signData, m.HashAlg)
 	if err != nil {
 		return fmt.Errorf("unable to set the signature: %w", err)
 	}

@@ -50,10 +50,11 @@ type Manifest struct {
 
 func (m *Manifest) SetSignature(
 	algo manifest.Algorithm,
+	hashAlgo manifest.Algorithm,
 	privKey crypto.Signer,
 	signedData []byte,
 ) error {
-	err := m.KeyAndSignature.SetSignature(algo, privKey, signedData)
+	err := m.KeyAndSignature.SetSignature(algo, hashAlgo, privKey, signedData)
 	if err != nil {
 		return fmt.Errorf("unable to set the signature: %w", err)
 	}
