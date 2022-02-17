@@ -124,9 +124,11 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryValidation() {
 	amdFw, err := ParseAMDFirmware(suite.firmwareImage)
 	require.NoError(suite.T(), err)
 
-	pspLevel := uint(2)
+	keyDB, err := GetKeys(amdFw, 2)
+	require.NoError(suite.T(), err)
+
 	smuOffChipFirmwareType := "12"
-	signatureValidation, err := ValidatePSPEntries(amdFw, pspLevel, []string{smuOffChipFirmwareType})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{smuOffChipFirmwareType})
 
 	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), 1, len(signatureValidation))
@@ -157,10 +159,11 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongSignature(
 		}
 	}
 
-	pspLevel := uint(2)
+	keyDB, err := GetKeys(amdFw, 2)
+	require.NoError(suite.T(), err)
 
 	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
-	signatureValidation, err := ValidatePSPEntries(amdFw, pspLevel, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
 	require.NoError(suite.T(), err)
 
 	require.Equal(suite.T(), 1, len(signatureValidation))
@@ -197,10 +200,11 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongKeys() {
 		}
 	}
 
-	pspLevel := uint(2)
+	keyDB, err := GetKeys(amdFw, 2)
+	require.NoError(suite.T(), err)
 
 	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
-	signatureValidation, err := ValidatePSPEntries(amdFw, pspLevel, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
 	require.NoError(suite.T(), err)
 
 	require.Equal(suite.T(), 1, len(signatureValidation))
