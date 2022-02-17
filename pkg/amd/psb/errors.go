@@ -34,3 +34,13 @@ type UnknownSigningKeyError struct {
 func (s *UnknownSigningKeyError) Error() string {
 	return fmt.Sprintf("key ID %s is unknown", s.keyID.Hex())
 }
+
+// ErrNotFound describes a situation when particular item is not found
+type ErrNotFound struct {
+	Item string
+}
+
+// Error implements error.
+func (err ErrNotFound) Error() string {
+	return fmt.Sprintf("'%s' is not found", err.Item)
+}

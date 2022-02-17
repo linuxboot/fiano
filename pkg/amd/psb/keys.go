@@ -361,7 +361,7 @@ func GetKeys(amdFw *amd_manifest.AMDFirmware, level uint) (KeySet, error) {
 	}
 
 	// Extract ABL signing key (entry 0x0A in PSP Directory), which is signed with AMD Public Key.
-	pubKeyBytes, err := extractRawEntry(amdFw, level, "psp", uint64(ABLPublicKey))
+	pubKeyBytes, err := ExtractPSPEntry(amdFw, level, ABLPublicKey)
 	if err != nil {
 		return keySet, fmt.Errorf("could not extract raw PSP entry for ABL Public Key")
 	}
@@ -376,7 +376,7 @@ func GetKeys(amdFw *amd_manifest.AMDFirmware, level uint) (KeySet, error) {
 	}
 
 	// Extract OEM signing key (entry 0x05 in BIOS Directory table)
-	pubKeyBytes, err = extractRawEntry(amdFw, level, "bios", uint64(OEMSigningKeyEntry))
+	pubKeyBytes, err = ExtractBIOSEntry(amdFw, level, OEMSigningKeyEntry, -1)
 	if err != nil {
 		return keySet, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key")
 	}

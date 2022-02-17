@@ -157,31 +157,24 @@ func (_type PSPEntryType) String() string {
 	return "UNKNOWN"
 }
 
-func getPSPTable(amdFw *amd_manifest.AMDFirmware, pspLevel uint) (*amd_manifest.PSPDirectoryTable, error) {
-	var pspDirectory *amd_manifest.PSPDirectoryTable
-	pspFw := amdFw.PSPFirmware()
-
+func getPSPTable(pspFirmware *amd_manifest.PSPFirmware, pspLevel uint) (*amd_manifest.PSPDirectoryTable, error) {
 	switch pspLevel {
 	case 1:
-		pspDirectory = pspFw.PSPDirectoryLevel1
+		return pspFirmware.PSPDirectoryLevel1, nil
 	case 2:
-		pspDirectory = pspFw.PSPDirectoryLevel2
-	default:
-		return nil, fmt.Errorf("cannot extract raw PSP entry, invalid PSP Directory Level requested: %d", pspLevel)
+		return pspFirmware.PSPDirectoryLevel2, nil
 	}
-
-	return pspDirectory, nil
+	return nil, fmt.Errorf("cannot extract raw PSP entry, invalid PSP Directory Level requested: %d", pspLevel)
 }
 
 // OutputPSPEntries outputs the PSP entries in an ASCII table format
 func OutputPSPEntries(amdFw *amd_manifest.AMDFirmware) error {
-
-	pspDirectoryLevel1Table, err := getPSPTable(amdFw, 1)
+	pspDirectoryLevel1Table, err := getPSPTable(amdFw.PSPFirmware(), 1)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve PSP Directory Level 1 Entries: %w", err)
 	}
 
-	pspDirectoryLevel2Table, err := getPSPTable(amdFw, 2)
+	pspDirectoryLevel2Table, err := getPSPTable(amdFw.PSPFirmware(), 2)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve PSP Directory Level 2 Entries: %w", err)
 	}
@@ -222,7 +215,6 @@ func OutputPSPEntries(amdFw *amd_manifest.AMDFirmware) error {
 
 // ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
 func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entries []string) ([]SignatureValidationResult, error) {
-
 	keyDB, err := GetKeys(amdFw, pspLevel)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract key database: %w", err)
@@ -231,12 +223,12 @@ func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entries 
 	validationResults := make([]SignatureValidationResult, 0, len(entries))
 
 	for _, entry := range entries {
-		id, err := strconv.ParseInt(entry, 16, 64)
+		id, err := strconv.ParseInt(entry, 16, 32)
 		if err != nil {
 			return nil, fmt.Errorf("could not parse hexadecimal entry: %w", err)
 		}
 
-		data, err := extractRawEntry(amdFw, pspLevel, "psp", uint64(id))
+		data, err := ExtractPSPEntry(amdFw, pspLevel, amd_manifest.PSPDirectoryTableEntryType(id))
 		if err != nil {
 			return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
 		}
