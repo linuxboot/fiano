@@ -177,7 +177,7 @@ func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet 
 	 * Public Root Keys, so we are forced to use PSP Directory
 	 * Level 1 to get them, and not have it configurable
 	 */
-	pubKeyBytes, err := extractRawEntry(amdFw, uint(1), "psp", uint64(AMDPublicKeyEntry))
+	pubKeyBytes, err := ExtractPSPEntry(amdFw, 1, AMDPublicKeyEntry)
 	if err != nil {
 		return fmt.Errorf("could not extract raw PSP entry for AMD Public Key: %w", err)
 	}
@@ -193,7 +193,7 @@ func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet 
 		return fmt.Errorf("could not add AMD key to the key database: %w", err)
 	}
 
-	data, err := extractRawEntry(amdFw, pspLevel, "psp", uint64(KeyDatabaseEntry))
+	data, err := ExtractPSPEntry(amdFw, pspLevel, KeyDatabaseEntry)
 	if err != nil {
 		return fmt.Errorf("could not extract entry 0x%x (KeyDatabaseEntry) from PSP table: %w", KeyDatabaseEntry, err)
 	}

@@ -61,31 +61,24 @@ func (_type BIOSEntryType) String() string {
 
 }
 
-func getBIOSTable(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*amd_manifest.BIOSDirectoryTable, error) {
-	var biosDirectory *amd_manifest.BIOSDirectoryTable
-
-	pspFw := amdFw.PSPFirmware()
-
+func getBIOSTable(pspFirmware *amd_manifest.PSPFirmware, biosLevel uint) (*amd_manifest.BIOSDirectoryTable, error) {
 	switch biosLevel {
 	case 1:
-		biosDirectory = pspFw.BIOSDirectoryLevel1
+		return pspFirmware.BIOSDirectoryLevel1, nil
 	case 2:
-		biosDirectory = pspFw.BIOSDirectoryLevel2
-	default:
-		return nil, fmt.Errorf("cannot extract key database, invalid BIOS Directory Level requested: %d", biosLevel)
+		return pspFirmware.BIOSDirectoryLevel2, nil
 	}
-	return biosDirectory, nil
+	return nil, fmt.Errorf("cannot extract key database, invalid BIOS Directory Level requested: %d", biosLevel)
 }
 
 // OutputBIOSEntries outputs the BIOS entries in an ASCII table format
 func OutputBIOSEntries(amdFw *amd_manifest.AMDFirmware) error {
-
-	biosDirectoryLevel1Table, err := getBIOSTable(amdFw, 1)
+	biosDirectoryLevel1Table, err := getBIOSTable(amdFw.PSPFirmware(), 1)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve BIOS Directory Level 1 Entries: %w", err)
 	}
 
-	biosDirectoryLevel2Table, err := getBIOSTable(amdFw, 2)
+	biosDirectoryLevel2Table, err := getBIOSTable(amdFw.PSPFirmware(), 2)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve BIOS Directory Level 2 Entries: %w", err)
 	}
@@ -175,12 +168,12 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 	}
 
 	// extract RTM Volume and signature
-	rtmVolume, err := extractRawEntry(amdFw, biosLevel, "bios", uint64(BIOSRTMVolumeEntry))
+	rtmVolume, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMVolumeEntry, -1)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
-	rtmVolumeSignature, err := extractRawEntry(amdFw, biosLevel, "bios", uint64(BIOSRTMSignatureEntry))
+	rtmVolumeSignature, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMSignatureEntry, -1)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
 	}
