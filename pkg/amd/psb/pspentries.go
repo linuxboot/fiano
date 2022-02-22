@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
@@ -15,6 +14,30 @@ import (
 const (
 	// AMDPublicKeyEntry denotes AMD public key entry in PSP Directory table
 	AMDPublicKeyEntry amd_manifest.PSPDirectoryTableEntryType = 0x00
+
+	// SMUOffChipFirmwareEntry points to a region of firmware containing SMU offchip firmware
+	SMUOffChipFirmwareEntry amd_manifest.PSPDirectoryTableEntryType = 0x08
+
+	// UnlockDebugImageEntry points to a region of firmware containing PSP early secure unlock debug image
+	UnlockDebugImageEntry amd_manifest.PSPDirectoryTableEntryType = 0x13
+
+	// SecurityPolicyBinaryEntry points to a region of firmware containing Security Policy Binary
+	SecurityPolicyBinaryEntry amd_manifest.PSPDirectoryTableEntryType = 0x24
+
+	// MP5FirmwareEntry points to a region of firmware containing MP5 Firmware
+	MP5FirmwareEntry amd_manifest.PSPDirectoryTableEntryType = 0x2A
+
+	// AGESABinary0Entry points to a region of firmware containing PSP AGESA Binary 0
+	AGESABinary0Entry amd_manifest.PSPDirectoryTableEntryType = 0x30
+
+	// SEVCodeEntry points to a region of firmware containing SEV Code
+	SEVCodeEntry amd_manifest.PSPDirectoryTableEntryType = 0x39
+
+	// DXIOPHYSRAMFirmwareEntry points to a region of firmware containing DXIO PHY SRAM firmware
+	DXIOPHYSRAMFirmwareEntry amd_manifest.PSPDirectoryTableEntryType = 0x42
+
+	//DRTMTAEntry points to a region of firmware containing DRTM TA
+	DRTMTAEntry amd_manifest.PSPDirectoryTableEntryType = 0x47
 
 	// KeyDatabaseEntry points to region of firmware containing key database
 	KeyDatabaseEntry amd_manifest.PSPDirectoryTableEntryType = 0x50
@@ -214,21 +237,16 @@ func OutputPSPEntries(amdFw *amd_manifest.AMDFirmware) error {
 }
 
 // ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
-func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, directory DirectoryType, entries []string) ([]SignatureValidationResult, error) {
+func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, directory DirectoryType, entries []uint32) ([]SignatureValidationResult, error) {
 	validationResults := make([]SignatureValidationResult, 0, len(entries))
 
 	for _, entry := range entries {
-		id, err := strconv.ParseInt(entry, 16, 32)
+		entries, err := GetEntries(amdFw.PSPFirmware(), directory, entry)
 		if err != nil {
-			return nil, fmt.Errorf("could not parse hexadecimal entry: %w", err)
-		}
-
-		entries, err := GetEntries(amdFw.PSPFirmware(), directory, uint32(id))
-		if err != nil {
-			return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", id, err)
+			return nil, fmt.Errorf("could not extract entry 0x%x from PSP table: %w", entry, err)
 		}
 		if len(entries) == 0 {
-			return nil, fmt.Errorf("no entries %d are found in '%s'", id, directory)
+			return nil, fmt.Errorf("no entries %d are found in '%s'", entry, directory)
 		}
 
 		image := amdFw.Firmware().ImageBytes()

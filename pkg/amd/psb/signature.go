@@ -121,3 +121,8 @@ func (v *SignatureValidationResult) String() string {
 	}
 	return str.String()
 }
+
+// Error returns a signature verification error if any
+func (v *SignatureValidationResult) Error() error {
+	return v.err
+}
