@@ -241,9 +241,7 @@ func GetEntries(pspFirmware *amd_manifest.PSPFirmware, directory DirectoryType, 
 		}
 
 		for _, entry := range biosEntries {
-			if entry.Type == amd_manifest.BIOSDirectoryTableEntryType(entryID) {
-				entries = append(entries, bytes2.Range{Offset: entry.SourceAddress, Length: uint64(entry.Size)})
-			}
+			entries = append(entries, bytes2.Range{Offset: entry.SourceAddress, Length: uint64(entry.Size)})
 		}
 	default:
 		return nil, fmt.Errorf("unsopprted directory type: %s", directory)

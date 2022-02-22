@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -127,8 +126,7 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryValidation() {
 	keyDB, err := GetKeys(amdFw, 2)
 	require.NoError(suite.T(), err)
 
-	smuOffChipFirmwareType := "12"
-	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{smuOffChipFirmwareType})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []uint32{0x12})
 
 	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), 1, len(signatureValidation))
@@ -163,7 +161,7 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongSignature(
 	require.NoError(suite.T(), err)
 
 	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
-	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []uint32{uint32(smuOffChipFirmwareType)})
 	require.NoError(suite.T(), err)
 
 	require.Equal(suite.T(), 1, len(signatureValidation))
@@ -204,7 +202,7 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongKeys() {
 	require.NoError(suite.T(), err)
 
 	// ValidatePSPEntries will succeed, but the signature validation object returned will hold a signature check error
-	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []string{fmt.Sprintf("%x", smuOffChipFirmwareType)})
+	signatureValidation, err := ValidatePSPEntries(amdFw, keyDB, PSPDirectoryLevel2, []uint32{uint32(smuOffChipFirmwareType)})
 	require.NoError(suite.T(), err)
 
 	require.Equal(suite.T(), 1, len(signatureValidation))
