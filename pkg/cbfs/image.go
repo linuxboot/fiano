@@ -159,11 +159,12 @@ func (i *Image) Update() error {
 }
 
 type mImage struct {
+	Offset   uint32
 	Segments []ReadWriter
 }
 
 func (i *Image) MarshalJSON() ([]byte, error) {
-	return json.Marshal(mImage{Segments: i.Segs})
+	return json.Marshal(mImage{Segments: i.Segs, Offset: i.Area.Offset})
 }
 
 func (i *Image) String() string {
