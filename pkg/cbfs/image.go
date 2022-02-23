@@ -76,6 +76,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 		}
 		Debug("It is %v type %v", f, f.Type)
 		f.RecordStart = uint32(off)
+		Debug("Starting at %#02x + %#02x", i.Area.Offset, f.RecordStart)
 		nameStart, err := r.Seek(0, io.SeekCurrent)
 		if err != nil {
 			return nil, fmt.Errorf("Getting file offset for name: %v", err)
