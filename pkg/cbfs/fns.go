@@ -9,6 +9,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
+	"unicode"
 )
 
 var Debug = func(format string, v ...interface{}) {}
@@ -113,6 +115,18 @@ func recString(n string, off uint32, typ string, sz uint32, compress string) str
 	return fmt.Sprintf("%-32s 0x%-8x %-24s 0x%-8x %-4s", n, off, typ, sz, compress)
 }
 
+// Clean up non-printable and other characters. 0xfffd is the Unicode tofu char,
+// aka 'REPLACEMENT CHARACTER': https://unicodemap.org/details/0xFFFD/index.html
+// Would occur e.g. from `0x66616c6c6261636b2f726f6d737461676500...00ff...ff`.
+func cleanString(n string) string {
+	return strings.Map(func(r rune) rune {
+		if r != 0xfffd && (unicode.IsPrint(r) || unicode.IsGraphic(r)) {
+			return r
+		}
+		return -1
+	}, n)
+}
+
 // ReadNameAndAttributes reads the variable CBFS file attribute after the fixed CBFS header
 // That is the filename, CBFS Attribute, Hashes, ...
 func ReadName(r io.Reader, f *File, size uint32) error {
@@ -122,7 +136,8 @@ func ReadName(r io.Reader, f *File, size uint32) error {
 		Debug("ReadName failed:%v", err)
 		return err
 	}
-	Debug("ReadName gets %#02x", b)
+	fname := cleanString(string(b))
+	Debug("ReadName gets '%s' (%#02x)", fname, b)
 	if n != len(b) {
 		err = fmt.Errorf("ReadName: got %d, want %d for name", n, len(b))
 		Debug("ReadName short: %v", err)
