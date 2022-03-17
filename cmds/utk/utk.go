@@ -72,6 +72,9 @@ func init() {
 
 func main() {
 	flag.Parse()
+	if len(flag.Args()) == 0 || flag.Args()[0] == "help" {
+		flag.Usage()
+	}
 	if err := utk.Run(flag.Args()...); err != nil {
 		log.Fatalf("%v", err)
 	}
