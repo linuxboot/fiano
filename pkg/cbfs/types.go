@@ -247,6 +247,10 @@ type BootBlockRecord struct {
 	File
 }
 
+type BootSplashRecord struct {
+	File
+}
+
 type SPDRecord struct {
 	File
 }
