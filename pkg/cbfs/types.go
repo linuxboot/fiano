@@ -243,6 +243,10 @@ type MicrocodeRecord struct {
 	File
 }
 
+type OptionROMRecord struct {
+	File
+}
+
 type BootBlockRecord struct {
 	File
 }
