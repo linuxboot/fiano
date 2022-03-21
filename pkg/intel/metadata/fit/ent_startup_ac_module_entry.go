@@ -5,15 +5,16 @@
 package fit
 
 import (
-	"bytes"
 	"crypto/rsa"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math/big"
+	"reflect"
 
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
+	"github.com/xaionaro-go/bytesextra"
 )
 
 // EntrySACM represents a FIT entry of type "Startup AC Module Entry" (0x02)
@@ -52,6 +53,9 @@ func (entry *EntrySACM) CustomRecalculateHeaders() error {
 // EntrySACMDataInterface is the interface of a startup AC module
 // data (of any version)
 type EntrySACMDataInterface interface {
+	io.ReadWriter
+	io.ReaderFrom
+	io.WriterTo
 
 	// Field getters:
 
@@ -124,8 +128,9 @@ type BCDDate uint32
 type SizeM4 uint32
 
 // Size return the size in bytes
-func (size SizeM4) Size() uint64   { return uint64(size) << 2 }
-func (size SizeM4) String() string { return fmt.Sprintf("%d*4", uint32(size)) }
+func (size SizeM4) Size() uint64      { return uint64(size) << 2 }
+func (size SizeM4) String() string    { return fmt.Sprintf("%d*4", uint32(size)) }
+func (size *SizeM4) SetSize(v uint64) { *size = SizeM4(v >> 2) }
 
 // TXTSVN is the TXT Security Version Number
 type TXTSVN uint16
@@ -182,6 +187,38 @@ type EntrySACMDataCommon struct {
 	Reserved2       [64]byte
 	KeySize         SizeM4
 	ScratchSize     SizeM4
+}
+
+var entrySACMDataCommonSize = uint(binary.Size(EntrySACMDataCommon{}))
+
+// Read parses the ACM common headers
+func (entryData *EntrySACMDataCommon) Read(b []byte) (int, error) {
+	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// ReadFrom parses the ACM common headers
+func (entryData *EntrySACMDataCommon) ReadFrom(r io.Reader) (int64, error) {
+	err := binary.Read(r, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMDataCommonSize), nil
+}
+
+// Write compiles the SACM common headers into a binary representation
+func (entryData *EntrySACMDataCommon) Write(b []byte) (int, error) {
+	n, err := entryData.WriteTo(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// WriteTo compiles the SACM common headers into a binary representation
+func (entryData *EntrySACMDataCommon) WriteTo(w io.Writer) (int64, error) {
+	err := binary.Write(w, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMDataCommonSize), nil
 }
 
 // GetModuleType returns the type of AC module
@@ -314,6 +351,36 @@ type EntrySACMData0 struct {
 
 var entrySACMData0Size = uint(binary.Size(EntrySACMData0{}))
 
+// Read parses the ACM v0 headers
+func (entryData *EntrySACMData0) Read(b []byte) (int, error) {
+	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// ReadFrom parses the ACM v0 headers
+func (entryData *EntrySACMData0) ReadFrom(r io.Reader) (int64, error) {
+	err := binary.Read(r, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData0Size), nil
+}
+
+// Write compiles the SACM v0 headers into a binary representation
+func (entryData *EntrySACMData0) Write(b []byte) (int, error) {
+	n, err := entryData.WriteTo(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// WriteTo compiles the SACM v0 headers into a binary representation
+func (entryData *EntrySACMData0) WriteTo(w io.Writer) (int64, error) {
+	err := binary.Write(w, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData0Size), nil
+}
+
 // GetRSAPubKey returns the RSA public key
 func (entryData *EntrySACMData0) GetRSAPubKey() rsa.PublicKey {
 	pubKey := rsa.PublicKey{
@@ -353,6 +420,36 @@ type EntrySACMData3 struct {
 
 var entrySACMData3Size = uint(binary.Size(EntrySACMData3{}))
 
+// Read parses the ACM v3 headers
+func (entryData *EntrySACMData3) Read(b []byte) (int, error) {
+	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// ReadFrom parses the ACM v3 headers
+func (entryData *EntrySACMData3) ReadFrom(r io.Reader) (int64, error) {
+	err := binary.Read(r, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData3Size), nil
+}
+
+// Write compiles the SACM v3 headers into a binary representation
+func (entryData *EntrySACMData3) Write(b []byte) (int, error) {
+	n, err := entryData.WriteTo(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// WriteTo compiles the SACM v3 headers into a binary representation
+func (entryData *EntrySACMData3) WriteTo(w io.Writer) (int64, error) {
+	err := binary.Write(w, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData3Size), nil
+}
+
 // GetRSAPubKey returns the RSA public key
 func (entryData *EntrySACMData3) GetRSAPubKey() rsa.PublicKey {
 	pubKey := rsa.PublicKey{
@@ -380,6 +477,47 @@ type EntrySACMData struct {
 	EntrySACMDataInterface
 
 	UserArea []byte
+}
+
+// Read parses the ACM
+func (entryData *EntrySACMData) Read(b []byte) (int, error) {
+	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// ReadFrom parses the ACM
+func (entryData *EntrySACMData) ReadFrom(r io.Reader) (int64, error) {
+	parsedEntryData, err := ParseSACMData(r)
+	if err != nil {
+		return -1, err
+	}
+	*entryData = *parsedEntryData
+	return int64(binary.Size(entryData.EntrySACMDataInterface) + len(entryData.UserArea)), nil
+}
+
+// Write compiles the SACM into a binary representation
+func (entryData *EntrySACMData) Write(b []byte) (int, error) {
+	n, err := entryData.WriteTo(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// WriteTo compiles the SACM into a binary representation
+func (entryData *EntrySACMData) WriteTo(w io.Writer) (int64, error) {
+	totalN, err := entryData.EntrySACMDataInterface.WriteTo(w)
+	if err != nil {
+		return -1, err
+	}
+	n, err := w.Write(entryData.UserArea)
+	if n >= 0 {
+		totalN += int64(n)
+	}
+	if err != nil {
+		return totalN, fmt.Errorf("unable to write UserArea: %w", err)
+	}
+	if n != len(entryData.UserArea) {
+		return totalN, fmt.Errorf("unable to complete writing UserArea: %d != %d: %w", n, len(entryData.UserArea), err)
+	}
+	return totalN, nil
 }
 
 // GetCommon returns the common part of the structures for different ACM versions.
@@ -425,8 +563,21 @@ func EntrySACMParseSize(b []byte) (uint32, error) {
 
 // ParseData parses SACM entry and returns EntrySACMData.
 func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
+	entryData := EntrySACMData{}
+	_, err := entryData.Read(entry.DataSegmentBytes)
+	if err != nil {
+		return nil, err
+	}
+	return &entryData, nil
+}
+
+// ParseSACMData parses SACM entry and returns EntrySACMData.
+func ParseSACMData(r io.Reader) (*EntrySACMData, error) {
+
+	// Read common headers
+
 	common := EntrySACMDataCommon{}
-	if err := binary.Read(bytes.NewReader(entry.DataSegmentBytes), binary.LittleEndian, &common); err != nil {
+	if _, err := common.ReadFrom(r); err != nil {
 		return nil, fmt.Errorf("unable to parse startup AC module entry: %w", err)
 	}
 	result := &EntrySACMData{EntrySACMDataInterface: &common, UserArea: nil}
@@ -434,10 +585,10 @@ func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 	var requiredKeySize uint64
 	switch common.HeaderVersion {
 	case ACHeaderVersion0:
-		result.EntrySACMDataInterface = &EntrySACMData0{}
+		result.EntrySACMDataInterface = &EntrySACMData0{EntrySACMDataCommon: common}
 		requiredKeySize = uint64(len(EntrySACMData0{}.RSAPubKey))
 	case ACHeaderVersion3:
-		result.EntrySACMDataInterface = &EntrySACMData3{}
+		result.EntrySACMDataInterface = &EntrySACMData3{EntrySACMDataCommon: common}
 		requiredKeySize = uint64(len(EntrySACMData3{}.RSAPubKey))
 	default:
 		return result, &ErrUnknownACMHeaderVersion{ACHeaderVersion: common.HeaderVersion}
@@ -447,17 +598,45 @@ func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
 		return result, &ErrACMInvalidKeySize{ExpectedKeySize: requiredKeySize, RealKeySize: common.KeySize.Size()}
 	}
 
-	if err := binary.Read(bytes.NewReader(entry.DataSegmentBytes), binary.LittleEndian, result.EntrySACMDataInterface); err != nil {
-		return result, fmt.Errorf("cannot parse AC header of version %v: %w", common.HeaderVersion, err)
+	// Read version-specific headers
+	//
+	// Here we need to continue reading from the reader,
+	// but in the resulting struct we need to skip the first field (because it contains
+	// already read common headers).
+
+	// Creating a substruct without the first field (which is already read)
+	t := reflect.TypeOf(result.EntrySACMDataInterface).Elem()
+	var fieldsToBeFilled []reflect.StructField
+	for fieldNum := 1; fieldNum < t.NumField(); fieldNum++ {
+		fieldsToBeFilled = append(fieldsToBeFilled, t.Field(fieldNum))
 	}
+	subStructToBeFilled := reflect.New(reflect.StructOf(fieldsToBeFilled))
+	// Reading the substruct
+	if err := binary.Read(r, binary.LittleEndian, subStructToBeFilled.Interface()); err != nil {
+		return result, fmt.Errorf("cannot parse version-specific headers (version 0x%04X): %w", common.HeaderVersion, err)
+	}
+	// Copying values from the substruct to the headers struct
+	subStructToBeFilled = subStructToBeFilled.Elem()
+	v := reflect.ValueOf(result.EntrySACMDataInterface).Elem()
+	for fieldNum := 1; fieldNum < v.NumField(); fieldNum++ {
+		v.Field(fieldNum).Set(subStructToBeFilled.Field(fieldNum - 1))
+	}
+
+	// Read UserArea
 
 	// `UserArea` has variable length and therefore was not included into
 	// `EntrySACMData0` and `EntrySACMData3`, but it is in the tail,
 	// so we just calculate the startIndex as the end of
 	// EntrySACMData0/EntrySACMData3.
-	userAreaStartIdx := binary.Size(result.EntrySACMDataInterface)
+	userAreaStartIdx := uint64(binary.Size(result.EntrySACMDataInterface))
 	userAreaEndIdx := result.EntrySACMDataInterface.GetSize().Size()
-	result.UserArea = entry.DataSegmentBytes[userAreaStartIdx:userAreaEndIdx]
+	if userAreaEndIdx > userAreaStartIdx {
+		var err error
+		result.UserArea, err = readBytesFromReader(r, userAreaEndIdx-userAreaStartIdx)
+		if err != nil {
+			return result, fmt.Errorf("unable to read user area: %w", err)
+		}
+	}
 
 	return result, nil
 }

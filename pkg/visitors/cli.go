@@ -22,6 +22,10 @@ type visitorEntry struct {
 	createVisitor func([]string) (uefi.Visitor, error)
 }
 
+const (
+	helpMessage = "Usage: utk FILE [COMMAND [ARGS]]..."
+)
+
 // RegisterCLI registers a function `createVisitor` to be called when parsing
 // the arguments with `ParseCLI`. For a Visitor to be accessible from the
 // command line, it should have an init function which registers a
@@ -38,7 +42,6 @@ func RegisterCLI(name string, help string, numArgs int, createVisitor func([]str
 }
 
 // ParseCLI constructs a list of visitors from the given CLI argument list.
-// TODO: display some type of help message
 func ParseCLI(args []string) ([]uefi.Visitor, error) {
 	visitors := []uefi.Visitor{}
 	for len(args) > 0 {
@@ -46,11 +49,11 @@ func ParseCLI(args []string) ([]uefi.Visitor, error) {
 		args = args[1:]
 		o, ok := visitorRegistry[cmd]
 		if !ok {
-			return []uefi.Visitor{}, fmt.Errorf("could not find visitor '%s'", cmd)
+			return []uefi.Visitor{}, fmt.Errorf("could not find command '%s'\n%s", cmd, helpMessage)
 		}
 		if o.numArgs > len(args) {
-			return []uefi.Visitor{}, fmt.Errorf("too few arguments for visitor '%s', got %d, expected %d",
-				cmd, len(args), o.numArgs)
+			return []uefi.Visitor{}, fmt.Errorf("too few arguments for command '%s', got %d, expected %d.\nSynopsis: %s",
+				cmd, len(args), o.numArgs, o.help)
 		}
 		visitor, err := o.createVisitor(args[:o.numArgs])
 		if err != nil {

@@ -9,6 +9,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/sha512"
 	"fmt"
 	"math/big"
 
@@ -29,9 +30,14 @@ func NewSignatureData(
 ) (SignatureDataInterface, error) {
 	if signAlgo == 0 {
 		// auto-detect the sign algorithm, based on the provided signing key
-		switch privKey.(type) {
+		switch k := privKey.(type) {
 		case *rsa.PrivateKey:
-			signAlgo = AlgRSASSA
+			switch k.Size() {
+			case 2048:
+				signAlgo = AlgRSASSA
+			case 3072:
+				signAlgo = AlgRSAPSS
+			}
 		case *ecdsa.PrivateKey:
 			signAlgo = AlgECDSA
 		case *sm2.PrivateKey:
@@ -44,15 +50,15 @@ func NewSignatureData(
 		if !ok {
 			return nil, fmt.Errorf("expected private RSA key (type %T), but received %T", rsaPrivateKey, privKey)
 		}
-		h := sha256.New()
+		h := sha512.New384()
 		_, _ = h.Write(signedData)
 		bpmHash := h.Sum(nil)
 
 		pss := rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthAuto,
-			Hash:       crypto.SHA256,
+			Hash:       crypto.SHA384,
 		}
-		data, err := rsa.SignPSS(RandReader, rsaPrivateKey, crypto.SHA256, bpmHash, &pss)
+		data, err := rsa.SignPSS(RandReader, rsaPrivateKey, crypto.SHA384, bpmHash, &pss)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with RSAPSS the data: %w", err)
 		}
@@ -145,7 +151,7 @@ type SignatureDataInterface interface {
 
 	// Verify returns nil if signedData was indeed signed by key pk, and
 	// returns an appropriate error otherwise.
-	Verify(pk crypto.PublicKey, signedData []byte) error
+	Verify(pk crypto.PublicKey, hashAlgo Algorithm, signedData []byte) error
 }
 
 // SignatureRSAPSS is RSAPSS signature bytes.
@@ -157,22 +163,34 @@ func (s SignatureRSAPSS) String() string {
 }
 
 // Verify implements SignatureDataInterface.
-func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, signedData []byte) error {
+func (s SignatureRSAPSS) Verify(pkIface crypto.PublicKey, hashAlgo Algorithm, signedData []byte) error {
 	pk, ok := pkIface.(*rsa.PublicKey)
 	if !ok {
 		return fmt.Errorf("expected public key of type %T, but received %T", pk, pkIface)
 	}
-	h := sha256.New()
+	h, err := hashAlgo.Hash()
+	if err != nil {
+		return fmt.Errorf("invalid hash algorithm: %q", err)
+	}
 	if _, err := h.Write(signedData); err != nil {
 		return fmt.Errorf("unable to hash the data: %w", err)
 	}
 	hash := h.Sum(nil)
 
+	var hashfunc crypto.Hash
+	switch hashAlgo {
+	case AlgSHA256:
+		hashfunc = crypto.SHA256
+	case AlgSHA384:
+		hashfunc = crypto.SHA384
+	default:
+		return fmt.Errorf("signature verification for RSAPSS only supports SHA256 and SHA384")
+	}
 	pss := rsa.PSSOptions{
 		SaltLength: rsa.PSSSaltLengthAuto,
-		Hash:       crypto.SHA256,
+		Hash:       hashfunc,
 	}
-	err := rsa.VerifyPSS(pk, crypto.SHA256, hash, s, &pss)
+	err = rsa.VerifyPSS(pk, hashfunc, hash, s, &pss)
 	if err != nil {
 		return fmt.Errorf("signature does not correspond to the pub key: %w", err)
 	}
@@ -188,19 +206,32 @@ func (s SignatureRSAASA) String() string {
 }
 
 // Verify implements SignatureDataInterface.
-func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, signedData []byte) error {
+func (s SignatureRSAASA) Verify(pkIface crypto.PublicKey, hashAlgo Algorithm, signedData []byte) error {
 	pk, ok := pkIface.(*rsa.PublicKey)
 	if !ok {
 		return fmt.Errorf("expected public key of type %T, but received %T", pk, pkIface)
 	}
 
-	h := sha256.New()
+	h, err := hashAlgo.Hash()
+	if err != nil {
+		return fmt.Errorf("invalid hash algorithm: %q", err)
+	}
 	if _, err := h.Write(signedData); err != nil {
 		return fmt.Errorf("unable to hash the data: %w", err)
 	}
 	hash := h.Sum(nil)
 
-	err := rsa.VerifyPKCS1v15(pk, crypto.SHA256, hash, s)
+	var hashfunc crypto.Hash
+	switch hashAlgo {
+	case AlgSHA256:
+		hashfunc = crypto.SHA256
+	case AlgSHA384:
+		hashfunc = crypto.SHA384
+	default:
+		return fmt.Errorf("signature verification for RSAASA only supports SHA256 and SHA384")
+	}
+
+	err = rsa.VerifyPKCS1v15(pk, hashfunc, hash, s)
 	if err != nil {
 		return fmt.Errorf("signature does not correspond to the pub key: %w", err)
 	}
@@ -222,7 +253,7 @@ func (s SignatureECDSA) String() string {
 }
 
 // Verify implements SignatureDataInterface.
-func (s SignatureECDSA) Verify(pkIface crypto.PublicKey, signedData []byte) error {
+func (s SignatureECDSA) Verify(pkIface crypto.PublicKey, hashAlgo Algorithm, signedData []byte) error {
 	return fmt.Errorf("support of ECDSA signatures is not implemented, yet")
 }
 
@@ -240,6 +271,6 @@ func (s SignatureSM2) String() string {
 }
 
 // Verify implements SignatureDataInterface.
-func (s SignatureSM2) Verify(pkIface crypto.PublicKey, signedData []byte) error {
+func (s SignatureSM2) Verify(pkIface crypto.PublicKey, hashAlgo Algorithm, signedData []byte) error {
 	return fmt.Errorf("support of SM2 signatures is not implemented, yet")
 }

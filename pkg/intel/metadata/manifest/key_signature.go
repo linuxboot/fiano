@@ -28,7 +28,7 @@ func (s *KeySignature) Verify(signedData []byte) error {
 	if err != nil {
 		return fmt.Errorf("invalid public key: %w", err)
 	}
-	err = sig.Verify(pk, signedData)
+	err = sig.Verify(pk, s.Signature.HashAlg, signedData)
 	if err != nil {
 		return fmt.Errorf("verification failed: %w", err)
 	}
@@ -40,14 +40,14 @@ func (s *KeySignature) Verify(signedData []byte) error {
 //
 // if signAlgo is zero then it is detected automatically, based on the type
 // of the provided private key.
-func (s *KeySignature) SetSignature(signAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
+func (s *KeySignature) SetSignature(signAlgo Algorithm, hashAlgo Algorithm, privKey crypto.Signer, signedData []byte) error {
 	s.Version = 0x10
 	err := s.Key.SetPubKey(privKey.Public())
 	if err != nil {
 		return fmt.Errorf("unable to set public key: %w", err)
 	}
 
-	return s.Signature.SetSignature(signAlgo, privKey, signedData)
+	return s.Signature.SetSignature(signAlgo, hashAlgo, privKey, signedData)
 }
 
 // SetSignatureAuto generates a signature and sets all the values of KeyManifest,
@@ -62,7 +62,7 @@ func (s *KeySignature) SetSignatureAuto(privKey crypto.Signer, signedData []byte
 		return fmt.Errorf("unable to set public key: %w", err)
 	}
 
-	return s.SetSignature(0, privKey, signedData)
+	return s.SetSignature(0, 0, privKey, signedData)
 }
 
 // FillSignature sets a signature and all the values of KeyManifest,

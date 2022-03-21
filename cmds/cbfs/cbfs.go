@@ -24,7 +24,7 @@ func main() {
 
 	a := flag.Args()
 	if len(a) != 2 {
-		log.Fatal("arg count")
+		log.Fatal("Usage: cbfs <firmware-file> <json,list>")
 	}
 
 	i, err := cbfs.Open(a[0])

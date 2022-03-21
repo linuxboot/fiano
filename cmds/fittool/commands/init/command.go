@@ -11,14 +11,14 @@ import (
 
 	"github.com/linuxboot/fiano/cmds/fittool/commands"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit"
-	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 )
 
 var _ commands.Command = (*Command)(nil)
 
 type Command struct {
-	UEFIPath string `short:"f" long:"uefi" description:"path to UEFI image" required:"true"`
-	Pointer  uint64 `short:"p" long:"pointer" description:"the FIT pointer value" required:"true"`
+	UEFIPath          string  `short:"f" long:"uefi" description:"path to UEFI image" required:"true"`
+	Pointer           *uint64 `short:"p" long:"pointer" description:"the FIT pointer value"`
+	PointerFromOffset *uint64 `long:"pointer-from-offset" description:"the FIT pointer value defined by an offset from the beginning of the image"`
 }
 
 // ShortDescription explains what this command does in one line
@@ -40,6 +40,13 @@ func (cmd *Command) Execute(args []string) error {
 		return commands.ErrArgs{Err: fmt.Errorf("there are extra arguments")}
 	}
 
+	if cmd.PointerFromOffset == nil && cmd.Pointer == nil {
+		return commands.ErrArgs{Err: fmt.Errorf("either '--pointer' or '--pointer-from-offset' is required")}
+	}
+	if cmd.PointerFromOffset != nil && cmd.Pointer != nil {
+		return commands.ErrArgs{Err: fmt.Errorf("it does not make sense to use '--pointer' and '--pointer-from-offset' together")}
+	}
+
 	file, err := os.OpenFile(cmd.UEFIPath, os.O_RDWR, 0)
 	if err != nil {
 		return fmt.Errorf("unable to open the firmware image file '%s': %w", cmd.UEFIPath, err)
@@ -50,6 +57,14 @@ func (cmd *Command) Execute(args []string) error {
 		return fmt.Errorf("unable to detect file size (through seek): %w", err)
 	}
 
+	var fitOffset uint64
+	if cmd.Pointer != nil {
+		fitOffset = fit.Address64(*cmd.Pointer).Offset(uint64(fileSize))
+	}
+	if cmd.PointerFromOffset != nil {
+		fitOffset = *cmd.PointerFromOffset
+	}
+
 	entries := fit.Entries{
 		&fit.EntryFITHeaderEntry{},
 	}
@@ -57,7 +72,7 @@ func (cmd *Command) Execute(args []string) error {
 		return fmt.Errorf("unable to recalculate headers: %w", err)
 	}
 
-	if err := entries.InjectTo(file, fit.CalculateOffsetFromPhysAddr(consts.BasePhysAddr-cmd.Pointer, uint64(fileSize))); err != nil {
+	if err := entries.InjectTo(file, fitOffset); err != nil {
 		return fmt.Errorf("unable to inject entries to the firmware: %w", err)
 	}
 
