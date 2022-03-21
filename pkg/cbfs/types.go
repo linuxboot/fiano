@@ -235,6 +235,10 @@ type EmptyRecord struct {
 	File
 }
 
+type CMOSRecord struct {
+	File
+}
+
 type CMOSLayoutRecord struct {
 	File
 }
