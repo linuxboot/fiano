@@ -235,6 +235,10 @@ type EmptyRecord struct {
 	File
 }
 
+type CMOSRecord struct {
+	File
+}
+
 type CMOSLayoutRecord struct {
 	File
 }
@@ -248,6 +252,10 @@ type OptionROMRecord struct {
 }
 
 type BootBlockRecord struct {
+	File
+}
+
+type BootSplashRecord struct {
 	File
 }
 
