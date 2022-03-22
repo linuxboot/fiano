@@ -84,6 +84,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 		sr, ok := SegReaders[f.Type]
 		// If we cant find any new match, break out of the loop.
 		if !ok {
+			Debug("No match found for type %v, %v", f.Type, ok)
 			// Remove last segment in image, because it's garbage
 			i.Segs = i.Segs[:len(i.Segs)-1]
 			break
