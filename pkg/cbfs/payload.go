@@ -34,15 +34,23 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 			break
 		}
 	}
-	where, err := in.Seek(0, io.SeekCurrent)
+	// Seek to offset (after the header); the remainder is the actual payload.
+	offset, err := in.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return fmt.Errorf("Finding location in stream: %v", err)
 	}
-	amt := uint32(where) - p.Size
-	if amt == 0 {
+	bodySize := int64(p.Size) - offset
+	Debug("Payload size: %v, body size: %v, offset: %v", p.Size, bodySize, offset)
+	if bodySize < 0 {
+		// This should not happen. Tolerate a potential error.
 		return nil
 	}
-	p.FData = make([]byte, amt)
+	// This _may_ happen. E.g. with the test payload here. Silently ignore.
+	if bodySize == 0 {
+		Debug("Payload empty, nothing to read")
+		return nil
+	}
+	p.FData = make([]byte, bodySize)
 	n, err := in.Read(p.FData)
 	if err != nil {
 		return err
