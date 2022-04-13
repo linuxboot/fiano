@@ -27,7 +27,7 @@ type ErrUnknownACMHeaderVersion struct {
 }
 
 func (err *ErrUnknownACMHeaderVersion) Error() string {
-	return fmt.Sprintf("unknown ACM header version: %v", err.ACHeaderVersion)
+	return fmt.Sprintf("unknown ACM header version: %#v", err.ACHeaderVersion)
 }
 
 // ErrInvalidTXTPolicyRecordVersion means TXT Policy entry has invalid version.
