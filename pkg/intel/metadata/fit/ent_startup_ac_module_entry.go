@@ -106,11 +106,15 @@ type ACModuleHeaderVersion uint32
 
 const (
 	// ACHeaderVersion0 is version "0.0 – for SINIT ACM before 2017"
-	ACHeaderVersion0 = ACModuleHeaderVersion(0x0000)
+	ACHeaderVersion0 = ACModuleHeaderVersion(0x00000000)
 
 	// ACHeaderVersion3 is version "3.0 – for SINIT ACM of converge of BtG and TXT"
-	ACHeaderVersion3 = ACModuleHeaderVersion(0x0300)
+	ACHeaderVersion3 = ACModuleHeaderVersion(0x00030000)
 )
+
+func (ver ACModuleHeaderVersion) GoString() string {
+	return fmt.Sprintf("0x%08X", ver)
+}
 
 // ACChipsetID defines the module release identifier
 type ACChipsetID uint16
