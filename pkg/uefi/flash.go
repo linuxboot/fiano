@@ -39,16 +39,21 @@ type FlashDescriptor struct {
 
 // FindSignature searches for an Intel flash signature.
 func FindSignature(buf []byte) (int, error) {
-	if bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
+	if len(buf) >= 16+len(FlashSignature) && bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
 	}
-	if bytes.Equal(buf[:len(FlashSignature)], FlashSignature) {
+	if len(buf) >= len(FlashSignature) && bytes.Equal(buf[:len(FlashSignature)], FlashSignature) {
 		// + 4 since the descriptor starts after the signature
 		return len(FlashSignature), nil
 	}
-	return -1, fmt.Errorf("flash signature not found: first 20 bytes are:\n%s",
-		hex.Dump(buf[:20]))
+
+	firstBytesCnt := 20
+	if len(buf) < firstBytesCnt {
+		firstBytesCnt = len(buf)
+	}
+	return -1, fmt.Errorf("flash signature not found: first %d bytes are:\n%s",
+		firstBytesCnt, hex.Dump(buf[:firstBytesCnt]))
 }
 
 // Buf returns the buffer.
