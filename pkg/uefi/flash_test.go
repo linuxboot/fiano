@@ -47,6 +47,10 @@ func TestFindSignature(t *testing.T) {
 		offset int
 		msg    string
 	}{
+		{nil, -1,
+			fmt.Sprintf("flash signature not found: first 0 bytes are:\n%s", hex.Dump(nil))},
+		{[]byte{1, 2, 3}, -1,
+			fmt.Sprintf("flash signature not found: first 3 bytes are:\n%s", hex.Dump([]byte{1, 2, 3}))},
 		{emptySig, -1,
 			fmt.Sprintf("flash signature not found: first 20 bytes are:\n%s", hex.Dump(emptySig[:20]))},
 		{ichSig, 4, ""},
