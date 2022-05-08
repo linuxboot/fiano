@@ -7,6 +7,7 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -173,13 +174,27 @@ const (
 	FileStateValid FileState = FileStateHeaderConstruction | FileStateHeaderValid | FileStateDataValid
 )
 
+type ThreeUint8 [3]uint8
+
+func (t *ThreeUint8) UnmarshalJSON(b []byte) error {
+	if copy(t[:], b) == 0 {
+		return fmt.Errorf("Cannot unmarshal 3 uint8 from %v\n", b)
+	}
+	return nil
+}
+
+func (t *ThreeUint8) MarshalJSON() ([]byte, error) {
+	res := Read3Size(*t)
+	return json.Marshal(res)
+}
+
 // FileHeader represents an EFI File header.
 type FileHeader struct {
 	GUID       guid.GUID      // This is the GUID of the file.
 	Checksum   IntegrityCheck `json:"-"`
 	Type       FVFileType
 	Attributes fileAttr
-	Size       [3]uint8 `json:"-"`
+	Size       ThreeUint8
 	State      FileState
 }
 
