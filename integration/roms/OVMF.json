@@ -55,13 +55,13 @@
 				"Files": [
 					{
 						"Header": {
+							"ExtendedSize": 1201831,
 							"GUID": {
 								"GUID": "9E21FD93-9C72-4C15-8C4B-E77F1DB2D792"
 							},
 							"Type": 11,
 							"Attributes": 0,
-							"State": 248,
-							"ExtendedSize": 1201831
+							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE",
 						"Sections": [
@@ -128,13 +128,13 @@
 														"Files": [
 															{
 																"Header": {
+																	"ExtendedSize": 44,
 																	"GUID": {
 																		"GUID": "1B45CC0A-156A-428A-AF62-49864DA0E6E6"
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 44
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
 																"Sections": [
@@ -151,13 +151,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 64,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 64
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -165,13 +165,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 50426,
 																	"GUID": {
 																		"GUID": "52C05B14-0B98-496C-BC3B-04B50211D680"
 																	},
 																	"Type": 4,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 50426
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEI_CORE",
 																"Sections": [
@@ -211,13 +211,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 20282,
 																	"GUID": {
 																		"GUID": "9B3ADA4F-AE56-4C24-8DEA-F03B7558AE50"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 20282
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -225,13 +225,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 64,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 64
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -239,13 +239,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8478,
 																	"GUID": {
 																		"GUID": "A3610442-E69F-4DF3-82CA-2360C4031A23"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 8478
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -253,13 +253,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 96,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 96
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -267,13 +267,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8662,
 																	"GUID": {
 																		"GUID": "9D225237-FA01-464C-A949-BAABC02D31D0"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 8662
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -281,13 +281,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 40,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 40
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -295,13 +295,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 35202,
 																	"GUID": {
 																		"GUID": "222C386D-5ABC-4FB4-B124-FBB82488ACF4"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 35202
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -309,13 +309,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 120,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 120
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -323,13 +323,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 19834,
 																	"GUID": {
 																		"GUID": "86D70125-BAA3-4296-A62F-602BEBBB9081"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 19834
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -337,13 +337,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 17734,
 																	"GUID": {
 																		"GUID": "89E549B0-7CFE-449D-9BA3-10D8B2312D71"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 17734
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -351,13 +351,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 56,
 																	"GUID": {
 																		"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 56
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
 																"ExtractPath": "",
@@ -365,13 +365,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 34302,
 																	"GUID": {
 																		"GUID": "EDADEB9D-DDBA-48BD-9D22-C1C169C8C5C6"
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
-																	"State": 248,
-																	"ExtendedSize": 34302
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
 																"ExtractPath": "",
@@ -432,13 +432,13 @@
 														"Files": [
 															{
 																"Header": {
+																	"ExtendedSize": 92,
 																	"GUID": {
 																		"GUID": "FC510EE7-FFDC-11D4-BD41-0080C73C8881"
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 92
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
 																"Sections": [
@@ -455,13 +455,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 165950,
 																	"GUID": {
 																		"GUID": "D6A2CB7F-6A18-4E2F-B43B-9920A733700A"
 																	},
 																	"Type": 5,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 165950
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DXE_CORE",
 																"Sections": [
@@ -494,13 +494,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24730,
 																	"GUID": {
 																		"GUID": "D93CE3D8-A7EB-4730-8C8E-CC466A9ECC3C"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24730
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -560,13 +560,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24738,
 																	"GUID": {
 																		"GUID": "6C2004EF-4E0E-4BE4-B14C-340EB4AA5891"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24738
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -635,13 +635,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24754,
 																	"GUID": {
 																		"GUID": "80CF7257-87AB-47F9-A3FE-D50B76D89541"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24754
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -699,13 +699,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24686,
 																	"GUID": {
 																		"GUID": "B601F8C4-43B7-4784-95B1-F4226CB40CEE"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24686
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -765,13 +765,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 11766,
 																	"GUID": {
 																		"GUID": "F80697E9-7FD6-4665-8646-88E33EF71DFC"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 11766
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -831,13 +831,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 21526,
 																	"GUID": {
 																		"GUID": "13AC6DD0-73D0-11D4-B06B-00AA00BD6DE7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 21526
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -888,13 +888,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 7902,
 																	"GUID": {
 																		"GUID": "79CA4208-BBA1-4A9A-8456-E1E66A81484E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 7902
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -945,13 +945,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8858,
 																	"GUID": {
 																		"GUID": "A19B1FE7-C1BC-49F8-875F-54A5D542443F"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8858
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1002,13 +1002,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 62758,
 																	"GUID": {
 																		"GUID": "1A1E4886-9517-440E-9FDE-3BE44CEE2136"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 62758
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1068,13 +1068,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8118,
 																	"GUID": {
 																		"GUID": "F2765DEC-6B41-11D5-8E71-00902707B35E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8118
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1143,13 +1143,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8838,
 																	"GUID": {
 																		"GUID": "F6697AC4-A776-4EE1-B643-1FEFF2B615BB"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8838
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1200,13 +1200,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 13306,
 																	"GUID": {
 																		"GUID": "11A6EDF6-A9BE-426D-A6CC-B22FE51D9224"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 13306
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1266,13 +1266,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 39482,
 																	"GUID": {
 																		"GUID": "128FB770-5E79-4176-9E51-9BB268A17DD1"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 39482
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1395,13 +1395,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 65474,
 																	"GUID": {
 																		"GUID": "93B80004-9FB3-11D4-9A3A-0090273FC14D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 65474
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1434,13 +1434,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 28802,
 																	"GUID": {
 																		"GUID": "4B28E4C7-FF36-4E10-93CF-A82159E777C5"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 28802
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1500,13 +1500,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8410,
 																	"GUID": {
 																		"GUID": "C8339973-A563-4561-B858-D8476F9DEFC4"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8410
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1557,13 +1557,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 28806,
 																	"GUID": {
 																		"GUID": "378D7B65-8DA9-4773-B6E4-A47826A833E1"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 28806
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1641,13 +1641,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 11866,
 																	"GUID": {
 																		"GUID": "33CB97AF-6C33-4C42-986B-07581FA366D4"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 11866
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1680,13 +1680,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 13078,
 																	"GUID": {
 																		"GUID": "83DD3B39-7CAF-4FAC-A542-E050B767E3A7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 13078
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1719,13 +1719,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 14146,
 																	"GUID": {
 																		"GUID": "0170F60C-1D40-4651-956D-F0BD9879D527"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 14146
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1758,13 +1758,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 14602,
 																	"GUID": {
 																		"GUID": "11D92DFB-3CA9-4F93-BA2E-4780ED3E03B5"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 14602
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1797,13 +1797,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 15818,
 																	"GUID": {
 																		"GUID": "FAB5D4F4-83C0-4AAF-8480-442D11DF6CEA"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 15818
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1836,13 +1836,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 13066,
 																	"GUID": {
 																		"GUID": "58E26F0D-CBAC-4BBA-B70F-18221415665A"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 13066
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1875,13 +1875,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 10502,
 																	"GUID": {
 																		"GUID": "CF569F50-DE44-4F54-B4D7-F4AE25CDA599"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 10502
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1914,13 +1914,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 38594,
 																	"GUID": {
 																		"GUID": "565EC8BA-A484-11E3-802B-B8AC6F7D65E6"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 38594
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1953,13 +1953,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 20486,
 																	"GUID": {
 																		"GUID": "8C2487EA-9AF3-11E3-B966-B8AC6F7D65E6"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 20486
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -1992,13 +1992,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8454,
 																	"GUID": {
 																		"GUID": "F099D67F-71AE-4C36-B2A3-DCEB0EB2B7D8"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8454
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2067,13 +2067,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 20642,
 																	"GUID": {
 																		"GUID": "AD608272-D07F-4964-801E-7BD3B7888652"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 20642
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2142,13 +2142,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24718,
 																	"GUID": {
 																		"GUID": "42857F0A-13F2-4B21-8A23-53D3F714B840"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24718
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2217,13 +2217,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 16334,
 																	"GUID": {
 																		"GUID": "51CCF399-4FDF-4E55-A45B-E123F84D456A"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 16334
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2256,13 +2256,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 33230,
 																	"GUID": {
 																		"GUID": "408EDCEC-CF6D-477C-A5A8-B4844E3DE281"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 33230
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2295,13 +2295,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 25046,
 																	"GUID": {
 																		"GUID": "CCCB0C28-4B24-11D5-9A5A-0090273FC14D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 25046
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2334,13 +2334,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 32966,
 																	"GUID": {
 																		"GUID": "9E863906-A40F-4875-977F-5B93FF237FC6"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 32966
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2373,13 +2373,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 26266,
 																	"GUID": {
 																		"GUID": "EBF8ED7C-0DD1-4787-84F1-F48D537DCACF"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 26266
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2482,13 +2482,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 111446,
 																	"GUID": {
 																		"GUID": "6D33944A-EC75-4855-A54D-809C75241F6C"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 111446
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2608,13 +2608,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 152942,
 																	"GUID": {
 																		"GUID": "462CAA21-7614-4503-836E-8AB6F4662331"
 																	},
 																	"Type": 9,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 152942
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_APPLICATION",
 																"Sections": [
@@ -2654,13 +2654,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 46098,
 																	"GUID": {
 																		"GUID": "9B680FCE-AD6B-4F3A-B60B-F59899003443"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 46098
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2708,13 +2708,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 11802,
 																	"GUID": {
 																		"GUID": "79E4A61C-ED73-4312-94FE-E3E7563362A9"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 11802
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2765,13 +2765,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 20610,
 																	"GUID": {
 																		"GUID": "6B38F7B4-AD98-40E9-9093-ACA2B5A253C4"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 20610
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2804,13 +2804,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24778,
 																	"GUID": {
 																		"GUID": "1FA1F39E-FEFF-4AAE-BD7B-38A070A3B609"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24778
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2843,13 +2843,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 45420,
 																	"GUID": {
 																		"GUID": "28A03FF4-12B3-4305-A417-BB1A4F94081E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 45420
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2959,13 +2959,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8966,
 																	"GUID": {
 																		"GUID": "CD3BAFB6-50FB-4FE8-8E4E-AB74D2C1A600"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8966
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -2998,13 +2998,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 17278,
 																	"GUID": {
 																		"GUID": "0167CCC4-D0F7-4F21-A3EF-9E64B7CDCE8B"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 17278
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3037,13 +3037,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 39938,
 																	"GUID": {
 																		"GUID": "0A66E322-3740-4CCE-AD62-BD172CECCA35"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 39938
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3076,13 +3076,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 13902,
 																	"GUID": {
 																		"GUID": "021722D8-522B-4079-852A-FE44C2C13F49"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 13902
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3115,13 +3115,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 41750,
 																	"GUID": {
 																		"GUID": "5E523CB4-D397-4986-87BD-A6DD8B22F455"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 41750
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3154,13 +3154,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 27586,
 																	"GUID": {
 																		"GUID": "19DF145A-B1D4-453F-8507-38816676D7F6"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 27586
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3193,13 +3193,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 43210,
 																	"GUID": {
 																		"GUID": "5BE3BDF4-53CF-46A3-A6A9-73C34A6E5EE3"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 43210
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3232,13 +3232,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 124654,
 																	"GUID": {
 																		"GUID": "348C4D62-BFBD-4882-9ECE-C80BB1C4783B"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 124654
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3298,13 +3298,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 106666,
 																	"GUID": {
 																		"GUID": "EBF342FE-B1D3-4EF8-957C-8048606FF671"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 106666
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3391,13 +3391,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 80534,
 																	"GUID": {
 																		"GUID": "E660EA85-058E-4B55-A54B-F02F83A24707"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 80534
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3500,13 +3500,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 9018,
 																	"GUID": {
 																		"GUID": "96B5C032-DF4C-4B6E-8232-438DCF448D0E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 9018
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3566,13 +3566,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 11390,
 																	"GUID": {
 																		"GUID": "38A0EC22-FBE7-4911-8BC1-176E0D6C1DBD"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 11390
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3605,13 +3605,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 16642,
 																	"GUID": {
 																		"GUID": "240612B5-A063-11D4-9A3A-0090273FC14D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 16642
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3644,13 +3644,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 21386,
 																	"GUID": {
 																		"GUID": "93B80003-9FB3-11D4-9A3A-0090273FC14D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 21386
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3683,13 +3683,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24206,
 																	"GUID": {
 																		"GUID": "3DC82376-637B-40A6-A8FC-A565417F2C38"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24206
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3722,13 +3722,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 21514,
 																	"GUID": {
 																		"GUID": "0ABD8284-6DA3-4616-971A-83A5148067BA"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 21514
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3761,13 +3761,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 22738,
 																	"GUID": {
 																		"GUID": "F9D88642-0737-49BC-81B5-6889CD57D9EA"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 22738
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3851,13 +3851,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 13618,
 																	"GUID": {
 																		"GUID": "4110465D-5FF3-4F4B-B580-24ED0D06747A"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 13618
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -3944,13 +3944,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 29490,
 																	"GUID": {
 																		"GUID": "9622E42C-8E38-4A08-9E8F-54F784652F6B"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 29490
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4010,13 +4010,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 33898,
 																	"GUID": {
 																		"GUID": "49970331-E3FA-4637-9ABC-3B7868676970"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 33898
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4103,13 +4103,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 4392,
 																	"GUID": {
 																		"GUID": "7E374E25-8E01-4FEE-87F2-390C23C606CD"
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 4392
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
 																"Sections": [
@@ -4154,13 +4154,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 27742,
 																	"GUID": {
 																		"GUID": "BDCE85BB-FBAA-4F4E-9264-501A2C249581"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 27742
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4244,13 +4244,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 59130,
 																	"GUID": {
 																		"GUID": "FA20568B-548B-4B2B-81EF-1BA08D4A3CEC"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 59130
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4337,13 +4337,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 10538,
 																	"GUID": {
 																		"GUID": "B8E62775-BB0A-43F0-A843-5BE8B14F8CCD"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 10538
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4376,13 +4376,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 42742,
 																	"GUID": {
 																		"GUID": "961578FE-B6B7-44C3-AF35-6BC705CD2B1F"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 42742
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4415,13 +4415,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 44406,
 																	"GUID": {
 																		"GUID": "A487A478-51EF-48AA-8794-7BEE2A0562F1"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 44406
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4508,13 +4508,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 920214,
 																	"GUID": {
 																		"GUID": "7C04A583-9E3E-4F1C-AD65-E05268D0B4D1"
 																	},
 																	"Type": 9,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 920214
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_APPLICATION",
 																"Sections": [
@@ -4554,13 +4554,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 19706,
 																	"GUID": {
 																		"GUID": "F74D20EE-37E7-48FC-97F7-9B1047749C69"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 19706
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4629,13 +4629,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 31614,
 																	"GUID": {
 																		"GUID": "A2F436EA-A127-4EF8-957C-8048606FF670"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 31614
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4668,13 +4668,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 8918,
 																	"GUID": {
 																		"GUID": "A210F973-229D-4F4D-AA37-9895E6C9EABA"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 8918
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4725,13 +4725,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 45950,
 																	"GUID": {
 																		"GUID": "025BBFC7-E6A9-4B8B-82AD-6815A1AEAF4A"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 45950
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4764,13 +4764,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 29886,
 																	"GUID": {
 																		"GUID": "E4F61863-FE2C-4B56-A8F4-08519BC439DF"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 29886
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4810,13 +4810,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 25982,
 																	"GUID": {
 																		"GUID": "529D3F93-E8E9-4E73-B1E1-BDF6A9D50113"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 25982
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4849,13 +4849,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 45378,
 																	"GUID": {
 																		"GUID": "94734718-0BBC-47FB-96A5-EE7A5AE6A2AD"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 45378
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4888,13 +4888,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 82930,
 																	"GUID": {
 																		"GUID": "9FB1A1F3-3B71-4324-B39A-745CBB015FFF"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 82930
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4934,13 +4934,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 40258,
 																	"GUID": {
 																		"GUID": "DC3641B8-2FA8-4ED3-BC1F-F9962A03454B"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 40258
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -4973,13 +4973,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 38590,
 																	"GUID": {
 																		"GUID": "6D6963AB-906D-4A65-A7CA-BD40E5D6AF2B"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 38590
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5012,13 +5012,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 70078,
 																	"GUID": {
 																		"GUID": "6D6963AB-906D-4A65-A7CA-BD40E5D6AF4D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 70078
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5051,13 +5051,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 44426,
 																	"GUID": {
 																		"GUID": "3B1DEAB5-C75D-442E-9238-8E2FFB62B0BB"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 44426
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5090,13 +5090,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 75382,
 																	"GUID": {
 																		"GUID": "4579B72D-7EC4-4DD4-8486-083C86B182A7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 75382
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5136,13 +5136,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24138,
 																	"GUID": {
 																		"GUID": "A92CDB4B-82F1-4E0B-A516-8A655D371524"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24138
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5175,13 +5175,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 30398,
 																	"GUID": {
 																		"GUID": "2FB92EFA-2EE0-4BAE-9EB6-7464125E1EF7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 30398
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5214,13 +5214,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 37054,
 																	"GUID": {
 																		"GUID": "BDFE430E-8F2A-4DB0-9991-6F856594777E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 37054
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5253,13 +5253,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 54398,
 																	"GUID": {
 																		"GUID": "B7F50E91-A759-412C-ADE4-DCD03E7F7C28"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 54398
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5292,13 +5292,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 39170,
 																	"GUID": {
 																		"GUID": "240612B7-A063-11D4-9A3A-0090273FC14D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 39170
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5331,13 +5331,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 27586,
 																	"GUID": {
 																		"GUID": "2D2E62CF-9ECF-43B7-8219-94E7FC713DFE"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 27586
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5370,13 +5370,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24850,
 																	"GUID": {
 																		"GUID": "9FB4B4A7-42C0-4BCD-8540-9BCC6711F83E"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24850
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5409,13 +5409,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 28170,
 																	"GUID": {
 																		"GUID": "E3752948-B9A1-4770-90C4-DF41C38986BE"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 28170
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5448,13 +5448,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 25418,
 																	"GUID": {
 																		"GUID": "D6099B94-CD97-4CC5-8714-7F6312701A8A"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 25418
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5487,13 +5487,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 21118,
 																	"GUID": {
 																		"GUID": "D9DCC5DF-4007-435E-9098-8970935504B2"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 21118
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5605,13 +5605,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 10730,
 																	"GUID": {
 																		"GUID": "2EC9DA37-EE35-4DE9-86C5-6D9A81DC38A7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 10730
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5671,13 +5671,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 14874,
 																	"GUID": {
 																		"GUID": "8657015B-EA43-440D-949A-AF3BE365C0FC"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 14874
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5728,13 +5728,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 28802,
 																	"GUID": {
 																		"GUID": "733CBAC2-B23F-4B92-BC8E-FB01CE5907B7"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 28802
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5794,13 +5794,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 24714,
 																	"GUID": {
 																		"GUID": "22DC2B60-FE40-42AC-B01F-3AB1FAD9AAD8"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 24714
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5860,13 +5860,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 23334,
 																	"GUID": {
 																		"GUID": "FE5CEA76-4F72-49E8-986F-2CD899DFFE5D"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 23334
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -5944,13 +5944,13 @@
 															},
 															{
 																"Header": {
+																	"ExtendedSize": 57470,
 																	"GUID": {
 																		"GUID": "CBD2E4D5-7068-4FF5-B462-9822B4AD8D60"
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
-																	"State": 248,
-																	"ExtendedSize": 57470
+																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
 																"Sections": [
@@ -6057,13 +6057,13 @@
 				"Files": [
 					{
 						"Header": {
+							"ExtendedSize": 21950,
 							"GUID": {
 								"GUID": "DF1CCEF6-F301-4A63-9661-FC6030DCC880"
 							},
 							"Type": 3,
 							"Attributes": 0,
-							"State": 248,
-							"ExtendedSize": 21950
+							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_SECURITY_CORE",
 						"Sections": [
@@ -6096,13 +6096,13 @@
 					},
 					{
 						"Header": {
+							"ExtendedSize": 190160,
 							"GUID": {
 								"GUID": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 							},
 							"Type": 240,
 							"Attributes": 0,
-							"State": 248,
-							"ExtendedSize": 190160
+							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_FFS_PAD",
 						"ExtractPath": "",
@@ -6110,13 +6110,13 @@
 					},
 					{
 						"Header": {
+							"ExtendedSize": 760,
 							"GUID": {
 								"GUID": "1BA0062E-C779-4582-8566-336AE8F78F09"
 							},
 							"Type": 1,
 							"Attributes": 8,
-							"State": 248,
-							"ExtendedSize": 760
+							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_RAW",
 						"ExtractPath": "",

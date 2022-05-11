@@ -244,9 +244,10 @@ func (f *File) ChecksumHeader() uint8 {
 // they are actually large. This makes it easier for us to just return one type
 // All sizes are also copied into the ExtendedSize field so we only have to check once
 type FileHeaderExtended struct {
-	FileHeader
-	// `json:"-"` removed to fix Fiedka's UEFI block size display
+	// `json:"-"` removed to have info on UEFI blocks size
+	// put on top to fix breaking parsing JSON issue
 	ExtendedSize uint64
+	FileHeader
 }
 
 // File represents an EFI File.
