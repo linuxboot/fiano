@@ -15,8 +15,17 @@ const (
 	// AMDPublicKeyEntry denotes AMD public key entry in PSP Directory table
 	AMDPublicKeyEntry amd_manifest.PSPDirectoryTableEntryType = 0x00
 
+	// PSPRecoveryBootlader is a recovery instance of PSP bootloader
+	PSPRecoveryBootlader amd_manifest.PSPDirectoryTableEntryType = 0x03
+
 	// SMUOffChipFirmwareEntry points to a region of firmware containing SMU offchip firmware
 	SMUOffChipFirmwareEntry amd_manifest.PSPDirectoryTableEntryType = 0x08
+
+	// ABLPublicKey represents the key used to sign ABL firmware
+	ABLPublicKey amd_manifest.PSPDirectoryTableEntryType = 0x0A
+
+	// SMUOffChipFirmware2Entry points to a region of firmware containing SMU offchip firmware
+	SMUOffChipFirmware2Entry amd_manifest.PSPDirectoryTableEntryType = 0x12
 
 	// UnlockDebugImageEntry points to a region of firmware containing PSP early secure unlock debug image
 	UnlockDebugImageEntry amd_manifest.PSPDirectoryTableEntryType = 0x13
@@ -41,9 +50,6 @@ const (
 
 	// KeyDatabaseEntry points to region of firmware containing key database
 	KeyDatabaseEntry amd_manifest.PSPDirectoryTableEntryType = 0x50
-
-	// ABLPublicKey represents the key used to sign ABL firmware
-	ABLPublicKey amd_manifest.PSPDirectoryTableEntryType = 0x0A
 
 	// OEMSigningKeyEntry represents the OEM signing key
 	OEMSigningKeyEntry amd_manifest.BIOSDirectoryTableEntryType = 0x05
