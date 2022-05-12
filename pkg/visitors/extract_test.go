@@ -117,11 +117,11 @@ func TestExtractAssembleFile(t *testing.T) {
 			}
 			nb := f.Buf()
 			if len(test.newBuf) != len(nb) {
-				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
+				t.Fatalf("Binary sizes differ!\n Expected: %v\n Assembled: %v\n", len(test.newBuf), len(nb))
 			}
 			for i := range test.newBuf {
 				if test.newBuf[i] != nb[i] {
-					t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
+					t.Fatalf("Binaries differ at %v!\n Expected: %v\n Assembled: %v\n", i, test.newBuf[i], nb[i])
 				}
 			}
 		})
@@ -163,11 +163,11 @@ func TestExtractAssembleFV(t *testing.T) {
 			}
 			nb := fv.Buf()
 			if len(test.newBuf) != len(nb) {
-				t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
+				t.Fatalf("Binary sizes differ!\n Expected: %v\n Assembled: %v\n", len(test.newBuf), len(nb))
 			}
 			for i := range test.newBuf {
 				if test.newBuf[i] != nb[i] {
-					t.Fatalf("Binaries differ! expected \n%v\n assembled \n%v\n", test.newBuf, nb)
+					t.Fatalf("Binaries differ at %v!\n Expected: %v\n Assembled: %v\n", i, test.newBuf[i], nb[i])
 				}
 			}
 		})
@@ -212,11 +212,11 @@ func TestExtractAssembleSection(t *testing.T) {
 			}
 			nb := s.Buf()
 			if len(test.buf) != len(nb) {
-				t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
+				t.Fatalf("Binary sizes differ!\n Expected: %v\n Assembled: %v\n", len(test.buf), len(nb))
 			}
 			for i := range test.buf {
 				if test.buf[i] != nb[i] {
-					t.Fatalf("Binaries differ! original \n%v\n assembled \n%v\n", test.buf, nb)
+					t.Fatalf("Binaries differ at %v!\n Expected: %v\n Assembled: %v\n", i, test.buf[i], nb[i])
 				}
 			}
 		})
