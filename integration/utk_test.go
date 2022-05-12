@@ -6,6 +6,7 @@ package utk_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -66,9 +67,11 @@ func TestExtractAssembleExtract(t *testing.T) {
 
 			// Test paths
 			var (
-				dir1   = filepath.Join(tmpDirT, "dir1")
-				tmpRom = filepath.Join(tmpDirT, "tmp.rom")
-				dir2   = filepath.Join(tmpDirT, "dir2")
+				dir1         = filepath.Join(tmpDirT, "dir1")
+				tmpRom       = filepath.Join(tmpDirT, "tmp.rom")
+				dir2         = filepath.Join(tmpDirT, "dir2")
+				summary1Json = filepath.Join(dir1, "summary.json")
+				summary2Json = filepath.Join(dir2, "summary.json")
 			)
 
 			// Extract
@@ -94,7 +97,19 @@ func TestExtractAssembleExtract(t *testing.T) {
 					t.Errorf("no files in directory %q", d)
 				}
 			}
-
+			sedRemove := func(path string) {
+				sedCmd := exec.Command("sed", "-i", "/\"ExtendedSize\": [0-9]*.*/d", path)
+				sedCmd.Stderr = os.Stderr
+				sedCmd.Stdout = os.Stdout
+				if err := sedCmd.Run(); err != nil {
+					t.Error(fmt.Sprintf("Sed failed for %s, error: %s", path, err.Error()))
+				}
+			}
+			// Remove all occurences of ExtendedSize from JSON file
+			// compressed sizes are different
+			// diff will always fail if this is not done.
+			sedRemove(summary1Json)
+			sedRemove(summary2Json)
 			// Recursively test for equality.
 			cmd := exec.Command("diff", "-r", dir1, dir2)
 			cmd.Stderr = os.Stderr
