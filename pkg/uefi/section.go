@@ -355,19 +355,31 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	s.Type = s.Header.Type.String()
 
 	headerSize := unsafe.Sizeof(SectionHeader{})
-	if s.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
-		// Extended Header
-		if err := binary.Read(r, binary.LittleEndian, &s.Header.ExtendedSize); err != nil {
-			return nil, err
+	switch s.Header.Type {
+	case SectionTypeAll, SectionTypeCompression, SectionTypeGUIDDefined, SectionTypeDisposable,
+		SectionTypePE32, SectionTypePIC, SectionTypeTE, SectionTypeDXEDepEx, SectionTypeVersion,
+		SectionTypeUserInterface, SectionTypeCompatibility16, SectionTypeFirmwareVolumeImage,
+		SectionTypeFreeformSubtypeGUID, SectionTypeRaw, SectionTypePEIDepEx, SectionMMDepEx:
+		if s.Header.Size == [3]uint8{0xFF, 0xFF, 0xFF} {
+			// Extended Header
+			if err := binary.Read(r, binary.LittleEndian, &s.Header.ExtendedSize); err != nil {
+				return nil, err
+			}
+			if s.Header.ExtendedSize == 0xFFFFFFFF {
+				return nil, errors.New("section size and extended size are all FFs! there should not be free space inside a file")
+			}
+			headerSize = unsafe.Sizeof(SectionExtHeader{})
+		} else {
+			// Copy small size into big for easier handling.
+			// Section's extended size is 32 bits unlike file's
+			s.Header.ExtendedSize = uint32(Read3Size(s.Header.Size))
 		}
-		if s.Header.ExtendedSize == 0xFFFFFFFF {
-			return nil, errors.New("section size and extended size are all FFs! there should not be free space inside a file")
-		}
-		headerSize = unsafe.Sizeof(SectionExtHeader{})
-	} else {
-		// Copy small size into big for easier handling.
-		// Section's extended size is 32 bits unlike file's
+	default:
 		s.Header.ExtendedSize = uint32(Read3Size(s.Header.Size))
+		if buflen := len(buf); int(s.Header.ExtendedSize) > buflen {
+			log.Warnf("foo")
+			s.Header.ExtendedSize = uint32(buflen)
+		}
 	}
 
 	if buflen := len(buf); int(s.Header.ExtendedSize) > buflen {

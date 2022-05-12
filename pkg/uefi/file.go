@@ -49,6 +49,7 @@ const (
 // on this list are treated as opaque binary blobs.
 var SupportedFiles = map[FVFileType]bool{
 	// These are the file types that we'll actually try to parse sections for.
+	FVFileTypeRaw:      false,
 	FVFileTypeFreeForm: true,
 	FVFileTypeSECCore:  true,
 	FVFileTypePEICore:  true,
@@ -483,9 +484,10 @@ func NewFile(buf []byte) (*File, error) {
 	}
 
 	// Parse sections
-	if _, ok := SupportedFiles[f.Header.Type]; !ok {
+	if !SupportedFiles[f.Header.Type] {
 		return &f, nil
 	}
+
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
 		s, err := NewSection(f.buf[offset:], i)
 		if err != nil {
@@ -500,6 +502,5 @@ func NewFile(buf []byte) (*File, error) {
 		offset = Align4(offset)
 		f.Sections = append(f.Sections, s)
 	}
-
 	return &f, nil
 }
