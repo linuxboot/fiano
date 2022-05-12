@@ -60,6 +60,7 @@
 							},
 							"Type": 11,
 							"Attributes": 0,
+							"Size": 1201831,
 							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE",
@@ -132,6 +133,7 @@
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
+																	"Size": 44,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
@@ -154,6 +156,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 64,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -167,6 +170,7 @@
 																	},
 																	"Type": 4,
 																	"Attributes": 16,
+																	"Size": 50426,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEI_CORE",
@@ -212,6 +216,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 20282,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -225,6 +230,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 64,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -238,6 +244,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 8478,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -251,6 +258,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 96,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -264,6 +272,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 8662,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -277,6 +286,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 40,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -290,6 +300,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 35202,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -303,6 +314,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 120,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -316,6 +328,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 19834,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -329,6 +342,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 17734,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -342,6 +356,7 @@
 																	},
 																	"Type": 240,
 																	"Attributes": 0,
+																	"Size": 56,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -355,6 +370,7 @@
 																	},
 																	"Type": 6,
 																	"Attributes": 16,
+																	"Size": 34302,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_PEIM",
@@ -421,6 +437,7 @@
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
+																	"Size": 92,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
@@ -443,6 +460,7 @@
 																	},
 																	"Type": 5,
 																	"Attributes": 0,
+																	"Size": 165950,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DXE_CORE",
@@ -481,6 +499,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24730,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -546,6 +565,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24738,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -620,6 +640,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24754,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -683,6 +704,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24686,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -748,6 +770,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 11766,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -813,6 +836,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 21526,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -869,6 +893,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 7902,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -925,6 +950,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8858,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -981,6 +1007,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 62758,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1046,6 +1073,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8118,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1120,6 +1148,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8838,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1176,6 +1205,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 13306,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1241,6 +1271,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 39482,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1369,6 +1400,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 65474,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1407,6 +1439,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 28802,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1472,6 +1505,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8410,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1528,6 +1562,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 28806,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1611,6 +1646,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 11866,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1649,6 +1685,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 13078,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1687,6 +1724,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 14146,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1725,6 +1763,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 14602,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1763,6 +1802,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 15818,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1801,6 +1841,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 13066,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1839,6 +1880,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 10502,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1877,6 +1919,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 38594,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1915,6 +1958,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 20486,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -1953,6 +1997,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8454,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2027,6 +2072,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 20642,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2101,6 +2147,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24718,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2175,6 +2222,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 16334,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2213,6 +2261,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 33230,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2251,6 +2300,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 25046,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2289,6 +2339,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 32966,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2327,6 +2378,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 26266,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2435,6 +2487,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 111446,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2560,6 +2613,7 @@
 																	},
 																	"Type": 9,
 																	"Attributes": 0,
+																	"Size": 152942,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_APPLICATION",
@@ -2605,6 +2659,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 46098,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2658,6 +2713,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 11802,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2714,6 +2770,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 20610,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2752,6 +2809,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24778,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2790,6 +2848,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 45420,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2905,6 +2964,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8966,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2943,6 +3003,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 17278,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -2981,6 +3042,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 39938,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3019,6 +3081,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 13902,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3057,6 +3120,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 41750,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3095,6 +3159,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 27586,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3133,6 +3198,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 43210,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3171,6 +3237,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 124654,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3236,6 +3303,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 106666,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3328,6 +3396,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 80534,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3436,6 +3505,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 9018,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3501,6 +3571,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 11390,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3539,6 +3610,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 16642,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3577,6 +3649,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 21386,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3615,6 +3688,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24206,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3653,6 +3727,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 21514,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3691,6 +3766,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 22738,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3780,6 +3856,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 13618,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3872,6 +3949,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 29490,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -3937,6 +4015,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 33898,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4029,6 +4108,7 @@
 																	},
 																	"Type": 2,
 																	"Attributes": 0,
+																	"Size": 4392,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_FREEFORM",
@@ -4079,6 +4159,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 27742,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4168,6 +4249,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 59130,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4260,6 +4342,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 10538,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4298,6 +4381,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 42742,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4336,6 +4420,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 44406,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4428,6 +4513,7 @@
 																	},
 																	"Type": 9,
 																	"Attributes": 0,
+																	"Size": 920214,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_APPLICATION",
@@ -4473,6 +4559,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 19706,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4547,6 +4634,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 31614,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4585,6 +4673,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 8918,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4641,6 +4730,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 45950,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4679,6 +4769,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 29886,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4724,6 +4815,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 25982,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4762,6 +4854,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 45378,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4800,6 +4893,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 82930,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4845,6 +4939,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 40258,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4883,6 +4978,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 38590,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4921,6 +5017,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 70078,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4959,6 +5056,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 44426,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -4997,6 +5095,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 75382,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5042,6 +5141,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24138,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5080,6 +5180,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 30398,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5118,6 +5219,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 37054,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5156,6 +5258,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 54398,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5194,6 +5297,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 39170,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5232,6 +5336,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 27586,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5270,6 +5375,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24850,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5308,6 +5414,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 28170,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5346,6 +5453,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 25418,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5384,6 +5492,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 21118,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5501,6 +5610,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 10730,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5566,6 +5676,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 14874,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5622,6 +5733,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 28802,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5687,6 +5799,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 24714,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5752,6 +5865,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 23334,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5835,6 +5949,7 @@
 																	},
 																	"Type": 7,
 																	"Attributes": 0,
+																	"Size": 57470,
 																	"State": 248
 																},
 																"Type": "EFI_FV_FILETYPE_DRIVER",
@@ -5947,6 +6062,7 @@
 							},
 							"Type": 3,
 							"Attributes": 0,
+							"Size": 21950,
 							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_SECURITY_CORE",
@@ -5985,6 +6101,7 @@
 							},
 							"Type": 240,
 							"Attributes": 0,
+							"Size": 190160,
 							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_FFS_PAD",
@@ -5998,6 +6115,7 @@
 							},
 							"Type": 1,
 							"Attributes": 8,
+							"Size": 760,
 							"State": 248
 						},
 						"Type": "EFI_FV_FILETYPE_RAW",
