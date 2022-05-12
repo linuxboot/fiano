@@ -168,12 +168,12 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 	}
 
 	// extract RTM Volume and signature
-	rtmVolume, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMVolumeEntry, -1)
+	rtmVolume, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMVolumeEntry, 0)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
-	rtmVolumeSignature, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMSignatureEntry, -1)
+	rtmVolumeSignature, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMSignatureEntry, 0)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
 	}

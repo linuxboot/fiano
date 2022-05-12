@@ -80,10 +80,10 @@ func (b *PSPBinary) Header() *PspHeader {
 func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 
 	if b.header.sizeSigned == 0 {
-		return nil, fmt.Errorf("size of signed data cannot be 0 for PSPBinary")
+		return nil, newErrInvalidFormat(fmt.Errorf("size of signed data cannot be 0 for PSPBinary"))
 	}
 	if b.header.sizeImage == 0 {
-		return nil, fmt.Errorf("size of image cannot be 0 for PSPBinary")
+		return nil, newErrInvalidFormat(fmt.Errorf("size of image cannot be 0 for PSPBinary"))
 	}
 
 	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary.
@@ -108,7 +108,7 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 	if b.header.compressionOptions == 0x0 {
 		// the image is not compressed, sizeSigned and sizeImage constitute the source of truth
 		if b.header.sizeSigned > b.header.sizeImage {
-			return nil, fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage)
+			return nil, newErrInvalidFormat(fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage))
 		}
 		// sizeSigned does not include the size of the header
 		sizeSignedImage = b.header.sizeSigned + pspHeaderSize
@@ -122,25 +122,25 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 	}
 
 	if sizeImage <= sizeSignature {
-		return nil, fmt.Errorf("sizeImage (%d) cannot be <= of sizeSignature (%d)", sizeImage, sizeSignature)
+		return nil, newErrInvalidFormat(fmt.Errorf("sizeImage (%d) cannot be <= of sizeSignature (%d)", sizeImage, sizeSignature))
 	}
 	signatureStart := sizeImage - sizeSignature
 	signatureEnd := signatureStart + sizeSignature
 
 	if err := checkBoundaries(uint64(signatureStart), uint64(signatureEnd), b.raw); err != nil {
-		return nil, fmt.Errorf("could not extract signature from raw PSPBinary: %w", err)
+		return nil, newErrInvalidFormat(fmt.Errorf("could not extract signature from raw PSPBinary: %w", err))
 	}
 
 	signedDataEnd := signedDataStart + sizeSignedImage
 	if err := checkBoundaries(uint64(signedDataStart), uint64(signedDataEnd), b.raw); err != nil {
-		return nil, fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err)
+		return nil, newErrInvalidFormat(fmt.Errorf("could not extract signed data from raw PSPBinary: %w", err))
 	}
 
 	signature := b.raw[signatureStart:signatureEnd]
 
 	signedData := b.raw[signedDataStart:signedDataEnd]
 	if len(signedData) <= pspHeaderSize {
-		return nil, fmt.Errorf("PSP binary cannot be smaller than or equal to header size")
+		return nil, newErrInvalidFormat(fmt.Errorf("PSP binary cannot be smaller than or equal to header size"))
 	}
 	return NewSignedBlob(signature, signedData, signingKey, "PSP binary")
 }
