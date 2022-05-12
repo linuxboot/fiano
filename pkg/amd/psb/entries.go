@@ -126,7 +126,11 @@ func GetBIOSEntries(
 	}
 
 	if biosTable == nil {
-		return nil, ErrNotFound{Item: fmt.Sprintf("BIOS directory of level %d", biosLevel)}
+		directory, err := GetBIOSDirectoryOfLevel(biosLevel)
+		if err != nil {
+			return nil, fmt.Errorf("unknown bios directory of level %d", biosLevel)
+		}
+		return nil, newErrNotFound(newDirectoryItem(directory))
 	}
 
 	var biosTableEntries []amd_manifest.BIOSDirectoryTableEntry
@@ -143,39 +147,36 @@ func GetBIOSEntries(
 }
 
 // GetBIOSEntry returns a singe entry of a certain type from BIOS directory, returns error if multiple entries are found
-// if instance < 0 returns entry with any instnce
 func GetBIOSEntry(
 	pspFirmware *amd_manifest.PSPFirmware,
 	biosLevel uint,
 	entryID amd_manifest.BIOSDirectoryTableEntryType,
-	instance int,
+	instance uint8,
 ) (*amd_manifest.BIOSDirectoryTableEntry, error) {
 	entries, err := GetBIOSEntries(pspFirmware, biosLevel, entryID)
 	if err != nil {
 		return nil, err
-	}
-	if len(entries) == 0 {
-		return nil, ErrNotFound{Item: fmt.Sprintf("No entries %x in BIOS directory level %d", entryID, biosLevel)}
-	}
-	if instance < 0 {
-		if len(entries) != 1 {
-			return nil, fmt.Errorf("multiple entriers %d are found in BIOS directory level %d", entryID, biosLevel)
-		}
-		return &entries[0], nil
 	}
 
 	var result *amd_manifest.BIOSDirectoryTableEntry
 	for idx := range entries {
 		if entries[idx].Instance == uint8(instance) {
 			if result != nil {
-				return nil, fmt.Errorf("multiple entriers %x of instance %d are found in BIOS directory level %d", entryID, instance, biosLevel)
+				directory, err := GetBIOSDirectoryOfLevel(biosLevel)
+				if err != nil {
+					return nil, fmt.Errorf("unknown bios directory of level %d", biosLevel)
+				}
+				return nil, newErrInvalidFormatWithItem(
+					newDirectoryItem(directory),
+					fmt.Errorf("multiple entriers %x of instance %d are found in BIOS directory level %d", entryID, instance, biosLevel),
+				)
 			}
 			result = &entries[idx]
 		}
 	}
 
 	if result == nil {
-		return nil, ErrNotFound{Item: fmt.Sprintf("No entries %x with instance %d in BIOS directory level %d", entryID, instance, biosLevel)}
+		return nil, newErrNotFound(newBIOSDirectoryEntryItem(uint8(biosLevel), entryID, instance))
 	}
 	return result, nil
 }
@@ -191,7 +192,11 @@ func GetPSPEntries(
 		return nil, err
 	}
 	if pspTable == nil {
-		return nil, ErrNotFound{Item: fmt.Sprintf("PSP directory of level %d", pspLevel)}
+		directory, err := GetPSPDirectoryOfLevel(pspLevel)
+		if err != nil {
+			return nil, fmt.Errorf("unknown psp directory of level %d", pspLevel)
+		}
+		return nil, newErrNotFound(newDirectoryItem(directory))
 	}
 	var entries []amd_manifest.PSPDirectoryTableEntry
 	for _, entry := range pspTable.Entries {
@@ -213,10 +218,17 @@ func GetPSPEntry(
 		return nil, err
 	}
 	if len(entries) == 0 {
-		return nil, ErrNotFound{Item: fmt.Sprintf("No entries %x in PSP directory level %d", entryID, pspLevel)}
+		return nil, newErrNotFound(newPSPDirectoryEntryItem(uint8(pspLevel), entryID))
 	}
 	if len(entries) > 1 {
-		return nil, fmt.Errorf("multiple entriers %x are found in PSP directory level %d", entryID, pspLevel)
+		directory, err := GetPSPDirectoryOfLevel(pspLevel)
+		if err != nil {
+			return nil, fmt.Errorf("unknown psp directory of level %d", pspLevel)
+		}
+		return nil, newErrInvalidFormatWithItem(
+			newDirectoryItem(directory),
+			fmt.Errorf("multiple entriers %x are found in PSP directory level %d", entryID, pspLevel),
+		)
 	}
 	return &entries[0], err
 }
@@ -254,7 +266,7 @@ func GetEntries(pspFirmware *amd_manifest.PSPFirmware, directory DirectoryType, 
 func GetRangeBytes(image []byte, start, length uint64) ([]byte, error) {
 	end := start + length
 	if err := checkBoundaries(start, end, image); err != nil {
-		return nil, fmt.Errorf("boundary check fail: %w", err)
+		return nil, newErrInvalidFormat(fmt.Errorf("boundary check fail: %w", err))
 	}
 	return image[start:end], nil
 }
@@ -266,16 +278,30 @@ func ExtractPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entryID amd
 	if err != nil {
 		return nil, err
 	}
-	return GetRangeBytes(amdFw.Firmware().ImageBytes(), entry.LocationOrValue, uint64(entry.Size))
+	data, err := GetRangeBytes(amdFw.Firmware().ImageBytes(), entry.LocationOrValue, uint64(entry.Size))
+	if err != nil {
+		if errInvalidFormat, ok := err.(ErrInvalidFormat); ok {
+			return nil, newErrInvalidFormatWithItem(newPSPDirectoryEntryItem(uint8(pspLevel), entryID), errInvalidFormat.Unwrap())
+		}
+		return nil, err
+	}
+	return data, nil
 }
 
 // ExtractBIOSEntry extracts a single generic raw entry from BIOS Directory.
-func ExtractBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance int) ([]byte, error) {
+func ExtractBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance uint8) ([]byte, error) {
 	entry, err := GetBIOSEntry(amdFw.PSPFirmware(), biosLevel, entryID, instance)
 	if err != nil {
 		return nil, err
 	}
-	return GetRangeBytes(amdFw.Firmware().ImageBytes(), entry.SourceAddress, uint64(entry.Size))
+	data, err := GetRangeBytes(amdFw.Firmware().ImageBytes(), entry.SourceAddress, uint64(entry.Size))
+	if err != nil {
+		if errInvalidFormat, ok := err.(ErrInvalidFormat); ok {
+			return nil, newErrInvalidFormatWithItem(newBIOSDirectoryEntryItem(uint8(biosLevel), entryID, instance), errInvalidFormat.Unwrap())
+		}
+		return nil, err
+	}
+	return data, nil
 }
 
 // DumpPSPEntry dumps an entry from PSP Directory
@@ -288,7 +314,7 @@ func DumpPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entryID amd_ma
 }
 
 // DumpBIOSEntry dumps an entry from BIOS directory
-func DumpBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance int, w io.Writer) (int, error) {
+func DumpBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance uint8, w io.Writer) (int, error) {
 	data, err := ExtractBIOSEntry(amdFw, biosLevel, entryID, instance)
 	if err != nil {
 		return 0, err
@@ -311,7 +337,7 @@ func PatchPSPEntry(amdFw *amd_manifest.AMDFirmware, pspLevel uint, entryID amd_m
 
 // PatchBIOSEntry takes an AmdFirmware object and modifies one entry in BIOS directory.
 // The modified entry is read from `r` reader object, while the modified firmware is written into `w` writer object.
-func PatchBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance int, r io.Reader, w io.Writer) (int, error) {
+func PatchBIOSEntry(amdFw *amd_manifest.AMDFirmware, biosLevel uint, entryID amd_manifest.BIOSDirectoryTableEntryType, instance uint8, r io.Reader, w io.Writer) (int, error) {
 	entry, err := GetBIOSEntry(amdFw.PSPFirmware(), biosLevel, entryID, instance)
 	if err != nil {
 		return 0, err
@@ -331,12 +357,12 @@ func patchEntry(amdFw *amd_manifest.AMDFirmware, start, end uint64, r io.Reader,
 	firmwareBytes := amdFw.Firmware().ImageBytes()
 
 	if err := checkBoundaries(start, end, firmwareBytes); err != nil {
-		return 0, fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err)
+		return 0, newErrInvalidFormat(fmt.Errorf("cannot extract key database from firmware image, boundary check fail: %w", err))
 	}
 
 	size := end - start
 	if uint64(end-start) != uint64(len(modifiedEntry)) {
-		return 0, fmt.Errorf("cannot write the entry to the firmware image, entry size check fail, expected %d, modified entry is %d", uint64(size), uint64(len(modifiedEntry)))
+		return 0, newErrInvalidFormat(fmt.Errorf("cannot write the entry to the firmware image, entry size check fail, expected %d, modified entry is %d", uint64(size), uint64(len(modifiedEntry))))
 	}
 
 	firmwareBytesFirstSection := firmwareBytes[0:start]
