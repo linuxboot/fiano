@@ -377,7 +377,6 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 	default:
 		s.Header.ExtendedSize = uint32(Read3Size(s.Header.Size))
 		if buflen := len(buf); int(s.Header.ExtendedSize) > buflen {
-			log.Warnf("foo")
 			s.Header.ExtendedSize = uint32(buflen)
 		}
 	}
