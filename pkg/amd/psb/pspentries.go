@@ -242,7 +242,7 @@ func OutputPSPEntries(amdFw *amd_manifest.AMDFirmware) error {
 	return nil
 }
 
-// ValidatePSPEntries validates signature of PSP entries given their entry values in PSP Table
+// ValidatePSPEntries validates signature of PSP entries given their entry values in PSP/BIOS Table
 func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, directory DirectoryType, entries []uint32) ([]SignatureValidationResult, error) {
 	validationResults := make([]SignatureValidationResult, 0, len(entries))
 
@@ -255,32 +255,41 @@ func ValidatePSPEntries(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, directory
 			return nil, fmt.Errorf("no entries %d are found in '%s'", entry, directory)
 		}
 
-		image := amdFw.Firmware().ImageBytes()
 		for _, entry := range entries {
-			data, err := GetRangeBytes(image, entry.Offset, entry.Length)
+			validationResult, err := ValidatePSPEntry(amdFw, keyDB, entry.Offset, entry.Length)
 			if err != nil {
 				return nil, err
 			}
-			binary, err := newPSPBinary(data)
-			if err != nil {
-				return nil, fmt.Errorf("could not create PSB binary from raw data for entry 0x%x: %w", entry, err)
-			}
-			signedBlob, err := binary.getSignedBlob(keyDB)
-			var signedElement strings.Builder
-			fmt.Fprintf(&signedElement, "PSP entry 0x%s", entry)
-
-			if err != nil {
-				var sigError *SignatureCheckError
-				if errors.As(err, &sigError) {
-					validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), signingKey: sigError.SigningKey(), err: err})
-				} else {
-					validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), err: err})
-				}
-			} else {
-				signature := signedBlob.Signature()
-				validationResults = append(validationResults, SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.SigningKey(), err: err})
-			}
+			validationResults = append(validationResults, validationResult)
 		}
 	}
 	return validationResults, nil
+}
+
+// ValidatePSPEntry validates signature of a PSP entry
+func ValidatePSPEntry(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, offset, length uint64) (SignatureValidationResult, error) {
+	image := amdFw.Firmware().ImageBytes()
+	data, err := GetRangeBytes(image, offset, length)
+	if err != nil {
+		return SignatureValidationResult{}, err
+	}
+
+	binary, err := newPSPBinary(data)
+	if err != nil {
+		return SignatureValidationResult{}, fmt.Errorf("could not create PSB binary from raw data for entry: 0x%x-0x%x: %w", offset, offset+length, err)
+	}
+	signedBlob, err := binary.getSignedBlob(keyDB)
+	var signedElement strings.Builder
+	fmt.Fprintf(&signedElement, "PSP entry 0x%x-0x%x", offset, offset+length)
+
+	if err != nil {
+		var sigError *SignatureCheckError
+		if errors.As(err, &sigError) {
+			return SignatureValidationResult{signedElement: signedElement.String(), signingKey: sigError.SigningKey(), err: err}, nil
+		}
+		return SignatureValidationResult{signedElement: signedElement.String(), err: err}, nil
+	}
+
+	signature := signedBlob.Signature()
+	return SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.SigningKey(), err: err}, nil
 }
