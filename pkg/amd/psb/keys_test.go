@@ -55,17 +55,17 @@ func (suite *KeySuite) TestKeySetAddKey() {
 func (suite *KeySuite) TestRootKeyFields() {
 	key, err := NewRootKey(bytes.NewBuffer(amdRootKey))
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), uint32(0x01), key.versionID)
+	assert.Equal(suite.T(), uint32(0x01), key.VersionID)
 
-	assert.Equal(suite.T(), KeyID(rootKeyID), key.keyID)
-	assert.Equal(suite.T(), rootKeyID, key.certifyingKeyID)
-	assert.Equal(suite.T(), uint32(0x00), key.keyUsageFlag)
+	assert.Equal(suite.T(), KeyID(rootKeyID), key.KeyID)
+	assert.Equal(suite.T(), rootKeyID, key.CertifyingKeyID)
+	assert.Equal(suite.T(), uint32(0x00), key.KeyUsageFlag)
 
-	assert.Equal(suite.T(), uint32(0x1000), key.exponentSize)
-	assert.Equal(suite.T(), uint32(0x1000), key.modulusSize)
+	assert.Equal(suite.T(), uint32(0x1000), key.ExponentSize)
+	assert.Equal(suite.T(), uint32(0x1000), key.ModulusSize)
 
-	hashExponent := sha256.Sum256(key.exponent)
-	hashModulus := sha256.Sum256(key.modulus)
+	hashExponent := sha256.Sum256(key.Exponent)
+	hashModulus := sha256.Sum256(key.Modulus)
 
 	expectedModulusHash := [32]uint8{0x87, 0xdb, 0xd4, 0x5, 0x40, 0x23, 0x7d, 0xf3, 0x9c, 0x7, 0x2e, 0xfc, 0x2b, 0xa9, 0x1e, 0xc2, 0x3a, 0xe, 0xe5, 0x7e, 0x2a, 0xf0, 0x74, 0xdd, 0xe8, 0x44, 0xa4, 0x61, 0x4d, 0xc4, 0x57, 0x7b}
 
@@ -85,18 +85,18 @@ func (suite *KeySuite) TestOEMKeyFields() {
 
 	key, err := NewTokenKey(bytes.NewBuffer(oemSigningKey), keySet)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), uint32(0x01), key.versionID)
+	assert.Equal(suite.T(), uint32(0x01), key.VersionID)
 
-	assert.Equal(suite.T(), KeyID(oemKeyID), key.keyID)
-	assert.Equal(suite.T(), rootKey.keyID, KeyID(key.certifyingKeyID))
+	assert.Equal(suite.T(), KeyID(oemKeyID), key.KeyID)
+	assert.Equal(suite.T(), rootKey.KeyID, KeyID(key.CertifyingKeyID))
 
-	assert.Equal(suite.T(), uint32(0x08), key.keyUsageFlag)
+	assert.Equal(suite.T(), uint32(0x08), key.KeyUsageFlag)
 
-	assert.Equal(suite.T(), uint32(0x1000), key.exponentSize)
-	assert.Equal(suite.T(), uint32(0x1000), key.modulusSize)
+	assert.Equal(suite.T(), uint32(0x1000), key.ExponentSize)
+	assert.Equal(suite.T(), uint32(0x1000), key.ModulusSize)
 
-	hashExponent := sha256.Sum256(key.exponent)
-	hashModulus := sha256.Sum256(key.modulus)
+	hashExponent := sha256.Sum256(key.Exponent)
+	hashModulus := sha256.Sum256(key.Modulus)
 
 	expectedModulusHash := [32]uint8{0x53, 0xbf, 0x68, 0xb9, 0x67, 0x97, 0xc5, 0x1f, 0xdd, 0xd3, 0xe6, 0x65, 0x2b, 0x2d, 0xdd, 0x2c, 0x6e, 0x57, 0x37, 0xee, 0x69, 0x6c, 0x50, 0x83, 0xa1, 0x25, 0xa9, 0x74, 0x24, 0xc1, 0xaf, 0x91}
 

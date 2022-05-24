@@ -47,14 +47,13 @@ func (kdb *KeySet) String() string {
 
 // AddKey adds a key to the key set
 func (kdb KeySet) AddKey(k *Key, keyType KeyType) error {
-	keyID := k.KeyID()
-	if _, ok := kdb.db[keyID]; ok {
-		return fmt.Errorf("canont add key id %s to set, key with same id already exists", keyID.Hex())
+	if _, ok := kdb.db[k.KeyID]; ok {
+		return fmt.Errorf("canont add key id %s to set, key with same id already exists", k.KeyID.Hex())
 	}
 
-	kdb.db[keyID] = k
+	kdb.db[k.KeyID] = k
 	// assume the key cannot be already present in the keyType mapping
-	kdb.keyType[keyType] = append(kdb.keyType[keyType], k.KeyID())
+	kdb.keyType[keyType] = append(kdb.keyType[keyType], k.KeyID)
 	return nil
 }
 
@@ -101,11 +100,11 @@ func (kdb KeySet) KeysetFromType(keyType KeyType) (KeySet, error) {
 
 // keydbHeader represents the header pre-pended to keydb structure
 type keydbHeader struct {
-	dataSize        uint32
-	version         uint32
-	cookie          uint32
-	reserved        buf36B
-	customerDefined buf32B
+	DataSize        uint32
+	Version         uint32
+	Cookie          uint32
+	Reserved        buf36B
+	CustomerDefined buf32B
 }
 
 func readAndCountSize(r io.Reader, order binary.ByteOrder, data interface{}, counter *uint64) error {
@@ -122,20 +121,8 @@ func readAndCountSize(r io.Reader, order binary.ByteOrder, data interface{}, cou
 func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
 	header := keydbHeader{}
 
-	if err := binary.Read(buff, binary.LittleEndian, &header.dataSize); err != nil {
-		return nil, fmt.Errorf("could not parse dataSize from keydb header: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &header.version); err != nil {
-		return nil, fmt.Errorf("could not parse version from keydb header: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &header.cookie); err != nil {
-		return nil, fmt.Errorf("could not parse cookie from keydb header: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &header.reserved); err != nil {
-		return nil, fmt.Errorf("could not parse reserved region from keydb header: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &header.customerDefined); err != nil {
-		return nil, fmt.Errorf("could not parse customer defined region from keydb header: %w", err)
+	if err := binary.Read(buff, binary.LittleEndian, &header); err != nil {
+		return nil, fmt.Errorf("could not read key database header: %w", err)
 	}
 
 	return &header, nil

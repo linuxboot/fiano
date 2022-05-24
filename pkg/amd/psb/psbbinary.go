@@ -17,35 +17,35 @@ const sizeSignedToSignatureParametersLen = 32
 
 // PspHeader models the header pre-pended to PSP binaries
 type PspHeader struct {
-	nonce                 buf16B
-	headerVersion         uint32
-	sizeSigned            uint32
-	encryptionOptions     uint32
-	ikekType              uint8
-	reserved0             buf3B
-	encryptionParameters  buf16B
-	signatureOption       uint32
-	signatureAlgorithmID  uint32
-	signatureParameters   buf16B
-	compressionOptions    uint32
-	securityPatchLevel    uint32
-	uncompressedImageSize uint32
-	compressedImageSize   uint32
-	compressionParameters buf8B
-	imageVersion          uint32
-	apuFamilyID           uint32
-	firmwareLoadAddress   uint32
-	sizeImage             uint32
-	sizeFwUnsigned        uint32
-	firmwareSplitAddress  uint32
-	reserved              buf4B
-	fwType                uint8
-	fwSubType             uint8
-	reserved1             uint16
-	encryptionKey         buf16B
-	signingInfo           buf16B
-	fwSpecificData        buf32B
-	debugEncKey           buf16B
+	Nonce                 buf16B
+	HeaderVersion         uint32
+	SizeSigned            uint32
+	EncryptionOptions     uint32
+	IkekType              uint8
+	Reserved0             buf3B
+	EncryptionParameters  buf16B
+	SignatureOption       uint32
+	SignatureAlgorithmID  uint32
+	SignatureParameters   buf16B
+	CompressionOptions    uint32
+	SecurityPatchLevel    uint32
+	UncompressedImageSize uint32
+	CompressedImageSize   uint32
+	CompressionParameters buf8B
+	ImageVersion          uint32
+	ApuFamilyID           uint32
+	FirmwareLoadAddress   uint32
+	SizeImage             uint32
+	SizeFwUnsigned        uint32
+	FirmwareSplitAddress  uint32
+	Reserved              buf4B
+	FwType                uint8
+	FwSubType             uint8
+	Reserved1             uint16
+	EncryptionKey         buf16B
+	SigningInfo           buf16B
+	FwSpecificData        buf32B
+	DebugEncKey           buf16B
 
 	// There should be 48 bytes of padding after the last field of the header,
 	// which can be ignored. What we care about is the signature of the binary,
@@ -56,7 +56,7 @@ type PspHeader struct {
 
 // Version returns the headerVersion field of the pspHeader structure
 func (h *PspHeader) Version() uint32 {
-	return h.headerVersion
+	return h.HeaderVersion
 }
 
 // PSPBinary represents a generic PSPBinary with pre-pended header structure
@@ -79,16 +79,16 @@ func (b *PSPBinary) Header() *PspHeader {
 // getSignedBlob returns the PSP binary object as a signature-validated SignedBlob structure
 func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 
-	if b.header.sizeSigned == 0 {
+	if b.header.SizeSigned == 0 {
 		return nil, newErrInvalidFormat(fmt.Errorf("size of signed data cannot be 0 for PSPBinary"))
 	}
-	if b.header.sizeImage == 0 {
+	if b.header.SizeImage == 0 {
 		return nil, newErrInvalidFormat(fmt.Errorf("size of image cannot be 0 for PSPBinary"))
 	}
 
 	// Try use signatureParameters as KeyID field for the signing key which signed the PSP binary.
 	// We need to look-up the signing key to infer the expected size of the signature.
-	signingKeyID := KeyID(b.header.signatureParameters)
+	signingKeyID := KeyID(b.header.SignatureParameters)
 	signingKey := keyDB.GetKey(signingKeyID)
 	if signingKey == nil {
 		return nil, &UnknownSigningKeyError{keyID: signingKeyID}
@@ -97,27 +97,27 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 	// The recommended value for RSA exponent is 0x10001. The specification does not enforce
 	// that modulus and exponent buffer size should be the same, but so far this has been the
 	// case. This should probably be clarified with AMD and possibly be removed in the future.
-	if signingKey.modulusSize != signingKey.exponentSize {
-		return nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.modulusSize, signingKey.exponentSize)
+	if signingKey.ModulusSize != signingKey.ExponentSize {
+		return nil, fmt.Errorf("exponent size (%d) and modulus size (%d) do not match", signingKey.ModulusSize, signingKey.ExponentSize)
 	}
 
-	sizeSignature := signingKey.modulusSize / 8
+	sizeSignature := signingKey.ModulusSize / 8
 
 	sizeImage := uint32(0)
 	sizeSignedImage := uint32(0)
-	if b.header.compressionOptions == 0x0 {
+	if b.header.CompressionOptions == 0x0 {
 		// the image is not compressed, sizeSigned and sizeImage constitute the source of truth
-		if b.header.sizeSigned > b.header.sizeImage {
-			return nil, newErrInvalidFormat(fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.sizeSigned, b.header.sizeImage))
+		if b.header.SizeSigned > b.header.SizeImage {
+			return nil, newErrInvalidFormat(fmt.Errorf("size of signed image cannot be > size of image (%d > %d)", b.header.SizeSigned, b.header.SizeImage))
 		}
 		// sizeSigned does not include the size of the header
-		sizeSignedImage = b.header.sizeSigned + pspHeaderSize
-		sizeImage = b.header.sizeImage
+		sizeSignedImage = b.header.SizeSigned + pspHeaderSize
+		sizeImage = b.header.SizeImage
 	} else {
 		// the image is compressed, SizeFWSigned is to be ignored and instead compressedImageSize should be
 		// taken into consideration and aligned to 16 bits. PSP header size is not included in compresseImageSize.
 		alignment := uint32(0x10)
-		sizeSignedImage = (b.header.compressedImageSize+alignment-1) & ^(alignment-1) + pspHeaderSize
+		sizeSignedImage = (b.header.CompressedImageSize+alignment-1) & ^(alignment-1) + pspHeaderSize
 		sizeImage = sizeSignedImage + sizeSignature
 	}
 
@@ -157,60 +157,8 @@ func newPSPBinary(data []byte) (*PSPBinary, error) {
 
 	buff := bytes.NewBuffer(pspBinary.raw)
 
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.nonce); err != nil {
-		return nil, fmt.Errorf("could not parse nonce from PSPBinary: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.headerVersion); err != nil {
-		return nil, fmt.Errorf("could not parse header version from PSPBinary: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.sizeSigned); err != nil {
-		return nil, fmt.Errorf("could not parse sizeSigned from PSPBinary: %w", err)
-
-	}
-
-	// skip parsing up to signatureParameters, all other fields are not relevant at the moment
-	unknown := make([]byte, sizeSignedToSignatureParametersLen)
-	if err := binary.Read(buff, binary.LittleEndian, unknown); err != nil {
-		return nil, fmt.Errorf("could not read header until sizeSignedToSignatureParametersLen: %w", err)
-	}
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.signatureParameters); err != nil {
-		return nil, fmt.Errorf("could not read signatureParameters: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.compressionOptions); err != nil {
-		return nil, fmt.Errorf("could not read compressionOptions: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.securityPatchLevel); err != nil {
-		return nil, fmt.Errorf("could not read securityPatchLevel: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.uncompressedImageSize); err != nil {
-		return nil, fmt.Errorf("could not read uncompressedImageSize: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.compressedImageSize); err != nil {
-		return nil, fmt.Errorf("could not read compressedImageSize: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.compressionParameters); err != nil {
-		return nil, fmt.Errorf("could not read compressionParameters: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.imageVersion); err != nil {
-		return nil, fmt.Errorf("could not read imageVersion: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.apuFamilyID); err != nil {
-		return nil, fmt.Errorf("could not read apuFamilyID: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.firmwareLoadAddress); err != nil {
-		return nil, fmt.Errorf("could not read firmwareLoadAddress: %w", err)
-	}
-
-	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header.sizeImage); err != nil {
-		return nil, fmt.Errorf("could not read sizeImage: %w", err)
+	if err := binary.Read(buff, binary.LittleEndian, &pspBinary.header); err != nil {
+		return nil, fmt.Errorf("could not parse header of PSP Binary: %w", err)
 	}
 	return &pspBinary, nil
 }

@@ -17,7 +17,7 @@ type SignatureCheckError struct {
 // Error returns the string representation of SignatureCheckError
 func (m *SignatureCheckError) Error() string {
 	var s strings.Builder
-	keyID := m.signingKey.KeyID()
+	keyID := m.signingKey.KeyID
 	fmt.Fprintf(&s, "signature of element %s does not validate against signing key %s: %s", m.signedElement, keyID.Hex(), m.err.Error())
 	return s.String()
 }
