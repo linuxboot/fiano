@@ -78,8 +78,7 @@ func (suite *PsbBinarySuite) TestPSBBinarySignedData() {
 	require.NotNil(suite.T(), sig)
 	key := sig.SigningKey()
 	require.NotNil(suite.T(), key)
-	keyID := key.KeyID()
-	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), keyID.String())
+	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), key.KeyID.String())
 
 	// obtain the RSA key from the generic Key object
 	pubKey, err := key.Get()
@@ -135,8 +134,7 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryValidation() {
 
 	signingKey := signatureValidation[0].signingKey
 
-	keyID := signingKey.KeyID()
-	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), keyID.String())
+	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), signingKey.KeyID.String())
 }
 
 func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongSignature() {
@@ -171,8 +169,7 @@ func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongSignature(
 
 	require.NotNil(suite.T(), signatureValidation[0].signingKey)
 	signingKey := signatureValidation[0].signingKey
-	keyID := signingKey.KeyID()
-	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), keyID.String())
+	require.Equal(suite.T(), hex.EncodeToString(smuSigningKeyID[:]), signingKey.KeyID.String())
 }
 
 func (suite *PsbBinarySuite) TestPSBBinaryPSPDirectoryLevel2EntryWrongKeys() {
