@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -348,7 +349,6 @@ func (k *Key) Get() (interface{}, error) {
 // of all the keys known to the system (e.g. additional keys might be OEM key,
 // ABL signing key, etc.).
 func GetKeys(amdFw *amd_manifest.AMDFirmware, level uint) (KeySet, error) {
-
 	keySet := NewKeySet()
 	err := getKeysFromDatabase(amdFw, level, keySet)
 	if err != nil {
@@ -371,19 +371,22 @@ func GetKeys(amdFw *amd_manifest.AMDFirmware, level uint) (KeySet, error) {
 	}
 
 	// Extract OEM signing key (entry 0x05 in BIOS Directory table)
+	// in PSB disabled this entry doesn't exist
 	pubKeyBytes, err = ExtractBIOSEntry(amdFw, level, OEMSigningKeyEntry, 0)
 	if err != nil {
-		return keySet, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key: %w", err)
-	}
-	oemPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
-	if err != nil {
-		return keySet, fmt.Errorf("could not extract OEM public key: %w", err)
-	}
+		if !errors.As(err, &ErrNotFound{}) {
+			return keySet, fmt.Errorf("could not extract raw BIOS directory entry for OEM Public Key: %w", err)
+		}
+	} else {
+		oemPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
+		if err != nil {
+			return keySet, fmt.Errorf("could not extract OEM public key: %w", err)
+		}
 
-	err = keySet.AddKey(oemPk, OEMKey)
-	if err != nil {
-		return keySet, fmt.Errorf("could not add OEM signing key to key set: %w", err)
+		err = keySet.AddKey(oemPk, OEMKey)
+		if err != nil {
+			return keySet, fmt.Errorf("could not add OEM signing key to key set: %w", err)
+		}
 	}
-
-	return keySet, err
+	return keySet, nil
 }
