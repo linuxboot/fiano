@@ -50,17 +50,102 @@ func (kids KeyIDs) String() string {
 	return s.String()
 }
 
+// KeyUsageFlag describes a known values for KeyUsageFlag field of AMD PSP Key structure
+type KeyUsageFlag uint32
+
+const (
+	// SignAMDBootloaderPSPSMU tells that the corresponding key is authorized to sign AMD developed PSP Boot
+	// Loader and AMD developed PSP FW components and SMU FW.
+	// See Table 26. RSA Key Format Fields of AMD Platform Security Processor BIOS Architecture Design Guide for AMD Family 17h and 19h Processors
+	// Revision 1.11
+	SignAMDBootloaderPSPSMU KeyUsageFlag = 0
+
+	// SignBIOS tells that the corresponding key is authorized to sign BIOS
+	SignBIOS KeyUsageFlag = 1
+
+	// SignAMDOEMPSP tells that the corresponding key is authorized to sign PSP FW (both AMD developed and OEM developed)
+	SignAMDOEMPSP KeyUsageFlag = 2
+
+	// PSBSignBIOS tells that a key is authorized to sign BIOS for platform secure boot.
+	// See Table 8. RSA Key Format Fields of Enabling Platform Secure Boot
+	// for AMD Family 17h Models 00h–0Fh and 30h–3Fh and Family 19h Models 00h–0Fh Processor-Based Server Platforms
+	// Revision 0.91
+	PSBSignBIOS KeyUsageFlag = 8
+)
+
 // Key structure extracted from the firmware
 type Key struct {
 	VersionID       uint32
 	KeyID           KeyID
 	CertifyingKeyID buf16B
-	KeyUsageFlag    uint32
+	KeyUsageFlag    KeyUsageFlag
 	Reserved        buf16B
 	ExponentSize    uint32
 	ModulusSize     uint32
 	Exponent        []byte
 	Modulus         []byte
+}
+
+// PlatformBindingInfo describes information of BIOS Signing Key to Platform Binding information
+type PlatformBindingInfo struct {
+	VendorID        uint8
+	KeyRevisionID   uint8
+	PlatformModelID uint8
+}
+
+func (b PlatformBindingInfo) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "Vendor ID: %X\n", b.VendorID)
+	fmt.Fprintf(&s, "Key Revision ID: %X\n", b.KeyRevisionID)
+	fmt.Fprintf(&s, "Platform Model ID: %X\n", b.PlatformModelID)
+	return s.String()
+}
+
+// GetPlatformBindingInfo for PSBSignBIOS key returns BIOS Signing Key to Platform Binding information
+func GetPlatformBindingInfo(k *Key) (PlatformBindingInfo, error) {
+	if k.KeyUsageFlag != PSBSignBIOS {
+		return PlatformBindingInfo{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.KeyUsageFlag)
+	}
+	return parsePlatformBinding(k.Reserved), nil
+}
+
+func parsePlatformBinding(reserved buf16B) PlatformBindingInfo {
+	return PlatformBindingInfo{
+		VendorID:        reserved[0],
+		KeyRevisionID:   reserved[1] & 7,  // Bits 0:3 => Key Revision ID
+		PlatformModelID: reserved[1] << 3, // Bits 4:7 => Platform Model ID
+	}
+}
+
+// SecurityFeatureVector represents a security feature selection vector of BIOS OEM key
+type SecurityFeatureVector struct {
+	DisableBIOSKeyAntiRollback bool
+	DisableAMDBIOSKeyUse       bool
+	DisableSecureDebugUnlock   bool
+}
+
+func (sfv SecurityFeatureVector) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "DISABLE_BIOS_KEY_ANTI_ROLLBACK: %t\n", sfv.DisableBIOSKeyAntiRollback)
+	fmt.Fprintf(&s, "DISABLE_AMD_BIOS_KEY_USE: %t\n", sfv.DisableAMDBIOSKeyUse)
+	fmt.Fprintf(&s, "DISABLE_SECURE_DEBUG_UNLOCK: %t\n", sfv.DisableSecureDebugUnlock)
+	return s.String()
+}
+
+// GetSecurityFeatureVector for PSBSignBIOS key returns a security feature selection vector
+func GetSecurityFeatureVector(k *Key) (SecurityFeatureVector, error) {
+	if k.KeyUsageFlag != PSBSignBIOS {
+		return SecurityFeatureVector{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.KeyUsageFlag)
+	}
+	return parseSecurityFeatureVector(k.Reserved), nil
+}
+
+func parseSecurityFeatureVector(reserved buf16B) SecurityFeatureVector {
+	return SecurityFeatureVector{
+		DisableBIOSKeyAntiRollback: reserved[3]&1 == 1,
+		DisableAMDBIOSKeyUse:       (reserved[3]<<1)&1 == 1,
+		DisableSecureDebugUnlock:   (reserved[3]<<2)&1 == 1,
+	}
 }
 
 // Key creation functions manage two slightly different key structures available in firmware:
@@ -310,6 +395,10 @@ func (k *Key) String() string {
 	fmt.Fprintf(&s, "Key ID: 0x%s\n", k.KeyID.Hex())
 	fmt.Fprintf(&s, "Certifying Key ID: 0x%x\n", k.CertifyingKeyID)
 	fmt.Fprintf(&s, "Key Usage Flag: 0x%x\n", k.KeyUsageFlag)
+	if k.KeyUsageFlag == PSBSignBIOS {
+		fmt.Fprintf(&s, "%s", parsePlatformBinding(k.Reserved))
+		fmt.Fprintf(&s, "%s", parseSecurityFeatureVector(k.Reserved))
+	}
 	fmt.Fprintf(&s, "Exponent size: 0x%x (dec %d) \n", k.ExponentSize, k.ExponentSize)
 	fmt.Fprintf(&s, "Modulus size: 0x%x (dec %d)\n", k.ModulusSize, k.ModulusSize)
 
