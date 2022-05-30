@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,7 +60,7 @@ func (suite *KeySuite) TestRootKeyFields() {
 
 	assert.Equal(suite.T(), KeyID(rootKeyID), key.KeyID)
 	assert.Equal(suite.T(), rootKeyID, key.CertifyingKeyID)
-	assert.Equal(suite.T(), uint32(0x00), key.KeyUsageFlag)
+	assert.Equal(suite.T(), SignAMDBootloaderPSPSMU, key.KeyUsageFlag)
 
 	assert.Equal(suite.T(), uint32(0x1000), key.ExponentSize)
 	assert.Equal(suite.T(), uint32(0x1000), key.ModulusSize)
@@ -75,7 +76,6 @@ func (suite *KeySuite) TestRootKeyFields() {
 }
 
 func (suite *KeySuite) TestOEMKeyFields() {
-
 	rootKey, err := NewRootKey(bytes.NewBuffer(amdRootKey))
 	assert.NoError(suite.T(), err)
 
@@ -90,7 +90,18 @@ func (suite *KeySuite) TestOEMKeyFields() {
 	assert.Equal(suite.T(), KeyID(oemKeyID), key.KeyID)
 	assert.Equal(suite.T(), rootKey.KeyID, KeyID(key.CertifyingKeyID))
 
-	assert.Equal(suite.T(), uint32(0x08), key.KeyUsageFlag)
+	assert.Equal(suite.T(), PSBSignBIOS, key.KeyUsageFlag)
+	platSignInfo, err := GetPlatformBindingInfo(key)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), byte(0x8D), platSignInfo.VendorID)
+	assert.Zero(suite.T(), platSignInfo.KeyRevisionID)
+	assert.Zero(suite.T(), platSignInfo.PlatformModelID)
+
+	secutiryFeatures, err := GetSecurityFeatureVector(key)
+	require.NoError(suite.T(), err)
+	assert.False(suite.T(), secutiryFeatures.DisableAMDBIOSKeyUse)
+	assert.False(suite.T(), secutiryFeatures.DisableBIOSKeyAntiRollback)
+	assert.False(suite.T(), secutiryFeatures.DisableSecureDebugUnlock)
 
 	assert.Equal(suite.T(), uint32(0x1000), key.ExponentSize)
 	assert.Equal(suite.T(), uint32(0x1000), key.ModulusSize)
@@ -102,7 +113,6 @@ func (suite *KeySuite) TestOEMKeyFields() {
 
 	assert.Equal(suite.T(), rsaCommonExponentSHA256, hashExponent)
 	assert.Equal(suite.T(), expectedModulusHash, hashModulus)
-
 }
 
 func (suite *KeySuite) TestKeyDBParsing() {
