@@ -78,7 +78,6 @@ func (b *PSPBinary) Header() *PspHeader {
 
 // getSignedBlob returns the PSP binary object as a signature-validated SignedBlob structure
 func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
-
 	if b.header.SizeSigned == 0 {
 		return nil, newErrInvalidFormat(fmt.Errorf("size of signed data cannot be 0 for PSPBinary"))
 	}
@@ -142,7 +141,7 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 	if len(signedData) <= pspHeaderSize {
 		return nil, newErrInvalidFormat(fmt.Errorf("PSP binary cannot be smaller than or equal to header size"))
 	}
-	return NewSignedBlob(signature, signedData, signingKey, "PSP binary")
+	return NewSignedBlob(signature, signedData, signingKey)
 }
 
 // newPSPBinary creates a PSPBinary object, with associated header

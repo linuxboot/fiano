@@ -303,7 +303,7 @@ func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 	}
 
 	// Validate the signature of the raw token
-	if _, err := NewSignedBlob(reverse(signature), raw[:lenSigned], signingKey, "token key"); err != nil {
+	if _, err := NewSignedBlob(reverse(signature), raw[:lenSigned], signingKey); err != nil {
 		return nil, fmt.Errorf("could not validate the signature of token key: %w", err)
 	}
 	return key, nil
@@ -451,7 +451,7 @@ func GetKeys(amdFw *amd_manifest.AMDFirmware, level uint) (KeySet, error) {
 	}
 	ablPk, err := NewTokenKey(bytes.NewBuffer(pubKeyBytes), keySet)
 	if err != nil {
-		return keySet, fmt.Errorf("could not extract ABL public key: %w", err)
+		return keySet, addFirmwareItemToError(err, newPSPDirectoryEntryItem(uint8(level), ABLPublicKey))
 	}
 
 	err = keySet.AddKey(ablPk, ABLKey)
