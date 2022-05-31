@@ -1,8 +1,8 @@
 package psb
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 )
@@ -10,16 +10,20 @@ import (
 // SignatureCheckError is an error type which indicates that signature of an element cannot be validated against its signing key
 type SignatureCheckError struct {
 	signingKey    *Key
-	signedElement string
+	signedElement FirmwareItem
 	err           error
 }
 
 // Error returns the string representation of SignatureCheckError
 func (m *SignatureCheckError) Error() string {
-	var s strings.Builder
-	keyID := m.signingKey.KeyID
-	fmt.Fprintf(&s, "signature of element %s does not validate against signing key %s: %s", m.signedElement, keyID.Hex(), m.err.Error())
-	return s.String()
+	if m.signedElement == nil {
+		return fmt.Sprintf("signature does not validate against signing key %s: %s", m.signingKey.KeyID.Hex(), m.err.Error())
+	}
+	return fmt.Sprintf("signature of element %s does not validate against signing key %s: %s", m.signedElement, m.signingKey.KeyID.Hex(), m.err.Error())
+}
+
+func (m *SignatureCheckError) Unwrap() error {
+	return m.err
 }
 
 // SigningKey returns the SigningKey associated to the error. Might return nil value
@@ -27,14 +31,28 @@ func (m *SignatureCheckError) SigningKey() *Key {
 	return m.signingKey
 }
 
+// SignedElement returns an optional item whose signature check failed
+func (m *SignatureCheckError) SignedElement() FirmwareItem {
+	return m.signedElement
+}
+
 // UnknownSigningKeyError is an error type which indicates that the signing key is unknown
 type UnknownSigningKeyError struct {
-	keyID KeyID
+	signedElement FirmwareItem
+	keyID         KeyID
+}
+
+// SignedElement returns an optional item whose signature check failed
+func (s *UnknownSigningKeyError) SignedElement() FirmwareItem {
+	return s.signedElement
 }
 
 // Error returns the string representation of the UnknownSigningKeyError
 func (s *UnknownSigningKeyError) Error() string {
-	return fmt.Sprintf("key ID %s is unknown", s.keyID.Hex())
+	if s.signedElement == nil {
+		return fmt.Sprintf("key ID '%s' is unknown", s.keyID.Hex())
+	}
+	return fmt.Sprintf("failed to check signature of element '%s' key ID '%s' is unknown", s.signedElement, s.keyID.Hex())
 }
 
 // FirmwareItem is a special item that references a PSP firmware item and could be one of the following types:
@@ -53,7 +71,7 @@ type BIOSDirectoryEntryItem struct {
 }
 
 func (biosEntry BIOSDirectoryEntryItem) String() string {
-	return fmt.Sprintf("entry '0x%X' instance %d of bios directory level %d", biosEntry.Entry, biosEntry.Instance, biosEntry.Level)
+	return fmt.Sprintf("entry '0x%X' (%s) instance %d of bios directory level %d", biosEntry.Entry, BIOSEntryType(biosEntry.Entry), biosEntry.Instance, biosEntry.Level)
 }
 
 func newBIOSDirectoryEntryItem(level uint8, entry amd_manifest.BIOSDirectoryTableEntryType, instance uint8) FirmwareItem {
@@ -71,7 +89,7 @@ type PSPDirectoryEntryItem struct {
 }
 
 func (pspEntry PSPDirectoryEntryItem) String() string {
-	return fmt.Sprintf("entry '0x%X' of psp directory level %d", pspEntry.Entry, pspEntry.Level)
+	return fmt.Sprintf("entry '0x%X' (%s) of psp directory level %d", pspEntry.Entry, PSPEntryType(pspEntry.Entry), pspEntry.Level)
 }
 
 func newPSPDirectoryEntryItem(level uint8, entry amd_manifest.PSPDirectoryTableEntryType) PSPDirectoryEntryItem {
@@ -130,4 +148,43 @@ func newErrInvalidFormatWithItem(item FirmwareItem, err error) ErrInvalidFormat 
 
 func newErrInvalidFormat(err error) ErrInvalidFormat {
 	return ErrInvalidFormat{err: err}
+}
+
+func addFirmwareItemToError(err error, item FirmwareItem) error {
+	if err == nil {
+		return nil
+	}
+
+	var sigCheckErr *SignatureCheckError
+	if errors.As(err, &sigCheckErr) {
+		if sigCheckErr.signedElement == nil {
+			return &SignatureCheckError{signingKey: sigCheckErr.signingKey, signedElement: item, err: sigCheckErr.err}
+		}
+		return err
+	}
+
+	var unknownKey *UnknownSigningKeyError
+	if errors.As(err, &unknownKey) {
+		if unknownKey.signedElement == nil {
+			return &UnknownSigningKeyError{keyID: unknownKey.keyID, signedElement: item}
+		}
+		return err
+	}
+
+	var notFoundErr ErrNotFound
+	if errors.As(err, &notFoundErr) {
+		if notFoundErr.item == nil {
+			return ErrNotFound{item: item}
+		}
+		return err
+	}
+
+	var invalidFormatErr ErrInvalidFormat
+	if errors.As(err, &invalidFormatErr) {
+		if notFoundErr.item == nil {
+			return ErrNotFound{item: item}
+		}
+		return err
+	}
+	return err
 }

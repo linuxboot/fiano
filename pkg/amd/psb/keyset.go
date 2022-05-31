@@ -85,13 +85,13 @@ func (kdb KeySet) AllKeyIDs() KeyIDs {
 // KeysetFromType returns a KeySet containing all KeyIDs of a specific type
 func (kdb KeySet) KeysetFromType(keyType KeyType) (KeySet, error) {
 	if _, ok := kdb.keyType[keyType]; !ok {
-		return NewKeySet(), fmt.Errorf("no key of type %s", keyType)
+		return NewKeySet(), newErrNotFound(nil)
 	}
 	keySet := NewKeySet()
 	for _, keyID := range kdb.keyType[keyType] {
 		key := kdb.GetKey(keyID)
 		if key == nil {
-			return NewKeySet(), fmt.Errorf("KeySet in inconsistent state, no key is present with keyID %s", keyID.Hex())
+			return NewKeySet(), newErrInvalidFormat(fmt.Errorf("KeySet in inconsistent state, no key is present with keyID %s", keyID.Hex()))
 		}
 		keySet.AddKey(key, keyType)
 	}
@@ -170,7 +170,7 @@ func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet 
 	}
 	amdPk, err := NewRootKey(bytes.NewBuffer(pubKeyBytes))
 	if err != nil {
-		return fmt.Errorf("could not create AMD Root key from raw bytes: %w", err)
+		return addFirmwareItemToError(err, newPSPDirectoryEntryItem(uint8(pspLevel), AMDPublicKeyEntry))
 	}
 
 	// All keys which get added the KeySet are supposed to be trusted. AMD root key is trusted as a result of being matched against a
@@ -187,19 +187,21 @@ func getKeysFromDatabase(amdFw *amd_manifest.AMDFirmware, pspLevel uint, keySet 
 
 	binary, err := newPSPBinary(data)
 	if err != nil {
-		return fmt.Errorf("could not create PSB binary from raw data for entry 0x%x (KeyDatabaseEntry): %w", KeyDatabaseEntry, err)
+		return newErrInvalidFormatWithItem(newPSPDirectoryEntryItem(uint8(pspLevel), KeyDatabaseEntry),
+			fmt.Errorf("could not create PSB binary from raw data for entry 0x%x (KeyDatabaseEntry): %w", KeyDatabaseEntry, err))
 	}
 
 	// getSignedBlob returns the whole PSP blob as a signature-validated structure.
 	signedBlob, err := binary.getSignedBlob(keySet)
 	if err != nil {
-		return fmt.Errorf("could not validate signature of PSB binary: %w", err)
+		return addFirmwareItemToError(err, newPSPDirectoryEntryItem(uint8(pspLevel), KeyDatabaseEntry))
 	}
 
 	// We need to strip off pspHeader to get the content which actually represents the keys database
 	signedData := signedBlob.SignedData()
 	if len(signedData) <= pspHeaderSize {
-		return fmt.Errorf("length of key database entry (%d) is less than pspHeader length (%d)", len(signedData), pspHeaderSize)
+		return newErrInvalidFormatWithItem(newPSPDirectoryEntryItem(uint8(pspLevel), KeyDatabaseEntry),
+			fmt.Errorf("length of key database entry (%d) is less than pspHeader length (%d)", len(signedData), pspHeaderSize))
 	}
 
 	return parseKeyDatabase(signedData[pspHeaderSize:], keySet)

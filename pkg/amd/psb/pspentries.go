@@ -291,5 +291,5 @@ func ValidatePSPEntry(amdFw *amd_manifest.AMDFirmware, keyDB KeySet, offset, len
 	}
 
 	signature := signedBlob.Signature()
-	return SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.SigningKey(), err: err}, nil
+	return SignatureValidationResult{signedElement: signedElement.String(), signingKey: signature.SigningKey()}, nil
 }

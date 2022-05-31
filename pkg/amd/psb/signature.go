@@ -25,11 +25,10 @@ func (b *SignedBlob) Signature() *Signature {
 }
 
 // NewSignedBlob creates a new signed blob object and validates its signature
-func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key, description string) (*SignedBlob, error) {
-
+func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key) (*SignedBlob, error) {
 	structuredKey, err := signingKey.Get()
 	if err != nil {
-		return nil, &SignatureCheckError{signingKey: signingKey, signedElement: description, err: fmt.Errorf("could not get structured key data from key in signature object: %w", err)}
+		return nil, &SignatureCheckError{signingKey: signingKey, err: fmt.Errorf("could not get structured key data from key in signature object: %w", err)}
 	}
 
 	switch rsaKey := structuredKey.(type) {
@@ -40,7 +39,7 @@ func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key, descrip
 			hash := sha512.New384()
 			hash.Write(signedData)
 			if err := rsa.VerifyPSS(rsaKey, hashAlg, hash.Sum(nil), signature, nil); err != nil {
-				return nil, &SignatureCheckError{signingKey: signingKey, signedElement: description, err: err}
+				return nil, &SignatureCheckError{signingKey: signingKey, err: err}
 			}
 			signature := NewSignature(signature, signingKey)
 			return &SignedBlob{signedData: signedData, signature: &signature}, nil
@@ -53,8 +52,7 @@ func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key, descrip
 
 // NewMultiKeySignedBlob validates the signature of a blob against multiple possible keys stored in a KeySet,
 // returning the key which validates the signature of the blob
-func NewMultiKeySignedBlob(signature []byte, signedData []byte, keySet KeySet, description string) (*SignedBlob, *Key, error) {
-
+func NewMultiKeySignedBlob(signature []byte, signedData []byte, keySet KeySet) (*SignedBlob, *Key, error) {
 	allKeyIDs := keySet.AllKeyIDs()
 	for _, keyID := range allKeyIDs {
 		key := keySet.GetKey(keyID)
@@ -62,7 +60,7 @@ func NewMultiKeySignedBlob(signature []byte, signedData []byte, keySet KeySet, d
 			return nil, nil, fmt.Errorf("KeySet is inconsistent, KeyID %s was returned but corresponding key is not present", keyID.Hex())
 		}
 
-		blob, err := NewSignedBlob(signature, signedData, key, description)
+		blob, err := NewSignedBlob(signature, signedData, key)
 		if err == nil {
 			return blob, key, nil
 		}
@@ -120,6 +118,11 @@ func (v *SignatureValidationResult) String() string {
 		fmt.Fprintf(&str, "Signature: OK\n")
 	}
 	return str.String()
+}
+
+// SigningKey returns a key that was used to validate the signature
+func (v *SignatureValidationResult) SigningKey() *Key {
+	return v.signingKey
 }
 
 // Error returns a signature verification error if any

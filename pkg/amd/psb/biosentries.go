@@ -153,16 +153,18 @@ func OutputBIOSEntries(amdFw *amd_manifest.AMDFirmware) error {
 
 // ValidateRTM validates signature of RTM volume and BIOS directory table concatenated
 func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureValidationResult, error) {
-
 	pspFw := amdFw.PSPFirmware()
 
 	// Get the byte range we'll need on the BIOS depending on the level
 	var biosDirectoryRange bytes2.Range
+	var directory DirectoryType
 	switch biosLevel {
 	case 1:
 		biosDirectoryRange = pspFw.BIOSDirectoryLevel1Range
+		directory = BIOSDirectoryLevel1
 	case 2:
 		biosDirectoryRange = pspFw.BIOSDirectoryLevel2Range
+		directory = BIOSDirectoryLevel2
 	default:
 		return nil, fmt.Errorf("cannot extract raw BIOS entry, invalid BIOS Directory Level requested: %d", biosLevel)
 	}
@@ -173,19 +175,14 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume (%x): %w", BIOSRTMVolumeEntry, err)
 	}
 
+	oemKey, err := GetPSBSignBIOSKey(amdFw, biosLevel)
+	if err != nil {
+		return nil, err
+	}
+
 	rtmVolumeSignature, err := ExtractBIOSEntry(amdFw, biosLevel, BIOSRTMSignatureEntry, 0)
 	if err != nil {
 		return nil, fmt.Errorf("could not extract BIOS entry corresponding to RTM volume signature (%x): %w", BIOSRTMSignatureEntry, err)
-	}
-
-	keySet, err := GetKeys(amdFw, biosLevel)
-	if err != nil {
-		return nil, fmt.Errorf("could not extract key from firmware: %w", err)
-	}
-
-	oemKeySet, err := keySet.KeysetFromType(OEMKey)
-	if err != nil {
-		return nil, fmt.Errorf("could not get keySet for type %s: %w", OEMKey, err)
 	}
 
 	// signature of RTM volume is calculated over the concatenation of RTM volume itself and
@@ -196,7 +193,8 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 	biosDirectoryEnd := biosDirectoryStart + biosDirectoryRange.Length
 
 	if err := checkBoundaries(biosDirectoryStart, biosDirectoryEnd, firmwareBytes); err != nil {
-		return nil, fmt.Errorf("could not extract BIOS Level %d directory, boundary check error: %w", biosLevel, err)
+		return nil, newErrInvalidFormatWithItem(newDirectoryItem(directory),
+			fmt.Errorf("could not extract BIOS Level %d directory, boundary check error: %w", biosLevel, err))
 	}
 
 	/**
@@ -209,7 +207,8 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 		biosDirectoryLevel1End := biosDirectoryLevel1Start + pspFw.BIOSDirectoryLevel1Range.Length
 
 		if err := checkBoundaries(biosDirectoryLevel1Start, biosDirectoryLevel1End, firmwareBytes); err != nil {
-			return nil, fmt.Errorf("could not extract BIOS Level 1 directory, boundary check error: %w", err)
+			return nil, newErrInvalidFormatWithItem(newDirectoryItem(BIOSDirectoryLevel1),
+				fmt.Errorf("could not extract BIOS Level 1 directory, boundary check error: %w", err))
 		}
 
 		biosDirectoryTableBytes := firmwareBytes[biosDirectoryLevel1Start:biosDirectoryLevel1End]
@@ -219,10 +218,40 @@ func ValidateRTM(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*SignatureVal
 	biosDirectoryTableBytes := firmwareBytes[biosDirectoryStart:biosDirectoryEnd]
 	rtmVolume = append(rtmVolume, biosDirectoryTableBytes...)
 
-	_, key, err := NewMultiKeySignedBlob(reverse(rtmVolumeSignature), rtmVolume, oemKeySet, "RTM Volume concatenated with BIOS Directory")
+	_, err = NewSignedBlob(reverse(rtmVolumeSignature), rtmVolume, oemKey)
+	return &SignatureValidationResult{signedElement: "RTM Volume concatenated with BIOS Directory", signingKey: oemKey, err: err}, nil
+}
+
+// GetPSBSignBIOSKey returns and OEM Key that is used to sign BIOS during PSB enabled
+func GetPSBSignBIOSKey(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*Key, error) {
+	keySet, err := GetKeys(amdFw, biosLevel)
 	if err != nil {
-		return nil, fmt.Errorf("could not validate signature of RTM Volume: %w", err)
+		return nil, fmt.Errorf("could not extract key from firmware: %w", err)
 	}
 
-	return &SignatureValidationResult{signedElement: "RTM Volume concatenated with BIOS Directory", signingKey: key, err: nil}, nil
+	oemKeySet, err := keySet.KeysetFromType(OEMKey)
+	if err != nil {
+		return nil, addFirmwareItemToError(err, newBIOSDirectoryEntryItem(uint8(biosLevel), OEMSigningKeyEntry, 0))
+	}
+	oemKeys := oemKeySet.AllKeyIDs()
+	switch len(oemKeys) {
+	case 0:
+		return nil, newErrNotFound(newBIOSDirectoryEntryItem(uint8(biosLevel), OEMSigningKeyEntry, 0))
+	case 1:
+		// should be only 1 OEM key
+	default:
+		return nil, newErrInvalidFormatWithItem(
+			newBIOSDirectoryEntryItem(uint8(biosLevel), OEMSigningKeyEntry, 0),
+			fmt.Errorf("multiple '%d' OEM keys", len(oemKeys)),
+		)
+	}
+
+	oemKey := keySet.GetKey(oemKeys[0])
+	if oemKey.KeyUsageFlag != PSBSignBIOS {
+		return nil, newErrInvalidFormatWithItem(
+			newBIOSDirectoryEntryItem(uint8(biosLevel), OEMSigningKeyEntry, 0),
+			fmt.Errorf("incorrect key usage '%d', expected: '%d'", oemKey.KeyUsageFlag, PSBSignBIOS),
+		)
+	}
+	return oemKey, nil
 }
