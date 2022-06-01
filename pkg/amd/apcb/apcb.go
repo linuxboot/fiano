@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +39,21 @@ const (
 	TokenIDPSPStopOnError     TokenID = 0xE7024A21
 )
 
+// GetTokenIDString returns literal representation of known Token IDs otherwise an empty string
+func GetTokenIDString(tokenID TokenID) string {
+	switch tokenID {
+	case TokenIDPSPMeasureConfig:
+		return "APCB_TOKEN_UID_PSP_MEASURE_CONFIG"
+	case TokenIDPSPEnableDebugMode:
+		return "APCB_TOKEN_UID_PSP_ENABLE_DEBUG_MODE"
+	case TokenIDPSPErrorDisplay:
+		return "APCB_TOKEN_UID_PSP_ERROR_DISPLAY"
+	case TokenIDPSPStopOnError:
+		return "APCB_TOKEN_UID_PSP_STOP_ON_ERROR"
+	}
+	return ""
+}
+
 // See: AgesaPkg/Addendum/Apcb/Inc/CommonV3/ApcbV3Priority.h
 
 // An APCB token may be saved in different instances or purpose levels and can have instances of the token at
@@ -52,6 +68,24 @@ const (
 // PriorityLevel describes APCB BInary token priority level (APCB_PRIORITY_LEVEL in AGESA source code)
 type PriorityLevel uint8
 
+func (pl PriorityLevel) String() string {
+	switch pl {
+	case PriorityLevelHardForce:
+		return "HardForce"
+	case PriorityLevelHigh:
+		return "High"
+	case PriorityLevelMedium:
+		return "Medium"
+	case PriorityLevelEventLogging:
+		return "EventLogging"
+	case PriorityLevelLow:
+		return "Low"
+	case PriorityLevelDefault:
+		return "Default"
+	}
+	return fmt.Sprintf("PriorityLevel_%d", pl)
+}
+
 // Defines existing APCB token priority levels
 const (
 	PriorityLevelHardForce    PriorityLevel = 1
@@ -64,6 +98,23 @@ const (
 
 // PriorityMask specifies a combined set of APCBPriorityLevels
 type PriorityMask uint8
+
+func (m PriorityMask) String() string {
+	var s strings.Builder
+	for level := PriorityLevelHardForce; level <= PriorityLevelDefault; level++ {
+		flag := uint8(1 << (uint8(level) - 1))
+		if uint8(m)&flag != uint8(0) {
+			if s.Len() > 0 {
+				s.WriteString("|")
+			}
+			s.WriteString(level.String())
+		}
+	}
+	if s.Len() == 0 {
+		return "none"
+	}
+	return s.String()
+}
 
 // CreatePriorityMask combines PriorityLevel into a APCBPriorityMask
 func CreatePriorityMask(levels ...PriorityLevel) PriorityMask {
