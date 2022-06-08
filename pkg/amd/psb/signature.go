@@ -77,7 +77,7 @@ type Signature struct {
 
 // String returns a string representation of the signature
 func (s *Signature) String() string {
-	keyID := s.signingKey.KeyID
+	keyID := s.signingKey.data.KeyID
 	var str strings.Builder
 	fmt.Fprintf(&str, "KeyID: %s\n", keyID.Hex())
 	fmt.Fprintf(&str, "Signature: 0x%x\n", s.signature)
@@ -107,7 +107,7 @@ func (v *SignatureValidationResult) String() string {
 	var str strings.Builder
 	fmt.Fprintf(&str, "Signed element: %s\n", v.signedElement)
 	if v.signingKey != nil {
-		keyID := v.signingKey.KeyID
+		keyID := v.signingKey.data.KeyID
 		fmt.Fprintf(&str, "Signing key ID: 0x%s\n", keyID.Hex())
 	} else {
 		fmt.Fprintf(&str, "Signing key ID: UNKNOWN\n")

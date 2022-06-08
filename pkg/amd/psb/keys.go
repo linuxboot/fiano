@@ -19,7 +19,7 @@ import (
 )
 
 // KeyID is the primary identifier of a key
-type KeyID buf16B
+type KeyID Buf16B
 
 // Hex returns a hexadecimal string representation of a KeyID
 func (kid *KeyID) Hex() string {
@@ -73,17 +73,22 @@ const (
 	PSBSignBIOS KeyUsageFlag = 8
 )
 
-// Key structure extracted from the firmware
-type Key struct {
+// KeyData represents the binary format (as it is stored in an image) of the information associated with a key
+type KeyData struct {
 	VersionID       uint32
 	KeyID           KeyID
-	CertifyingKeyID buf16B
+	CertifyingKeyID Buf16B
 	KeyUsageFlag    KeyUsageFlag
-	Reserved        buf16B
+	Reserved        Buf16B
 	ExponentSize    uint32
 	ModulusSize     uint32
 	Exponent        []byte
 	Modulus         []byte
+}
+
+// Key structure extracted from the firmware
+type Key struct {
+	data KeyData
 }
 
 // PlatformBindingInfo describes information of BIOS Signing Key to Platform Binding information
@@ -103,13 +108,13 @@ func (b PlatformBindingInfo) String() string {
 
 // GetPlatformBindingInfo for PSBSignBIOS key returns BIOS Signing Key to Platform Binding information
 func GetPlatformBindingInfo(k *Key) (PlatformBindingInfo, error) {
-	if k.KeyUsageFlag != PSBSignBIOS {
-		return PlatformBindingInfo{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.KeyUsageFlag)
+	if k.data.KeyUsageFlag != PSBSignBIOS {
+		return PlatformBindingInfo{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.data.KeyUsageFlag)
 	}
-	return parsePlatformBinding(k.Reserved), nil
+	return parsePlatformBinding(k.data.Reserved), nil
 }
 
-func parsePlatformBinding(reserved buf16B) PlatformBindingInfo {
+func parsePlatformBinding(reserved Buf16B) PlatformBindingInfo {
 	return PlatformBindingInfo{
 		VendorID:        reserved[0],
 		KeyRevisionID:   reserved[1] & 7,  // Bits 0:3 => Key Revision ID
@@ -134,13 +139,13 @@ func (sfv SecurityFeatureVector) String() string {
 
 // GetSecurityFeatureVector for PSBSignBIOS key returns a security feature selection vector
 func GetSecurityFeatureVector(k *Key) (SecurityFeatureVector, error) {
-	if k.KeyUsageFlag != PSBSignBIOS {
-		return SecurityFeatureVector{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.KeyUsageFlag)
+	if k.data.KeyUsageFlag != PSBSignBIOS {
+		return SecurityFeatureVector{}, fmt.Errorf("not a PSBSignBios key usage flag: %v", k.data.KeyUsageFlag)
 	}
-	return parseSecurityFeatureVector(k.Reserved), nil
+	return parseSecurityFeatureVector(k.data.Reserved), nil
 }
 
-func parseSecurityFeatureVector(reserved buf16B) SecurityFeatureVector {
+func parseSecurityFeatureVector(reserved Buf16B) SecurityFeatureVector {
 	return SecurityFeatureVector{
 		DisableBIOSKeyAntiRollback: reserved[3]&1 == 1,
 		DisableAMDBIOSKeyUse:       (reserved[3]<<1)&1 == 1,
@@ -162,7 +167,7 @@ func parseSecurityFeatureVector(reserved buf16B) SecurityFeatureVector {
 // 		publicExponent [4]uint8
 //		keyID	[16]uint8
 //		keySize uint32
-//		reserved buf44B
+//		reserved Buf44B
 //		modulus []byte
 // }
 //
@@ -180,7 +185,7 @@ func parseSecurityFeatureVector(reserved buf16B) SecurityFeatureVector {
 // a key should be validated.
 
 func zeroCertifyingKeyID(key *Key) bool {
-	for _, v := range key.CertifyingKeyID {
+	for _, v := range key.data.CertifyingKeyID {
 		if v != 0 {
 			return false
 		}
@@ -191,29 +196,29 @@ func zeroCertifyingKeyID(key *Key) bool {
 // readExponent reads exponent value from a buffer, assuming exponent size
 // has already been populated.
 func readExponent(buff *bytes.Buffer, key *Key) error {
-	if key.ExponentSize%8 != 0 {
+	if key.data.ExponentSize%8 != 0 {
 		return newErrInvalidFormat(fmt.Errorf("exponent size is not divisible by 8"))
 	}
-	exponent := make([]byte, key.ExponentSize/8)
+	exponent := make([]byte, key.data.ExponentSize/8)
 	if err := binary.Read(buff, binary.LittleEndian, &exponent); err != nil {
 		return newErrInvalidFormat(fmt.Errorf("could not parse exponent: %w", err))
 	}
-	key.Exponent = exponent
+	key.data.Exponent = exponent
 	return nil
 }
 
 // readModulus reads modulus value from a buffer, assuming modulus size
 // has already been populated
 func readModulus(buff *bytes.Buffer, key *Key) error {
-	if key.ModulusSize%8 != 0 {
+	if key.data.ModulusSize%8 != 0 {
 		return newErrInvalidFormat(fmt.Errorf("modulus size is not divisible by 8"))
 	}
 
-	modulus := make([]byte, key.ModulusSize/8)
+	modulus := make([]byte, key.data.ModulusSize/8)
 	if err := binary.Read(buff, binary.LittleEndian, &modulus); err != nil {
 		return newErrInvalidFormat(fmt.Errorf("could not parse modulus: %w", err))
 	}
-	key.Modulus = modulus
+	key.data.Modulus = modulus
 	return nil
 }
 
@@ -222,25 +227,25 @@ func newTokenOrRootKey(buff *bytes.Buffer) (*Key, error) {
 
 	key := Key{}
 
-	if err := binary.Read(buff, binary.LittleEndian, &key.VersionID); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.VersionID); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse VersionID: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.KeyID); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.KeyID); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse KeyID: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.CertifyingKeyID); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.CertifyingKeyID); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse Certifying KeyID: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.KeyUsageFlag); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.KeyUsageFlag); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse Key Usage Flag: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.Reserved); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.Reserved); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse reserved area: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.ExponentSize); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.ExponentSize); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse exponent size: %w", err))
 	}
-	if err := binary.Read(buff, binary.LittleEndian, &key.ModulusSize); err != nil {
+	if err := binary.Read(buff, binary.LittleEndian, &key.data.ModulusSize); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse modulus size: %w", err))
 	}
 
@@ -261,8 +266,8 @@ func NewRootKey(buff *bytes.Buffer) (*Key, error) {
 		return nil, fmt.Errorf("cannot parse root key: %w", err)
 	}
 
-	if key.KeyID != key.CertifyingKeyID {
-		return nil, newErrInvalidFormat(fmt.Errorf("root key must have certifying key ID == key ID (key ID: %x, certifying key ID: %x)", key.KeyID, key.CertifyingKeyID))
+	if key.data.KeyID != key.data.CertifyingKeyID {
+		return nil, newErrInvalidFormat(fmt.Errorf("root key must have certifying key ID == key ID (key ID: %x, certifying key ID: %x)", key.data.KeyID, key.data.CertifyingKeyID))
 	}
 	return key, err
 
@@ -279,11 +284,11 @@ func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 	}
 
 	// validate the signature of the new token key
-	signature := make([]byte, key.ModulusSize/8)
+	signature := make([]byte, key.data.ModulusSize/8)
 	if err := binary.Read(buff, binary.LittleEndian, &signature); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse signature from key token: %w", err))
 	}
-	signingKeyID := KeyID(key.CertifyingKeyID)
+	signingKeyID := KeyID(key.data.CertifyingKeyID)
 	signingKey := keySet.GetKey(signingKeyID)
 	if signingKey == nil {
 		return nil, fmt.Errorf("could not find signing key with ID %s for key token key", signingKeyID.Hex())
@@ -297,7 +302,7 @@ func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 	//
 	// Exponent, modulus and signature are all of the same size. Only the latter is not signed, hence the lenght
 	// of the signed payload is header size + 2 * exponent/modulus size.
-	lenSigned := uint64(64 + 2*key.ModulusSize/8)
+	lenSigned := uint64(64 + 2*key.data.ModulusSize/8)
 	if uint64(len(raw)) < lenSigned {
 		return nil, newErrInvalidFormat(fmt.Errorf("length of signed token is not sufficient: expected > %d, got %d", lenSigned, len(raw)))
 	}
@@ -328,21 +333,21 @@ func NewKeyFromDatabase(buff *bytes.Buffer) (*Key, error) {
 		return nil, newErrInvalidFormat(fmt.Errorf("buffer is not long enough (%d) to satisfy dataSize (%d)", buff.Len(), dataSize))
 	}
 
-	if err := readAndCountSize(buff, binary.LittleEndian, &key.VersionID, &numRead); err != nil {
+	if err := readAndCountSize(buff, binary.LittleEndian, &key.data.VersionID, &numRead); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse VersionID: %w", err))
 	}
 
-	if err := readAndCountSize(buff, binary.LittleEndian, &key.KeyUsageFlag, &numRead); err != nil {
+	if err := readAndCountSize(buff, binary.LittleEndian, &key.data.KeyUsageFlag, &numRead); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse key usage flags: %w", err))
 	}
 
-	var publicExponent buf4B
+	var publicExponent Buf4B
 	if err := readAndCountSize(buff, binary.LittleEndian, &publicExponent, &numRead); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse public exponent: %w", err))
 	}
-	key.Exponent = publicExponent[:]
+	key.data.Exponent = publicExponent[:]
 
-	if err := readAndCountSize(buff, binary.LittleEndian, &key.KeyID, &numRead); err != nil {
+	if err := readAndCountSize(buff, binary.LittleEndian, &key.data.KeyID, &numRead); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse key id: %w", err))
 	}
 
@@ -358,10 +363,10 @@ func NewKeyFromDatabase(buff *bytes.Buffer) (*Key, error) {
 		return nil, newErrInvalidFormat(fmt.Errorf("key size is not divisible by 8 (%d)", keySize))
 	}
 
-	key.ExponentSize = keySize
-	key.ModulusSize = keySize
+	key.data.ExponentSize = keySize
+	key.data.ModulusSize = keySize
 
-	var reserved buf44B
+	var reserved Buf44B
 	if err := readAndCountSize(buff, binary.LittleEndian, &reserved, &numRead); err != nil {
 		return nil, newErrInvalidFormat(fmt.Errorf("could not parse reserved area: %w", err))
 	}
@@ -391,16 +396,16 @@ func (k *Key) String() string {
 		return s.String()
 	}
 
-	fmt.Fprintf(&s, "Version ID: 0x%x\n", k.VersionID)
-	fmt.Fprintf(&s, "Key ID: 0x%s\n", k.KeyID.Hex())
-	fmt.Fprintf(&s, "Certifying Key ID: 0x%x\n", k.CertifyingKeyID)
-	fmt.Fprintf(&s, "Key Usage Flag: 0x%x\n", k.KeyUsageFlag)
-	if k.KeyUsageFlag == PSBSignBIOS {
-		fmt.Fprintf(&s, "%s", parsePlatformBinding(k.Reserved))
-		fmt.Fprintf(&s, "%s", parseSecurityFeatureVector(k.Reserved))
+	fmt.Fprintf(&s, "Version ID: 0x%x\n", k.data.VersionID)
+	fmt.Fprintf(&s, "Key ID: 0x%s\n", k.data.KeyID.Hex())
+	fmt.Fprintf(&s, "Certifying Key ID: 0x%x\n", k.data.CertifyingKeyID)
+	fmt.Fprintf(&s, "Key Usage Flag: 0x%x\n", k.data.KeyUsageFlag)
+	if k.data.KeyUsageFlag == PSBSignBIOS {
+		fmt.Fprintf(&s, "%s", parsePlatformBinding(k.data.Reserved))
+		fmt.Fprintf(&s, "%s", parseSecurityFeatureVector(k.data.Reserved))
 	}
-	fmt.Fprintf(&s, "Exponent size: 0x%x (dec %d) \n", k.ExponentSize, k.ExponentSize)
-	fmt.Fprintf(&s, "Modulus size: 0x%x (dec %d)\n", k.ModulusSize, k.ModulusSize)
+	fmt.Fprintf(&s, "Exponent size: 0x%x (dec %d) \n", k.data.ExponentSize, k.data.ExponentSize)
+	fmt.Fprintf(&s, "Modulus size: 0x%x (dec %d)\n", k.data.ModulusSize, k.data.ModulusSize)
 
 	switch rsaKey := pubKey.(type) {
 	case *rsa.PublicKey:
@@ -409,7 +414,7 @@ func (k *Key) String() string {
 		fmt.Fprintf(&s, "Exponent: key is not RSA, cannot get decimal exponent\n")
 	}
 
-	fmt.Fprintf(&s, "Modulus: 0x%x\n", k.Modulus)
+	fmt.Fprintf(&s, "Modulus: 0x%x\n", k.data.Modulus)
 	return s.String()
 }
 
@@ -418,10 +423,10 @@ func (k *Key) String() string {
 // might add support for additional key types.
 func (k *Key) Get() (interface{}, error) {
 
-	if len(k.Exponent) == 0 {
+	if len(k.data.Exponent) == 0 {
 		return nil, fmt.Errorf("could not build public key without exponent")
 	}
-	if len(k.Modulus) == 0 {
+	if len(k.data.Modulus) == 0 {
 		return nil, fmt.Errorf("could not build public key without modulus")
 	}
 
@@ -429,7 +434,7 @@ func (k *Key) Get() (interface{}, error) {
 	E := big.NewInt(0)
 
 	// modulus and exponent are read as little endian
-	rsaPk := rsa.PublicKey{N: N.SetBytes(reverse(k.Modulus)), E: int(E.SetBytes(reverse(k.Exponent)).Int64())}
+	rsaPk := rsa.PublicKey{N: N.SetBytes(reverse(k.data.Modulus)), E: int(E.SetBytes(reverse(k.data.Exponent)).Int64())}
 	return &rsaPk, nil
 }
 

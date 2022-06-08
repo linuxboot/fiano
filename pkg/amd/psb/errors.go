@@ -17,9 +17,9 @@ type SignatureCheckError struct {
 // Error returns the string representation of SignatureCheckError
 func (m *SignatureCheckError) Error() string {
 	if m.signedElement == nil {
-		return fmt.Sprintf("signature does not validate against signing key %s: %s", m.signingKey.KeyID.Hex(), m.err.Error())
+		return fmt.Sprintf("signature does not validate against signing key %s: %s", m.signingKey.data.KeyID.Hex(), m.err.Error())
 	}
-	return fmt.Sprintf("signature of element %s does not validate against signing key %s: %s", m.signedElement, m.signingKey.KeyID.Hex(), m.err.Error())
+	return fmt.Sprintf("signature of element %s does not validate against signing key %s: %s", m.signedElement, m.signingKey.data.KeyID.Hex(), m.err.Error())
 }
 
 func (m *SignatureCheckError) Unwrap() error {
