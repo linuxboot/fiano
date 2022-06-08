@@ -247,10 +247,10 @@ func GetPSBSignBIOSKey(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*Key, e
 	}
 
 	oemKey := keySet.GetKey(oemKeys[0])
-	if oemKey.KeyUsageFlag != PSBSignBIOS {
+	if oemKey.data.KeyUsageFlag != PSBSignBIOS {
 		return nil, newErrInvalidFormatWithItem(
 			newBIOSDirectoryEntryItem(uint8(biosLevel), OEMSigningKeyEntry, 0),
-			fmt.Errorf("incorrect key usage '%d', expected: '%d'", oemKey.KeyUsageFlag, PSBSignBIOS),
+			fmt.Errorf("incorrect key usage '%d', expected: '%d'", oemKey.data.KeyUsageFlag, PSBSignBIOS),
 		)
 	}
 	return oemKey, nil

@@ -47,13 +47,13 @@ func (kdb *KeySet) String() string {
 
 // AddKey adds a key to the key set
 func (kdb KeySet) AddKey(k *Key, keyType KeyType) error {
-	if _, ok := kdb.db[k.KeyID]; ok {
-		return fmt.Errorf("canont add key id %s to set, key with same id already exists", k.KeyID.Hex())
+	if _, ok := kdb.db[k.data.KeyID]; ok {
+		return fmt.Errorf("canont add key id %s to set, key with same id already exists", k.data.KeyID.Hex())
 	}
 
-	kdb.db[k.KeyID] = k
+	kdb.db[k.data.KeyID] = k
 	// assume the key cannot be already present in the keyType mapping
-	kdb.keyType[keyType] = append(kdb.keyType[keyType], k.KeyID)
+	kdb.keyType[keyType] = append(kdb.keyType[keyType], k.data.KeyID)
 	return nil
 }
 
@@ -103,8 +103,8 @@ type keydbHeader struct {
 	DataSize        uint32
 	Version         uint32
 	Cookie          uint32
-	Reserved        buf36B
-	CustomerDefined buf32B
+	Reserved        Buf36B
+	CustomerDefined Buf32B
 }
 
 func readAndCountSize(r io.Reader, order binary.ByteOrder, data interface{}, counter *uint64) error {
