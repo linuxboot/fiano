@@ -85,3 +85,35 @@ func TestGetBIOSEntry(t *testing.T) {
 		require.Nil(t, item)
 	})
 }
+
+func TestIsPSBEnabled(t *testing.T) {
+	t.Run("psb_disabled", func(t *testing.T) {
+		firmwareImage, err := samples.GetFile("firmwares", "F09C_3B06.PsbD.rom.xz")
+		require.NoError(t, err)
+
+		fw, err := uefi.ParseUEFIFirmwareBytes(firmwareImage)
+		require.NoError(t, err)
+
+		amdFw, err := amd_manifest.NewAMDFirmware(fw)
+		require.NoError(t, err)
+
+		enabled, err := IsPSBEnabled(amdFw)
+		require.NoError(t, err)
+		require.False(t, enabled)
+	})
+
+	t.Run("psb_enabled", func(t *testing.T) {
+		firmwareImage, err := samples.GetFile("firmwares", "F09C_3B08.bin.xz")
+		require.NoError(t, err)
+
+		fw, err := uefi.ParseUEFIFirmwareBytes(firmwareImage)
+		require.NoError(t, err)
+
+		amdFw, err := amd_manifest.NewAMDFirmware(fw)
+		require.NoError(t, err)
+
+		enabled, err := IsPSBEnabled(amdFw)
+		require.NoError(t, err)
+		require.True(t, enabled)
+	})
+}
