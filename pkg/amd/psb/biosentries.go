@@ -1,6 +1,7 @@
 package psb
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -254,4 +255,27 @@ func GetPSBSignBIOSKey(amdFw *amd_manifest.AMDFirmware, biosLevel uint) (*Key, e
 		)
 	}
 	return oemKey, nil
+}
+
+// IsPSBEnabled checks if firmware has PSB enabled
+func IsPSBEnabled(amdFw *amd_manifest.AMDFirmware) (bool, error) {
+	checkPSBEnabled := func(biosLevel uint) (bool, error) {
+		_, err := GetBIOSEntry(amdFw.PSPFirmware(), 2, OEMSigningKeyEntry, 0)
+		if err == nil {
+			return true, nil
+		}
+		if errors.As(err, &ErrNotFound{}) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if amdFw.PSPFirmware().BIOSDirectoryLevel2 != nil {
+		return checkPSBEnabled(2)
+	}
+	if amdFw.PSPFirmware().BIOSDirectoryLevel1 != nil {
+		return checkPSBEnabled(1)
+	}
+	// Can happen in pre-ODM firmware: no bios directories -> no PSB :)
+	return false, nil
 }
