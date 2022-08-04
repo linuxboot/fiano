@@ -20,17 +20,16 @@ workflows:
 jobs:
   clean-code:
     docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/linuxboot/fiano
+      - image: cimg/go:1.17
     steps:
       - checkout
       - run:
           name: Install ineffassign
-          command: go get github.com/gordonklaus/ineffassign
+          command: |
+            go get -u github.com/gordonklaus/ineffassign
+            ineffassign ./...
       - run:
           name: Check dependencies
-          environment:
-            - GO111MODULE: "on"
           command: |
             go mod download
             go mod verify
@@ -39,11 +38,7 @@ jobs:
           command: test -z "$(gofmt -s -l cmds pkg)"
   test:
     docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/linuxboot/fiano
-    environment:
-      - GO111MODULE: "on"
-      - CGO_ENABLED: 0
+      - image: cimg/go:1.17
     steps:
       - checkout
       - run:
@@ -56,11 +51,7 @@ jobs:
     resource_class: medium
   race:
     docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/linuxboot/fiano
-    environment:
-      - GO111MODULE: "on"
-      - CGO_ENABLED: 1
+      - image: cimg/go:1.17
     steps:
       - checkout
       - run:
@@ -68,11 +59,7 @@ jobs:
           command: go test -race ./...
   coverage:
     docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/linuxboot/fiano
-    environment:
-      - GO111MODULE: "on"
-      - CGO_ENABLED: 0
+      - image: cimg/go:1.17
     steps:
       - checkout
       - run:
@@ -93,11 +80,7 @@ jobs:
           command: bash <(curl -s https://codecov.io/bash)
   check_licenses:
     docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/linuxboot/fiano
-    environment:
-      - GO111MODULE: "on"
-      - CGO_ENABLED: 0
+      - image: cimg/go:1.17
     steps:
       - checkout
       - run:
