@@ -3,6 +3,7 @@ package psb
 import (
 	"crypto"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
 	"strings"
@@ -33,19 +34,30 @@ func NewSignedBlob(signature []byte, signedData []byte, signingKey *Key) (*Signe
 
 	switch rsaKey := structuredKey.(type) {
 	case *rsa.PublicKey:
+		var (
+			hashAlg crypto.Hash
+			digest  []byte
+		)
 		switch size := rsaKey.Size(); size {
 		case sha512.Size * 8:
-			hashAlg := crypto.SHA384
+			hashAlg = crypto.SHA384
 			hash := sha512.New384()
 			hash.Write(signedData)
-			if err := rsa.VerifyPSS(rsaKey, hashAlg, hash.Sum(nil), signature, nil); err != nil {
-				return nil, &SignatureCheckError{signingKey: signingKey, err: err}
-			}
-			signature := NewSignature(signature, signingKey)
-			return &SignedBlob{signedData: signedData, signature: &signature}, nil
+			digest = hash.Sum(nil)
+		case sha256.Size * 8:
+			hashAlg = crypto.SHA256
+			hash := sha256.New()
+			hash.Write(signedData)
+			digest = hash.Sum(nil)
 		default:
-			return nil, fmt.Errorf("signature validation for RSA key with size != 4096 bit (%d) is not supported", size)
+			return nil, fmt.Errorf("signature validation for RSA key with size != 4096/2048 bit (%d) is not supported", size)
 		}
+
+		if err := rsa.VerifyPSS(rsaKey, hashAlg, digest, signature, nil); err != nil {
+			return nil, &SignatureCheckError{signingKey: signingKey, err: err}
+		}
+		signature := NewSignature(signature, signingKey)
+		return &SignedBlob{signedData: signedData, signature: &signature}, nil
 	}
 	return nil, fmt.Errorf("signature validation with key type != RSA is not supported")
 }
