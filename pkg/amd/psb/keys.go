@@ -283,15 +283,21 @@ func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 		return nil, fmt.Errorf("could not create new token key: %w", err)
 	}
 
-	// validate the signature of the new token key
-	signature := make([]byte, key.data.ModulusSize/8)
-	if err := binary.Read(buff, binary.LittleEndian, &signature); err != nil {
-		return nil, newErrInvalidFormat(fmt.Errorf("could not parse signature from key token: %w", err))
-	}
 	signingKeyID := KeyID(key.data.CertifyingKeyID)
 	signingKey := keySet.GetKey(signingKeyID)
 	if signingKey == nil {
 		return nil, fmt.Errorf("could not find signing key with ID %s for key token key", signingKeyID.Hex())
+	}
+
+	signatureSize, err := signingKey.SignatureSize()
+	if err != nil {
+		return nil, &SignatureCheckError{signingKey: signingKey, err: fmt.Errorf("could not get signature length of a key: %w", err)}
+	}
+
+	// validate the signature of the new token key
+	signature := make([]byte, signatureSize)
+	if err := binary.Read(buff, binary.LittleEndian, &signature); err != nil {
+		return nil, newErrInvalidFormat(fmt.Errorf("could not parse signature from key token: %w", err))
 	}
 
 	// A key extracted from a signed token has the following structure:
@@ -422,12 +428,8 @@ func (k *Key) String() string {
 // AMD Milan supports only RSA Keys (2048, 4096), future platforms
 // might add support for additional key types.
 func (k *Key) Get() (interface{}, error) {
-
-	if len(k.data.Exponent) == 0 {
-		return nil, fmt.Errorf("could not build public key without exponent")
-	}
-	if len(k.data.Modulus) == 0 {
-		return nil, fmt.Errorf("could not build public key without modulus")
+	if err := k.checkValid(); err != nil {
+		return nil, err
 	}
 
 	N := big.NewInt(0)
@@ -436,6 +438,24 @@ func (k *Key) Get() (interface{}, error) {
 	// modulus and exponent are read as little endian
 	rsaPk := rsa.PublicKey{N: N.SetBytes(reverse(k.data.Modulus)), E: int(E.SetBytes(reverse(k.data.Exponent)).Int64())}
 	return &rsaPk, nil
+}
+
+// SignatureSize returns the size of the signature
+func (k *Key) SignatureSize() (int, error) {
+	if err := k.checkValid(); err != nil {
+		return 0, err
+	}
+	return len(k.data.Modulus), nil
+}
+
+func (k *Key) checkValid() error {
+	if len(k.data.Exponent) == 0 {
+		return fmt.Errorf("invalid key: exponent size is 0")
+	}
+	if len(k.data.Modulus) == 0 {
+		return fmt.Errorf("invalid key: modulus size is 0")
+	}
+	return nil
 }
 
 // GetKeys returns all the keys known to the system in the form of a KeySet.
