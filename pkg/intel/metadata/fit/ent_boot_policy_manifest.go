@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/bootpolicy"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/bootpolicy"
 )
 
 // EntryBootPolicyManifestRecord represents a FIT entry of type "Boot Policy Manifest" (0x0C)

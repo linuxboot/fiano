@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/key"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/key"
 	"github.com/stretchr/testify/require"
 	"github.com/xaionaro-go/bytesextra"
 )
