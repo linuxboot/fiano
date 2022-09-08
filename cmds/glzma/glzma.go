@@ -16,7 +16,7 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
+	"os"
 
 	"github.com/linuxboot/fiano/pkg/compression"
 	"github.com/linuxboot/fiano/pkg/log"
@@ -56,7 +56,7 @@ func main() {
 		op = compressor.Encode
 	}
 
-	in, err := ioutil.ReadFile(flag.Args()[0])
+	in, err := os.ReadFile(flag.Args()[0])
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -64,7 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	if err := ioutil.WriteFile(*o, out, 0666); err != nil {
+	if err := os.WriteFile(*o, out, 0666); err != nil {
 		log.Fatalf("%v", err)
 	}
 }

@@ -7,7 +7,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -98,11 +97,11 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 	}
 
 	if isCheck {
-		b0, err := ioutil.ReadFile(outFile)
+		b0, err := os.ReadFile(outFile)
 		if err != nil {
 			return fmt.Errorf("unable to read a temp file '%s'", outFile)
 		}
-		b1, err := ioutil.ReadFile(generatedFile + "~")
+		b1, err := os.ReadFile(generatedFile + "~")
 		if err != nil {
 			return fmt.Errorf("unable to read file '%s'", generatedFile)
 		}

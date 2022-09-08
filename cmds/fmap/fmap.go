@@ -35,7 +35,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"text/template"
@@ -119,7 +118,7 @@ func jsonGet(a cmdArgs) error {
 		return err
 	}
 	data = append(data, byte('\n'))
-	return ioutil.WriteFile(a.args[0], data, 0666)
+	return os.WriteFile(a.args[0], data, 0666)
 }
 
 // Replace current fmap with json representation in JSONFILE.
@@ -130,7 +129,7 @@ func jsonPut(a cmdArgs) error {
 	}
 	defer r.Close()
 
-	data, err := ioutil.ReadFile(a.args[0])
+	data, err := os.ReadFile(a.args[0])
 	if err != nil {
 		return err
 	}

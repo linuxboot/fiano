@@ -6,7 +6,7 @@ package unittest
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
@@ -14,7 +14,7 @@ import (
 )
 
 func ManifestReadWrite(t *testing.T, m cbnt.Manifest, testDataFilePath string) {
-	testData, err := ioutil.ReadFile(testDataFilePath)
+	testData, err := os.ReadFile(testDataFilePath)
 	require.NoError(t, err)
 
 	nR, err := m.ReadFrom(bytes.NewReader(append(testData, []byte(`extra bytes`)...)))

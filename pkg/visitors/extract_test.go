@@ -5,7 +5,6 @@
 package visitors
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -20,7 +19,7 @@ var (
 
 func init() {
 	var err error
-	sampleFV, err = ioutil.ReadFile("../../integration/roms/ovmfSECFV.fv")
+	sampleFV, err = os.ReadFile("../../integration/roms/ovmfSECFV.fv")
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -94,7 +93,7 @@ func TestExtractAssembleFile(t *testing.T) {
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := ioutil.TempDir("", "section-test")
+			tmpDir, err := os.MkdirTemp("", "section-test")
 
 			if err != nil {
 				t.Fatalf("could not create temp dir: %v", err)
@@ -140,7 +139,7 @@ func TestExtractAssembleFV(t *testing.T) {
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := ioutil.TempDir("", "section-test")
+			tmpDir, err := os.MkdirTemp("", "section-test")
 
 			if err != nil {
 				t.Fatalf("could not create temp dir: %v", err)
@@ -189,7 +188,7 @@ func TestExtractAssembleSection(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := ioutil.TempDir("", "section-test")
+			tmpDir, err := os.MkdirTemp("", "section-test")
 
 			if err != nil {
 				t.Fatalf("could not create temp dir: %v", err)

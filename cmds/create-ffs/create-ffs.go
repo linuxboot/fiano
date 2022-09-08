@@ -9,7 +9,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -144,7 +143,7 @@ func main() {
 		usage()
 	}
 
-	secData, err := ioutil.ReadFile(flag.Arg(0))
+	secData, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal(err)
 	}

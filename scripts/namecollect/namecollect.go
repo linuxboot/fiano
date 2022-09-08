@@ -9,7 +9,6 @@ package main
 import (
 	"flag"
 	"go/build"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -61,7 +60,7 @@ func getGUIDsFile() string {
 }
 
 func downloadEdk2() (tmpDir string, err error) {
-	tmpDir, err = ioutil.TempDir("", "namecollect")
+	tmpDir, err = os.MkdirTemp("", "namecollect")
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +89,7 @@ func findGUIDs(dir string) (map[guid.GUID]string, error) {
 			if *debug {
 				log.Printf("Check %s", path)
 			}
-			contents, err := ioutil.ReadFile(path)
+			contents, err := os.ReadFile(path)
 			if err != nil {
 				log.Printf("skipping %q due to error: %v", path, err)
 				return nil

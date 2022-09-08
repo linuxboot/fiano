@@ -7,7 +7,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ import (
 )
 
 func deleteBackupFiles(dirPath string) error {
-	files, err := ioutil.ReadDir(dirPath)
+	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("unable to open '%s' as dir: %w", dirPath, err)
 	}
@@ -38,7 +37,7 @@ func deleteBackupFiles(dirPath string) error {
 }
 
 func backupGeneratedFiles(dirPath string, isReverse bool) error {
-	files, err := ioutil.ReadDir(dirPath)
+	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("unable to open '%s' as dir: %w", dirPath, err)
 	}

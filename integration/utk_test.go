@@ -7,7 +7,6 @@ package utk_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,7 +33,7 @@ func romList(t *testing.T) []string {
 // Create a temporary directory.
 func createTempDir(t *testing.T) string {
 	// Create temporary directory for test files.
-	tmpDir, err := ioutil.TempDir("", "utk-test")
+	tmpDir, err := os.MkdirTemp("", "utk-test")
 	if err != nil {
 		t.Fatalf("could not create temp dir: %v", err)
 	}
@@ -91,7 +90,7 @@ func TestExtractAssembleExtract(t *testing.T) {
 
 			// Output directories must not be empty.
 			for _, d := range []string{dir1, dir2} {
-				files, err := ioutil.ReadDir(d)
+				files, err := os.ReadDir(d)
 				if err != nil {
 					t.Fatalf("cannot read directory %q: %v", d, err)
 				}
@@ -147,7 +146,7 @@ func TestRegressionJson(t *testing.T) {
 			}
 
 			// Read and parse the image.
-			image, err := ioutil.ReadFile(tt)
+			image, err := os.ReadFile(tt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -164,7 +163,7 @@ func TestRegressionJson(t *testing.T) {
 			if buf.String() == "" || buf.String() == "null" {
 				t.Fatal("no json")
 			}
-			if err := ioutil.WriteFile(newJSONFile, buf.Bytes(), 0666); err != nil {
+			if err := os.WriteFile(newJSONFile, buf.Bytes(), 0666); err != nil {
 				t.Fatal(err)
 			}
 

@@ -5,7 +5,7 @@
 package visitors
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -18,7 +18,7 @@ const (
 )
 
 func testRunObsoleteInsert(t *testing.T, f uefi.Firmware, insertType InsertType, testGUID guid.GUID) (*Insert, error) {
-	file, err := ioutil.ReadFile(insertTestFile)
+	file, err := os.ReadFile(insertTestFile)
 	if err != nil {
 		t.Fatal(err)
 	}
