@@ -145,6 +145,7 @@ func ReadName(r io.Reader, f *File, size uint32) error {
 	}
 	// discard trailing NULLs
 	z := bytes.Split(b, []byte{0})
+	Debug("ReadName stripped: '%s'", z)
 	f.Name = string(z[0])
 	return nil
 }
