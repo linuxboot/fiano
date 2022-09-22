@@ -32,7 +32,9 @@ func (r *MasterRecord) Read(in io.ReadSeeker) error {
 	Debug("MasterRecord Header %v at %v", r.MasterHeader, r.Offset)
 	if err := Read(in, &r.MasterHeader); err != nil {
 		Debug("MasterRecord read from %v: %v", r.Offset, err)
-		return err
+		if err != io.EOF {
+			return err
+		}
 	}
 	Debug("Got header %s offset %#x", r.String(), r.Offset)
 	return nil
