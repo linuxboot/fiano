@@ -17,7 +17,11 @@ var Debug = func(format string, v ...interface{}) {}
 
 // Read reads things in in BE format, which they are supposed to be in.
 func Read(r io.Reader, f interface{}) error {
+	// NOTE: THIS is the `Read` you are looking for!
 	if err := binary.Read(r, Endian, f); err != nil {
+		if err == io.EOF {
+			Debug("Read %v: reached EOF", f)
+		}
 		return err
 	}
 	return nil
