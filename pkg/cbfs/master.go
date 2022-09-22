@@ -5,6 +5,7 @@
 package cbfs
 
 import (
+	"bytes"
 	"io"
 	"log"
 )
@@ -16,13 +17,21 @@ func init() {
 }
 
 func NewMaster(f *File) (ReadWriter, error) {
+	Debug("NewMaster: %+v, %x", f, f)
 	r := &MasterRecord{File: *f}
 	return r, nil
 }
 
 func (r *MasterRecord) Read(in io.ReadSeeker) error {
+	dump := &bytes.Buffer{}
+	n, err := io.Copy(dump, in)
+	if err != nil {
+		return err
+	}
+	Debug("MasterRecord (%d bytes)\n   %+v\n   %x", n, r, dump)
+	Debug("MasterRecord Header %v at %v", r.MasterHeader, r.Offset)
 	if err := Read(in, &r.MasterHeader); err != nil {
-		Debug("MasterRecord read: %v", err)
+		Debug("MasterRecord read from %v: %v", r.Offset, err)
 		return err
 	}
 	Debug("Got header %s offset %#x", r.String(), r.Offset)
