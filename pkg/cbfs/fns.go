@@ -62,51 +62,51 @@ func (c Compression) String() string {
 func (f FileType) String() string {
 	switch f {
 	case TypeDeleted2:
-		return "TypeDeleted2"
+		return "Deleted2"
 	case TypeDeleted:
-		return "TypeDeleted"
+		return "Deleted"
 	case TypeMaster:
 		return "cbfs header"
 	case TypeBootBlock:
-		return "TypeBootBlock"
+		return "BootBlock"
 	case TypeLegacyStage:
-		return "TypeLegacyStage"
+		return "LegacyStage"
 	case TypeStage:
-		return "TypeStage"
+		return "Stage"
 	case TypeSELF:
-		return "TypeSELF"
+		return "SELF"
 	case TypeFIT:
-		return "TypeFIT"
+		return "FIT"
 	case TypeOptionRom:
-		return "TypeOptionRom"
+		return "OptionRom"
 	case TypeBootSplash:
-		return "TypeBootSplash"
+		return "BootSplash"
 	case TypeRaw:
-		return "TypeRaw"
+		return "Raw"
 	case TypeVSA:
-		return "TypeVSA"
+		return "VSA"
 	case TypeMBI:
-		return "TypeMBI"
+		return "MBI"
 	case TypeMicroCode:
-		return "TypeMicroCode"
+		return "MicroCode"
 	case TypeFSP:
-		return "TypeFSP"
+		return "FSP"
 	case TypeMRC:
-		return "TypeMRC"
+		return "MRC"
 	case TypeMMA:
-		return "TypeMMA"
+		return "MMA"
 	case TypeEFI:
-		return "TypeEFI"
+		return "EFI"
 	case TypeStruct:
-		return "TypeStruct"
+		return "Struct"
 	case TypeCMOS:
-		return "TypeCMOS"
+		return "CMOS"
 	case TypeSPD:
-		return "TypeSPD"
+		return "SPD"
 	case TypeMRCCache:
-		return "TypeMRCCache"
+		return "MRCCache"
 	case TypeCMOSLayout:
-		return "TypeCMOSLayout"
+		return "CMOSLayout"
 	}
 	return fmt.Sprintf("%#x", uint32(f))
 }
