@@ -122,7 +122,6 @@ func (s *SectionGUIDDefined) GetBinHeaderLen() uint32 {
 // SectionCompressionHeader contains the fields for a EFI_SECTION_COMPRESSION
 // encapsulated section header.
 type SectionCompressionHeader struct {
-	SectionHeader
 	UncompressedLength uint32
 	CompressionType    uint8
 }
@@ -144,10 +143,8 @@ func (s *SectionCompression) GetBinHeaderLen() uint32 {
 // SectionCompressionHeader contains the fields for a EFI_SECTION_COMPRESSION
 // encapsulated section header.
 type SectionCompressionExtHeader struct {
-	SectionExtHeader
 	UncompressedLength uint32
 	CompressionType    uint8
-	// TypeHeader interface forces type specific headers to report their length
 }
 
 // SectionCompression contains the type specific fields for a
@@ -164,6 +161,7 @@ func (s *SectionCompressionExt) GetBinHeaderLen() uint32 {
 	return uint32(unsafe.Sizeof(s.SectionCompressionExtHeader))
 }
 
+// TypeHeader interface forces type specific headers to report their length
 type TypeHeader interface {
 	GetBinHeaderLen() uint32
 }
