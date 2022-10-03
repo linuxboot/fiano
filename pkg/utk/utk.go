@@ -20,7 +20,7 @@ func Run(args ...string) error {
 		return errors.New("at least one argument is required")
 	}
 
-	v, err := visitors.ParseCLI(args[1:])
+	visitor, err := visitors.ParseCLI(args[1:])
 	if err != nil {
 		return err
 	}
@@ -56,5 +56,5 @@ func Run(args ...string) error {
 	}
 
 	// Execute the instructions from the command line.
-	return visitors.ExecuteCLI(parsedRoot, v)
+	return visitors.ExecuteCLI(parsedRoot, visitor)
 }

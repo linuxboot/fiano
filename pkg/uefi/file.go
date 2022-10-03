@@ -298,13 +298,17 @@ func (f *File) Apply(v Visitor) error {
 
 // ApplyChildren calls the visitor on each child node of File.
 func (f *File) ApplyChildren(v Visitor) error {
+	log.Warnf("apply children")
 	if f.NVarStore != nil {
+		log.Warnf("nvar %v", v)
 		if err := f.NVarStore.Apply(v); err != nil {
 			return err
 		}
 		return nil
 	}
+	log.Warnf("sections %v", f.Sections)
 	for _, s := range f.Sections {
+		log.Warnf("apply %v %v", v, s)
 		if err := s.Apply(v); err != nil {
 			return err
 		}
@@ -489,7 +493,7 @@ func NewFile(buf []byte) (*File, error) {
 	}
 
 	for i, offset := 0, f.DataOffset; offset < f.Header.ExtendedSize; i++ {
-		s, err := NewSection(f.buf[offset:], i)
+		s, err := NewSection(f.buf[offset:], offset, i)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing sections of file %v: %v", f.Header.GUID, err)
 		}
