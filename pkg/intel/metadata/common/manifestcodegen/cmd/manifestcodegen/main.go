@@ -67,7 +67,7 @@ func backupGeneratedFiles(dirPath string, isReverse bool) error {
 	return nil
 }
 
-func processPath(path string, isCheck, enableTracing bool) error {
+func processPath(path string, isCheck, enableTracing bool, packageName string) error {
 	if stat, err := os.Stat(path); err == nil && stat.IsDir() {
 		err := backupGeneratedFiles(path, false)
 		if err != nil {
@@ -93,7 +93,7 @@ func processPath(path string, isCheck, enableTracing bool) error {
 	}
 
 	for _, fileInfo := range dirInfo.Files {
-		err := generateMethodsFile(*fileInfo, isCheck, enableTracing)
+		err := generateMethodsFile(*fileInfo, isCheck, enableTracing, packageName)
 		if err != nil {
 			_ = backupGeneratedFiles(path, true)
 			return err
@@ -115,10 +115,10 @@ func processPath(path string, isCheck, enableTracing bool) error {
 	return nil
 }
 
-func processPaths(paths []string, checkFlag, traceFlag bool) int {
+func processPaths(paths []string, checkFlag, traceFlag bool, packageName string) int {
 	errorCount := 0
 	for _, path := range paths {
-		err := processPath(path, checkFlag, traceFlag)
+		err := processPath(path, checkFlag, traceFlag, packageName)
 		if err != nil {
 			log.Printf("an error: %v", err)
 			errorCount++
@@ -131,6 +131,7 @@ func processPaths(paths []string, checkFlag, traceFlag bool) int {
 func main() {
 	checkFlag := flag.Bool("check", false, "generate with tracing code")
 	traceFlag := flag.Bool("trace", false, "generate with tracing code")
+	packageName := flag.String("package", "TODO_PACKAGE", "target package name")
 	flag.Parse()
 
 	var paths []string
@@ -144,7 +145,7 @@ func main() {
 		paths = append(paths, ".")
 	}
 
-	errorCount := processPaths(paths, *checkFlag, *traceFlag)
+	errorCount := processPaths(paths, *checkFlag, *traceFlag, *packageName)
 	if errorCount != 0 {
 		os.Exit(1)
 	}

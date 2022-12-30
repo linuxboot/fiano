@@ -22,13 +22,14 @@ import (
 type methodsData struct {
 	analyze.File
 	EnableTracing bool
+	PackageName   string
 }
 
 // generateMethodsFile generates a file using the template above.
 //
 // The file name is constructed from the original file name, but with
 // adding suffix '_manifestcodegen' before the file extension.
-func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
+func generateMethodsFile(file analyze.File, isCheck, enableTracing bool, packageName string) error {
 	funcsMap := map[string]interface{}{
 		"add": func(a, b int) int { return a + b },
 		"ternary": func(cond bool, a, b interface{}) interface{} {
@@ -42,6 +43,9 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 		},
 		"camelcaseToSentence": func(in string) string {
 			return strings.Join(camelcase.Split(in), " ")
+		},
+		"join": func(a, b interface{}) interface{} {
+			return fmt.Sprintf("%s%s", a, b)
 		},
 	}
 
@@ -87,6 +91,7 @@ func generateMethodsFile(file analyze.File, isCheck, enableTracing bool) error {
 	err = templateMethods.Execute(f, methodsData{
 		File:          file,
 		EnableTracing: enableTracing,
+		PackageName:   packageName,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to write: %w", err)
