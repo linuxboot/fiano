@@ -7,7 +7,6 @@ package utk
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -45,7 +44,7 @@ func Run(args ...string) error {
 		}
 	} else {
 		// Regular file
-		image, err := ioutil.ReadFile(path)
+		image, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

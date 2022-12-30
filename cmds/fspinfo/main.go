@@ -11,7 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/linuxboot/fiano/pkg/fsp"
 	"github.com/linuxboot/fiano/pkg/log"
@@ -56,7 +56,7 @@ func main() {
 	if flag.Arg(0) == "" {
 		log.Fatalf("missing file name")
 	}
-	data, err := ioutil.ReadFile(flag.Arg(0))
+	data, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
 		log.Fatalf("cannot read input file: %v", err)
 	}

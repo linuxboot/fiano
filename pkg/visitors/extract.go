@@ -8,7 +8,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -40,7 +39,7 @@ func (v *Extract) extractBinary(buf []byte, filename string) (string, error) {
 
 	// Dump the binary.
 	fp := filepath.Join(dirPath, filename)
-	if err := ioutil.WriteFile(fp, buf, 0666); err != nil {
+	if err := os.WriteFile(fp, buf, 0666); err != nil {
 		// Make sure we return "" since we don't want an invalid path to be serialized out.
 		return "", err
 	}
@@ -59,7 +58,7 @@ func (v *Extract) Run(f uefi.Firmware) error {
 
 	if !*force {
 		// Check that directory does not exist or is empty.
-		files, err := ioutil.ReadDir(v.BasePath)
+		files, err := os.ReadDir(v.BasePath)
 		if err == nil {
 			if len(files) != 0 {
 				return errors.New("existing directory not empty, use --force to override")
@@ -86,7 +85,7 @@ func (v *Extract) Run(f uefi.Firmware) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(v.BasePath, "summary.json"), json, 0666)
+	return os.WriteFile(filepath.Join(v.BasePath, "summary.json"), json, 0666)
 }
 
 // Visit applies the Extract visitor to any Firmware type.

@@ -9,7 +9,7 @@ import (
 	"compress/bzip2"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +28,7 @@ func panicIfError(err error) {
 }
 
 func TestGetEntries(t *testing.T) {
-	firmwareBytes, err := ioutil.ReadAll(bzip2.NewReader(bytes.NewReader(fitHeadersSampleBZ2)))
+	firmwareBytes, err := io.ReadAll(bzip2.NewReader(bytes.NewReader(fitHeadersSampleBZ2)))
 	panicIfError(err)
 
 	entries, err := GetEntries(firmwareBytes)
@@ -63,7 +63,7 @@ func TestGetEntriesInvalidAddr(t *testing.T) {
 
 // BenchmarkGetEntries-8             520621              2357 ns/op            2944 B/op         59 allocs/op
 func BenchmarkGetEntries(b *testing.B) {
-	firmwareBytes, err := ioutil.ReadAll(bzip2.NewReader(bytes.NewReader(fitHeadersSampleBZ2)))
+	firmwareBytes, err := io.ReadAll(bzip2.NewReader(bytes.NewReader(fitHeadersSampleBZ2)))
 	panicIfError(err)
 
 	b.ReportAllocs()

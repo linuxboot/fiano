@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/manifest/key"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/key"
 )
 
 // EntryKeyManifestRecord represents a FIT entry of type "Key Manifest Record" (0x0B)

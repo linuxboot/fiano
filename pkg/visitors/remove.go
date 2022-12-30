@@ -7,7 +7,6 @@ package visitors
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -142,7 +141,7 @@ func init() {
 	})
 	RegisterCLI("remove_dxes_except", "remove all files from the volume except those in the specified file", 1, func(args []string) (uefi.Visitor, error) {
 		fileName := args[0]
-		fileContents, err := ioutil.ReadFile(fileName)
+		fileContents, err := os.ReadFile(fileName)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read blacklist file %q: %v", fileName, err)
 		}
