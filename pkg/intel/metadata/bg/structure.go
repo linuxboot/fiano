@@ -9,6 +9,8 @@ package bg
 import (
 	"encoding/binary"
 	"io"
+
+	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
 )
 
 var (
@@ -34,7 +36,7 @@ type Structure interface {
 	io.ReaderFrom
 	io.WriterTo
 	TotalSize() uint64
-	//PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string
+	PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string
 }
 
 type Element interface {

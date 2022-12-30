@@ -11,5 +11,5 @@ import (
 )
 
 func TestReadWrite(t *testing.T) {
-	unittest.ManifestReadWrite(t, &Manifest{}, "testdata/bpm.bin")
+	unittest.BGManifestReadWrite(t, &Manifest{}, "testdata/bpm.bin")
 }

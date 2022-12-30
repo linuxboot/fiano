@@ -3,15 +3,12 @@ module github.com/linuxboot/fiano
 go 1.16
 
 require (
-	github.com/9elements/converged-security-suite/v2 v2.6.0
-	github.com/creasty/defaults v1.6.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/camelcase v1.0.0
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/pretty v1.2.1
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/u-root/u-root v0.9.0
 	github.com/ulikunitz/xz v0.5.10
