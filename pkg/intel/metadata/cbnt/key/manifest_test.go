@@ -11,5 +11,5 @@ import (
 )
 
 func TestReadWrite(t *testing.T) {
-	unittest.ManifestReadWrite(t, &Manifest{}, "testdata/km.bin")
+	unittest.CBNTManifestReadWrite(t, &Manifest{}, "testdata/km.bin")
 }
