@@ -26,8 +26,8 @@ import (
 	"strings"
 
 	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
-{{- if ne .Package.Name "cbnt" }}
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
+{{- if and (ne .Package.Name "cbnt") (ne .Package.Name "bg") }}
+	"github.com/linuxboot/fiano/pkg/intel/metadata/{{.PackageName}}"
 {{- end }}
 )
 
@@ -38,11 +38,12 @@ var (
 	_ = (io.Reader)(nil)
 	_ = pretty.Header
 	_ = strings.Join
-{{- if ne .Package.Name "cbnt" }}
-	_ = cbnt.StructInfo{}
+{{- if and (ne .Package.Name "cbnt") (ne .Package.Name "bg") }}
+	_ = {{.PackageName}}.StructInfo{}
 {{- end }}
 )
-{{- $manifestRootPath := ternary (ne .Package.Name "cbnt") "cbnt." "" }}
+
+{{- $manifestRootPath := join .PackageName "." }}
 {{- $enableTracing := .EnableTracing }}
 
 {{- range $index, $struct := .Structs }}
