@@ -96,6 +96,15 @@ func (s *PM) ReadDataFrom(r io.Reader) (int64, error) {
 		// ReadDataFrom does not read Struct, use ReadFrom for that.
 	}
 
+	// DataSize (ManifestFieldType: endValue)
+	{
+		n, err := 2, binary.Read(r, binary.LittleEndian, &s.DataSize)
+		if err != nil {
+			return totalN, fmt.Errorf("unable to read field 'DataSize': %w", err)
+		}
+		totalN += int64(n)
+	}
+
 	// Data (ManifestFieldType: arrayDynamic)
 	{
 		var size uint16
@@ -141,6 +150,15 @@ func (s *PM) WriteTo(w io.Writer) (int64, error) {
 		totalN += int64(n)
 	}
 
+	// DataSize (ManifestFieldType: endValue)
+	{
+		n, err := 2, binary.Write(w, binary.LittleEndian, &s.DataSize)
+		if err != nil {
+			return totalN, fmt.Errorf("unable to write field 'DataSize': %w", err)
+		}
+		totalN += int64(n)
+	}
+
 	// Data (ManifestFieldType: arrayDynamic)
 	{
 		size := uint16(len(s.Data))
@@ -164,6 +182,11 @@ func (s *PM) StructInfoTotalSize() uint64 {
 	return s.StructInfo.TotalSize()
 }
 
+// DataSizeSize returns the size in bytes of the value of field DataSize
+func (s *PM) DataSizeTotalSize() uint64 {
+	return 2
+}
+
 // DataSize returns the size in bytes of the value of field Data
 func (s *PM) DataTotalSize() uint64 {
 	size := uint64(binary.Size(uint16(0)))
@@ -176,9 +199,14 @@ func (s *PM) StructInfoOffset() uint64 {
 	return 0
 }
 
+// DataSizeOffset returns the offset in bytes of field DataSize
+func (s *PM) DataSizeOffset() uint64 {
+	return s.StructInfoOffset() + s.StructInfoTotalSize()
+}
+
 // DataOffset returns the offset in bytes of field Data
 func (s *PM) DataOffset() uint64 {
-	return s.StructInfoOffset() + s.StructInfoTotalSize()
+	return s.DataSizeOffset() + s.DataSizeTotalSize()
 }
 
 // Size returns the total size of the PM.
@@ -189,6 +217,7 @@ func (s *PM) TotalSize() uint64 {
 
 	var size uint64
 	size += s.StructInfoTotalSize()
+	size += s.DataSizeTotalSize()
 	size += s.DataTotalSize()
 	return size
 }
@@ -204,6 +233,8 @@ func (s *PM) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) st
 	}
 	// ManifestFieldType is structInfo
 	lines = append(lines, pretty.SubValue(depth+1, "Struct Info", "", &s.StructInfo, opts...)...)
+	// ManifestFieldType is endValue
+	lines = append(lines, pretty.SubValue(depth+1, "Data Size", "", &s.DataSize, opts...)...)
 	// ManifestFieldType is arrayDynamic
 	lines = append(lines, pretty.SubValue(depth+1, "Data", "", &s.Data, opts...)...)
 	if depth < 2 {
