@@ -8,5 +8,6 @@ package bootpolicy
 
 type PM struct {
 	StructInfo `id:"__PMDA__" version:"0x10"`
+	DataSize   uint16 `json:"pcDataSize"`
 	Data       []byte `json:"pcData"`
 }
