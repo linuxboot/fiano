@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/bootpolicy"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntbootpolicy"
 )
 
 func assertNoError(err error) {
@@ -22,7 +22,7 @@ func main() {
 	f, err := os.Open(os.Args[1])
 	assertNoError(err)
 
-	m := &bootpolicy.Manifest{}
+	m := &cbntbootpolicy.Manifest{}
 	_, err = m.ReadFrom(f)
 	assertNoError(err)
 
