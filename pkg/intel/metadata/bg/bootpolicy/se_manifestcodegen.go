@@ -233,7 +233,7 @@ func NewSE() *SE {
 	copy(s.StructInfo.ID[:], []byte(StructureIDSE))
 	s.StructInfo.Version = 0x10
 	// Recursively initializing a child structure:
-	s.PostIBBHash = *bg.NewHashStructure()
+	s.PostIBBHash = *bg.NewHashStructureFill()
 	// Recursively initializing a child structure:
 	s.Digest = *bg.NewHashStructure()
 	s.Rehash()

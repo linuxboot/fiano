@@ -34,7 +34,7 @@ type SE struct {
 	// PrettyString: DMA Protection 2 Limit Address
 	Reserved3 [8]byte `json:"seDMAProtLimit1"`
 
-	PostIBBHash bg.HashStructure `json:"sePostIBBHash"`
+	PostIBBHash bg.HashStructureFill `json:"sePostIBBHash"`
 
 	IBBEntryPoint uint32 `json:"seIBBEntry"`
 

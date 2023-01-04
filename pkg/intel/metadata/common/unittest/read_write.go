@@ -40,7 +40,7 @@ func BGManifestReadWrite(t *testing.T, m bg.Manifest, testDataFilePath string) {
 	testData, err := os.ReadFile(testDataFilePath)
 	require.NoError(t, err)
 
-	nR, err := m.ReadFrom(bytes.NewReader(append(testData, []byte(`extra bytes`)...)))
+	nR, err := m.ReadFrom(bytes.NewReader(testData))
 	require.NoError(t, err)
 	require.Equal(t, int64(len(testData)), nR)
 	require.Equal(t, nR, int64(m.TotalSize()))
