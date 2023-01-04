@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/key"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntkey"
 )
 
 // EntryKeyManifestRecord represents a FIT entry of type "Key Manifest Record" (0x0B)
@@ -33,8 +33,8 @@ func (entry *EntryKeyManifestRecord) CustomRecalculateHeaders() error {
 }
 
 // ParseData creates EntryKeyManifestRecord from EntryKeyManifest
-func (entry *EntryKeyManifestRecord) ParseData() (*key.Manifest, error) {
-	var km key.Manifest
+func (entry *EntryKeyManifestRecord) ParseData() (*cbntkey.Manifest, error) {
+	var km cbntkey.Manifest
 	_, err := km.ReadFrom(bytes.NewReader(entry.DataSegmentBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse KeyManifest, err: %v", err)
@@ -44,7 +44,7 @@ func (entry *EntryKeyManifestRecord) ParseData() (*key.Manifest, error) {
 
 // ParseKeyManifest returns a boot policy manifest if it was able to
 // parse one.
-func (table Table) ParseKeyManifest(firmware []byte) (*key.Manifest, error) {
+func (table Table) ParseKeyManifest(firmware []byte) (*cbntkey.Manifest, error) {
 	hdr := table.First(EntryTypeKeyManifestRecord)
 	if hdr == nil {
 		return nil, ErrNotFound{}
