@@ -4,7 +4,7 @@
 
 //go:generate manifestcodegen
 
-package bgbootpolicy
+package bgkey
 
 import (
 	"bytes"
