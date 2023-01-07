@@ -312,7 +312,7 @@ func (s *Manifest) TotalSize() uint64 {
 func (s *Manifest) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
 	var lines []string
 	if withHeader {
-		lines = append(lines, pretty.Header(depth, "Manifest", s))
+		lines = append(lines, pretty.Header(depth, "BG Key Manifest", s))
 	}
 	if s == nil {
 		return strings.Join(lines, "\n")

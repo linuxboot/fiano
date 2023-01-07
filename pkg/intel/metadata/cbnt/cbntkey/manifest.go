@@ -14,7 +14,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
 )
 
-// PrettyString: Key Manifest
+// PrettyString: CBnT Key Manifest
 type Manifest struct {
 	cbnt.StructInfo `id:"__KEYM__" version:"0x21" var0:"0" var1:"0"`
 
