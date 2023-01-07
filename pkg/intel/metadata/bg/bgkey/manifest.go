@@ -14,6 +14,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/intel/metadata/bg"
 )
 
+// PrettyString: BG Key Manifest
 type Manifest struct {
 	bg.StructInfo   `id:"__KEYM__" version:"0x10"`
 	KMVersion       uint8            `json:"kmVersion"`
