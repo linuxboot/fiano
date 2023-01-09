@@ -81,3 +81,23 @@ func (a Algorithm) String() string {
 	}
 	return s.String()
 }
+
+func GetAlgFromString(name string) (Algorithm, error) {
+	n := strings.ToUpper(name)
+	switch n {
+	case "ALGUNKNOWN":
+		return AlgUnknown, nil
+	case "RSA":
+		return AlgRSA, nil
+	case "SHA1":
+		return AlgSHA1, nil
+	case "SHA256":
+		return AlgSHA256, nil
+	case "ALGNULL":
+		return AlgNull, nil
+	case "RSASSA":
+		return AlgRSASSA, nil
+	default:
+		return AlgNull, fmt.Errorf("algorithm name provided unknown")
+	}
+}
