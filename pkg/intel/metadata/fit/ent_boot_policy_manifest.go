@@ -6,10 +6,7 @@ package fit
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntbootpolicy"
 )
 
 // EntryBootPolicyManifestRecord represents a FIT entry of type "Boot Policy Manifest" (0x0C)
@@ -32,23 +29,7 @@ func (entry *EntryBootPolicyManifestRecord) CustomRecalculateHeaders() error {
 	return nil
 }
 
-// ParseData creates EntryKeyManifestRecord from EntryKeyManifest
-func (entry *EntryBootPolicyManifestRecord) ParseData() (*cbntbootpolicy.Manifest, error) {
-	var bpManifest cbntbootpolicy.Manifest
-	_, err := bpManifest.ReadFrom(bytes.NewReader(entry.DataSegmentBytes))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse KeyManifest, err: %v", err)
-	}
-	return &bpManifest, nil
-}
-
-// ParseBootPolicyManifest returns a boot policy manifest if it was able to
-// parse one.
-func (table Table) ParseBootPolicyManifest(firmware []byte) (*cbntbootpolicy.Manifest, error) {
-	hdr := table.First(EntryTypeBootPolicyManifest)
-	if hdr == nil {
-		return nil, ErrNotFound{}
-	}
-
-	return hdr.GetEntry(firmware).(*EntryBootPolicyManifestRecord).ParseData()
+// Reader creates io.ReadSeeker from EntryBootPolicyManifestRecord
+func (entry *EntryBootPolicyManifestRecord) Reader() *bytes.Reader {
+	return bytes.NewReader(entry.DataSegmentBytes)
 }
