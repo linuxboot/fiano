@@ -44,12 +44,11 @@ func DetectBGV(r io.Reader) (BootGuardVersion, error) {
 	if err != nil {
 		return 0, fmt.Errorf("unable to read field 'ID': %w", err)
 	}
-	switch s.Version {
-	case 0x10:
-		return Version10, nil
-	case 0x21:
+	if s.Version >= 0x20 {
 		return Version20, nil
-	default:
+	} else if (s.Version < 0x20) && (s.Version >= 0x10) {
+		return Version10, nil
+	} else {
 		return 0, fmt.Errorf("couldn't detect version")
 	}
 }
