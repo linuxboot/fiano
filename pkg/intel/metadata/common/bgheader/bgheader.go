@@ -40,18 +40,14 @@ func (bgv BootGuardVersion) String() string {
 
 func DetectBGV(r io.Reader) (BootGuardVersion, error) {
 	var s structInfo
-	err := binary.Read(r, binaryOrder, s.ID[:])
+	err := binary.Read(r, binaryOrder, &s)
 	if err != nil {
 		return 0, fmt.Errorf("unable to read field 'ID': %w", err)
-	}
-	err = binary.Read(r, binaryOrder, s.Version)
-	if err != nil {
-		return 0, fmt.Errorf("unable to read field 'Version': %w", err)
 	}
 	switch s.Version {
 	case 0x10:
 		return Version10, nil
-	case 0x20:
+	case 0x21:
 		return Version20, nil
 	default:
 		return 0, fmt.Errorf("couldn't detect version")
