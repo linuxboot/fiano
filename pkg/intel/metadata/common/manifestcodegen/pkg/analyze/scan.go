@@ -43,6 +43,7 @@ func getRawPkg(
 	buildCtx := build.Default
 	buildCtx.GOPATH = strings.Join(goPaths, string(filepath.ListSeparator))
 	buildCtx.BuildTags = append(buildCtx.BuildTags, `manifestcodegen`)
+	fmt.Printf("search for `%v` in `%v` (%v) \n\n", path, goPaths, buildCtx.GOPATH)
 	dirRaw, err := gosrc.OpenDirectoryByPkgPath(&buildCtx, path, false, false, false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open go directory: %w", err)

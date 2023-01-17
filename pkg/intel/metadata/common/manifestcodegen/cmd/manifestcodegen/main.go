@@ -87,6 +87,12 @@ func processPath(path string, isCheck, enableTracing bool, packageName string) e
 		goPaths = append(goPaths, filepath.Join(homeDir, "go"))
 	}
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("unable to determine working directory: %w", err)
+	}
+	goPaths = append(goPaths, cwd)
+
 	dirInfo, err := analyze.Scan(path, goPaths)
 	if err != nil {
 		return fmt.Errorf("unable to analyze path '%s': %w", path, err)
