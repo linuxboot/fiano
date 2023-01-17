@@ -42,6 +42,12 @@ const poisonedPolarity byte = 0xF0
 // Attributes holds the global attributes
 var Attributes = ROMAttributes{ErasePolarity: poisonedPolarity}
 
+// SuppressErasePolarityError forces to ignore the "conflicting erase polarities"
+// error.
+//
+// See also: https://github.com/linuxboot/fiano/issues/329
+var SuppressErasePolarityError = false
+
 // SetErasePolarity sets the Erase Polarity for the flash image.
 // It checks to see if there are conflicting Erase Polarities.
 func SetErasePolarity(ep byte) error {
@@ -51,7 +57,7 @@ func SetErasePolarity(ep byte) error {
 			ep)
 	}
 	// Set it only once.
-	if Attributes.ErasePolarity != poisonedPolarity {
+	if Attributes.ErasePolarity != poisonedPolarity && !SuppressErasePolarityError {
 		// it's already been set. Check that they are the same.
 		if Attributes.ErasePolarity != ep {
 			return fmt.Errorf("conflicting erase polarities, was 0x%02X, requested 0x%02X",
