@@ -10,7 +10,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -92,7 +92,7 @@ outer:
 			log.Fatalln("cannot open", file, err)
 		}
 		defer r.Close()
-		contents, err := ioutil.ReadAll(r)
+		contents, err := io.ReadAll(r)
 		if err != nil {
 			log.Fatalln("cannot read", file, err)
 		}

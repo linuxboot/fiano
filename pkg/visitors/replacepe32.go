@@ -7,7 +7,7 @@ package visitors
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -85,7 +85,7 @@ func init() {
 		}
 
 		filename := args[1]
-		newPE32, err := ioutil.ReadFile(filename)
+		newPE32, err := os.ReadFile(filename)
 		if err != nil {
 			return nil, err
 		}

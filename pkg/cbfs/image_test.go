@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -105,7 +104,7 @@ func TestSimpleWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
-	out, err := ioutil.TempFile("", "cbfs")
+	out, err := os.CreateTemp("", "cbfs")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,11 +119,11 @@ func TestSimpleWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("output file %v", fi)
-	old, err := ioutil.ReadFile("testdata/coreboot.rom")
+	old, err := os.ReadFile("testdata/coreboot.rom")
 	if err != nil {
 		t.Fatal(err)
 	}
-	new, err := ioutil.ReadFile(out.Name())
+	new, err := os.ReadFile(out.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +144,7 @@ func TestRemovePayload(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
-	out, err := ioutil.TempFile("", "cbfs")
+	out, err := os.CreateTemp("", "cbfs")
 	if err != nil {
 		t.Fatal(err)
 	}

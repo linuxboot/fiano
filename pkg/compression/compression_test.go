@@ -5,7 +5,7 @@
 package compression
 
 import (
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -48,7 +48,7 @@ func TestEncodeDecode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Read test data.
-			want, err := ioutil.ReadFile(tt.decodedFilename)
+			want, err := os.ReadFile(tt.decodedFilename)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -73,11 +73,11 @@ func TestDecode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Read test data.
-			want, err := ioutil.ReadFile(tt.decodedFilename)
+			want, err := os.ReadFile(tt.decodedFilename)
 			if err != nil {
 				t.Fatal(err)
 			}
-			encoded, err := ioutil.ReadFile(tt.encodedFilename)
+			encoded, err := os.ReadFile(tt.encodedFilename)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,7 +124,7 @@ func TestCompressorFromGUID(t *testing.T) {
 				t.Fatalf("compressor from guid %v did not match (got: %s, want: %s)", tt.guid, compressor.Name(), tt.expected.Name())
 			}
 			// Read test data.
-			want, err := ioutil.ReadFile(tt.decodedFilename)
+			want, err := os.ReadFile(tt.decodedFilename)
 			if err != nil {
 				t.Fatal(err)
 			}

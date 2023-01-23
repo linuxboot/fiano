@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -73,7 +72,7 @@ func TestFmap(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "fmap_json")
+	tmpDir, err := os.MkdirTemp("", "fmap_json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +82,7 @@ func TestJson(t *testing.T) {
 	if err := testutil.Command(t, "jget", jsonFile, testFlash).Run(); err != nil {
 		t.Fatal(err)
 	}
-	got, err := ioutil.ReadFile(jsonFile)
+	got, err := os.ReadFile(jsonFile)
 	if err != nil {
 		t.Fatal(err)
 	}

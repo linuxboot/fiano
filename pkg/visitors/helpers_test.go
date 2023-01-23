@@ -6,7 +6,7 @@ package visitors
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/guid"
@@ -18,7 +18,7 @@ var testGUID = guid.MustParse("DF1CCEF6-F301-4A63-9661-FC6030DCC880")
 var dxeCoreGUID = guid.MustParse("D6A2CB7F-6A18-4E2F-B43B-9920A733700A")
 
 func parseImage(t *testing.T) uefi.Firmware {
-	image, err := ioutil.ReadFile("../../integration/roms/OVMF.rom")
+	image, err := os.ReadFile("../../integration/roms/OVMF.rom")
 	if err != nil {
 		t.Fatal(err)
 	}

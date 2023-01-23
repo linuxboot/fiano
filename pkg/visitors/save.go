@@ -5,7 +5,7 @@
 package visitors
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
@@ -28,7 +28,7 @@ func (v *Save) Visit(f uefi.Firmware) error {
 	if err := f.Apply(a); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(v.DirPath, f.Buf(), 0666)
+	return os.WriteFile(v.DirPath, f.Buf(), 0666)
 }
 
 func init() {

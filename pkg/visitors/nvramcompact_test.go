@@ -5,7 +5,6 @@
 package visitors
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 func TestNVRamCompact(t *testing.T) {
 	path := "../../integration/roms/nvartest/"
 
-	tmpDir, err := ioutil.TempDir("", "section-test")
+	tmpDir, err := os.MkdirTemp("", "section-test")
 
 	if err != nil {
 		t.Fatalf("could not create temp dir: %v", err)

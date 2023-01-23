@@ -7,7 +7,6 @@ package compression
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 
 	"github.com/ulikunitz/xz/lzma"
 )
@@ -30,7 +29,7 @@ func (c *LZMA) Decode(encodedData []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ioutil.ReadAll(r)
+	return io.ReadAll(r)
 }
 
 // Encode encodes a byte slice with LZMA.

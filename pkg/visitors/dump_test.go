@@ -6,7 +6,7 @@ package visitors
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -24,7 +24,7 @@ func TestDump(t *testing.T) {
 	}
 
 	// Read in expected file.
-	file, err := ioutil.ReadFile("../../integration/roms/testfile.ffs")
+	file, err := os.ReadFile("../../integration/roms/testfile.ffs")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -159,7 +158,7 @@ func init() {
 		useBlackList := len(args) == 2
 		if useBlackList {
 			fileName := args[1]
-			fileContents, err := ioutil.ReadFile(fileName)
+			fileContents, err := os.ReadFile(fileName)
 			if err != nil {
 				return nil, fmt.Errorf("cannot read blacklist file %q: %v", fileName, err)
 			}
@@ -178,7 +177,7 @@ func init() {
 
 		return &DXECleaner{
 			Test: func(f uefi.Firmware) (bool, error) {
-				tmpDir, err := ioutil.TempDir("", "dxecleaner")
+				tmpDir, err := os.MkdirTemp("", "dxecleaner")
 				if err != nil {
 					return true, err
 				}

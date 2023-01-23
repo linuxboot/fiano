@@ -6,7 +6,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/fsp"
@@ -19,7 +19,7 @@ const (
 )
 
 func TestNewInfoHeaderRealFile(t *testing.T) {
-	buf, err := ioutil.ReadFile(FSPTestFile)
+	buf, err := os.ReadFile(FSPTestFile)
 	if err != nil {
 		t.Errorf("Error opening test file %s: %v", FSPTestFile, err)
 	}

@@ -7,7 +7,7 @@ package visitors
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -245,7 +245,7 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 }
 
 func parseFile(filePath string) (*uefi.File, error) {
-	fileBytes, err := ioutil.ReadFile(filePath)
+	fileBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read file '%s': %w", filePath, err)
 	}

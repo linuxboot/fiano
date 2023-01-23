@@ -6,7 +6,7 @@ package visitors
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -25,7 +25,7 @@ func (v *ParseDir) Run(f uefi.Firmware) error {
 // Parse parses a directory and creates the tree.
 func (v *ParseDir) Parse() (uefi.Firmware, error) {
 	// Read in the json and construct the tree.
-	jsonbuf, err := ioutil.ReadFile(filepath.Join(v.BasePath, "summary.json"))
+	jsonbuf, err := os.ReadFile(filepath.Join(v.BasePath, "summary.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (v *ParseDir) Parse() (uefi.Firmware, error) {
 
 func (v *ParseDir) readBuf(ExtractPath string) ([]byte, error) {
 	if ExtractPath != "" {
-		return ioutil.ReadFile(filepath.Join(v.BasePath, ExtractPath))
+		return os.ReadFile(filepath.Join(v.BasePath, ExtractPath))
 	}
 	return nil, nil
 }

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/linuxboot/fiano/pkg/fmap"
@@ -35,7 +34,7 @@ func RegisterFileReader(f *SegReader) error {
 func NewImage(rs io.ReadSeeker) (*Image, error) {
 	// Suck the image in. Todo: write a thing that implements
 	// ReadSeeker on a []byte.
-	b, err := ioutil.ReadAll(rs)
+	b, err := io.ReadAll(rs)
 	if err != nil {
 		return nil, fmt.Errorf("ReadAll: %v", err)
 	}
@@ -127,7 +126,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 }
 
 func (i *Image) WriteFile(name string, perm os.FileMode) error {
-	if err := ioutil.WriteFile(name, i.Data, 0666); err != nil {
+	if err := os.WriteFile(name, i.Data, 0666); err != nil {
 		return err
 	}
 	return nil

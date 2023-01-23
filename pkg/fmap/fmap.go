@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"strings"
 )
@@ -140,7 +139,7 @@ var errMultipleFound = errors.New("found multiple fmap")
 func Read(f io.Reader) (*FMap, *Metadata, error) {
 	// Read flash into memory.
 	// TODO: it is possible to parse fmap without reading entire file into memory
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, nil, err
 	}
