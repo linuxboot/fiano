@@ -227,6 +227,10 @@ type StageRecord struct {
 	Data []byte
 }
 
+type UnknownRecord struct {
+	File
+}
+
 type RawRecord struct {
 	File
 }
