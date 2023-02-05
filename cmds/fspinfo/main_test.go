@@ -42,8 +42,8 @@ func TestNewInfoHeaderRealFile(t *testing.T) {
 	if hdr.HeaderRevision != 3 {
 		t.Errorf("Invalid header revision %d; want %d", hdr.HeaderRevision, 3)
 	}
-	if hdr.ImageRevision != fsp.ImageRevision(0x01040301) {
-		t.Errorf("Invalid image revision %s; want %s", hdr.ImageRevision, fsp.ImageRevision(0x1431))
+	if hdr.ImageRevision != fsp.ImageRevision(0x0001000400030001) {
+		t.Errorf("Invalid image revision %s; want %s", hdr.ImageRevision, fsp.ImageRevision(0x0001000400030001))
 	}
 	if !bytes.Equal(hdr.ImageID[:], []byte("$APLFSP$")) {
 		t.Errorf("Invalid image ID %s; want %s", hdr.ImageID, "$APLFSP$")
