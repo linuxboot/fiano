@@ -24,9 +24,6 @@ func TestNewInfoHeader(t *testing.T) {
 	if hdr.HeaderLength != HeaderV3Length {
 		t.Errorf("Invalid header length %d; want %d", hdr.HeaderLength, HeaderV3Length)
 	}
-	if !bytes.Equal(hdr.Reserved1[:], bytes.Repeat([]byte{0}, 2)) {
-		t.Errorf("Invalid field Reserved1 %v; want %v", hdr.Reserved1, bytes.Repeat([]byte{0}, 2))
-	}
 	if hdr.SpecVersion != SpecVersion(0x20) {
 		t.Errorf("Invalid spec version %s; want %s", hdr.SpecVersion, SpecVersion(0x20))
 	}
@@ -57,14 +54,8 @@ func TestNewInfoHeader(t *testing.T) {
 	if hdr.CfgRegionSize != 0x3b0 {
 		t.Errorf("Invalid cfg region size %#x; want %#x", hdr.CfgRegionSize, 0x3b0)
 	}
-	if !bytes.Equal(hdr.Reserved2[:], bytes.Repeat([]byte{0}, 4)) {
-		t.Errorf("Invalid field Reserved2 %v; want %v", hdr.Reserved2, bytes.Repeat([]byte{0}, 4))
-	}
 	if hdr.TempRAMInitEntryOffset != 0x0 {
 		t.Errorf("Invalid temp RAM init entry offset %#x; want %#x", hdr.TempRAMInitEntryOffset, 0x0)
-	}
-	if !bytes.Equal(hdr.Reserved3[:], bytes.Repeat([]byte{0}, 4)) {
-		t.Errorf("Invalid field Reserved3 %v; want %v", hdr.Reserved3, bytes.Repeat([]byte{0}, 4))
 	}
 	if hdr.NotifyPhaseEntryOffset != 0x580 {
 		t.Errorf("Invalid notify phase entry offset %#x; want %#x", hdr.NotifyPhaseEntryOffset, 0x580)

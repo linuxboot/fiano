@@ -30,7 +30,7 @@ var (
 // See https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/fsp-architecture-spec-v2.pdf chapter 4.
 
 // TODO extract the remaining firmware volumes too
-func extractFirstFSPHeader(b []byte) (*fsp.InfoHeaderRev3, error) {
+func extractFirstFSPHeader(b []byte) (*fsp.CommonInfoHeader, error) {
 	fv, err := uefi.NewFirmwareVolume(b, 0, false)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse Firmware Volume: %v", err)
