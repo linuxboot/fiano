@@ -43,7 +43,7 @@ func TestNewInfoHeader(t *testing.T) {
 		t.Errorf("Invalid image size %#x; want %#x", hdr.ImageSize, 0x2a000)
 	}
 	if hdr.ImageBase != 0x200000 {
-		t.Errorf("Invalid image base %#x; want %#x", hdr.ImageSize, 0x200000)
+		t.Errorf("Invalid image base %#x; want %#x", hdr.ImageBase, 0x200000)
 	}
 	if hdr.ImageAttribute != 0x1 {
 		t.Errorf("Invalid image attribute %#x; want %#x", hdr.ImageAttribute, 0x1)
@@ -72,8 +72,8 @@ func TestNewInfoHeader(t *testing.T) {
 	if hdr.FSPMemoryInitEntryOffset != 0x0 {
 		t.Errorf("Invalid FSP memory init entry offset %#x; want %#x", hdr.FSPMemoryInitEntryOffset, 0x0)
 	}
-	if hdr.TempRAMInitEntryOffset != 0x0 {
-		t.Errorf("Invalid temp RAM init entry offset %#x; want %#x", hdr.TempRAMInitEntryOffset, 0x0)
+	if hdr.TempRAMExitEntryOffset != 0x0 {
+		t.Errorf("Invalid temp RAM exit entry offset %#x; want %#x", hdr.TempRAMExitEntryOffset, 0x0)
 	}
 	if hdr.FSPSiliconInitEntryOffset != 0x58a {
 		t.Errorf("Invalid FSP silicon init entry offset %#x; want %#x", hdr.FSPSiliconInitEntryOffset, 0x58a)
