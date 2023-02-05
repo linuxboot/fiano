@@ -8,6 +8,7 @@ package fsp
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -66,11 +67,34 @@ type InfoHeaderRev3 struct {
 	FSPSiliconInitEntryOffset uint32
 }
 
+// CommonInfoHeader represents the FSP_INFO_HEADER structure
+// revision independent
+type CommonInfoHeader struct {
+	Signature                      [4]byte
+	HeaderLength                   uint32
+	SpecVersion                    SpecVersion
+	HeaderRevision                 uint8
+	ImageRevision                  ImageRevision
+	ImageID                        [8]byte
+	ImageSize                      uint32
+	ImageBase                      uint32
+	ImageAttribute                 ImageAttribute
+	ComponentAttribute             ComponentAttribute
+	CfgRegionOffset                uint32
+	CfgRegionSize                  uint32
+	TempRAMInitEntryOffset         uint32
+	NotifyPhaseEntryOffset         uint32
+	FSPMemoryInitEntryOffset       uint32
+	TempRAMExitEntryOffset         uint32
+	FSPSiliconInitEntryOffset      uint32
+	FspMultiPhaseSiInitEntryOffset uint32
+	ExtendedImageRevision          uint16
+}
+
 // Summary prints a multi-line summary of the header's content.
-func (ih InfoHeaderRev3) Summary() string {
+func (ih CommonInfoHeader) Summary() string {
 	s := fmt.Sprintf("Signature                   : %s\n", ih.Signature)
 	s += fmt.Sprintf("Header Length               : %d\n", ih.HeaderLength)
-	s += fmt.Sprintf("Reserved1                   : %#04x\n", ih.Reserved1)
 	s += fmt.Sprintf("Spec Version                : %s\n", ih.SpecVersion)
 	s += fmt.Sprintf("Header Revision             : %d\n", ih.HeaderRevision)
 	s += fmt.Sprintf("Image Revision              : %s\n", ih.ImageRevision)
@@ -81,9 +105,7 @@ func (ih InfoHeaderRev3) Summary() string {
 	s += fmt.Sprintf("Component Attribute         : %s\n", ih.ComponentAttribute)
 	s += fmt.Sprintf("Cfg Region Offset           : %#08x %d\n", ih.CfgRegionOffset, ih.CfgRegionOffset)
 	s += fmt.Sprintf("Cfg Region Size             : %#08x %d\n", ih.CfgRegionSize, ih.CfgRegionSize)
-	s += fmt.Sprintf("Reserved2                   : %#08x\n", ih.Reserved2)
 	s += fmt.Sprintf("TempRAMInit Entry Offset    : %#08x %d\n", ih.TempRAMInitEntryOffset, ih.TempRAMInitEntryOffset)
-	s += fmt.Sprintf("Reserved3                   : %#08x\n", ih.Reserved3)
 	s += fmt.Sprintf("NotifyPhase Entry Offset    : %#08x %d\n", ih.NotifyPhaseEntryOffset, ih.NotifyPhaseEntryOffset)
 	s += fmt.Sprintf("FSPMemoryInit Entry Offset  : %#08x %d\n", ih.FSPMemoryInitEntryOffset, ih.FSPMemoryInitEntryOffset)
 	s += fmt.Sprintf("TempRAMExit Entry Offset    : %#08x %d\n", ih.TempRAMExitEntryOffset, ih.TempRAMExitEntryOffset)
@@ -202,10 +224,8 @@ func (ca ComponentAttribute) String() string {
 	return ret
 }
 
-// NewInfoHeader creates an InfoHeaderRev3 from a byte buffer.
-// TODO in the future this should return a generic info header, independently from
-//      the revision, but need to implement other header revisions first.
-func NewInfoHeader(b []byte) (*InfoHeaderRev3, error) {
+// NewInfoHeader creates an CommonInfoHeader from a byte buffer.
+func NewInfoHeader(b []byte) (*CommonInfoHeader, error) {
 	if len(b) < FixedInfoHeaderLength {
 		return nil, fmt.Errorf("short FSP Info Header length %d; want at least %d", len(b), FixedInfoHeaderLength)
 	}
@@ -248,5 +268,13 @@ func NewInfoHeader(b []byte) (*InfoHeaderRev3, error) {
 	if err := binary.Read(reader, binary.LittleEndian, &f); err != nil {
 		return nil, err
 	}
-	return &f, nil
+
+	// Fill common info header
+	j, _ := json.Marshal(f)
+	var c CommonInfoHeader
+	if err := json.Unmarshal(j, &c); err != nil {
+		return nil, err
+	}
+	return &c, nil
+
 }
