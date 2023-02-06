@@ -261,6 +261,65 @@ func TestNewInfoHeaderRev6(t *testing.T) {
 	}
 }
 
+func TestErrorPath(t *testing.T) {
+	// Header too small
+	tmp := make([]byte, len(FSPTestHeaderRev3))
+	copy(tmp, FSPTestHeaderRev3)
+	_, err := NewInfoHeader(tmp[:len(tmp)-1])
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	copy(tmp, FSPTestHeaderRev3)
+	_, err = NewInfoHeader(tmp[:11])
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	// Signature corrupted
+	copy(tmp, FSPTestHeaderRev3)
+	tmp[0] = 0
+	_, err = NewInfoHeader(tmp)
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	// Spec version too small
+	copy(tmp, FSPTestHeaderRev3)
+	tmp[10] = 0x10
+	_, err = NewInfoHeader(tmp)
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	// Spec version too big
+	copy(tmp, FSPTestHeaderRev3)
+	tmp[10] = 0x30
+	_, err = NewInfoHeader(tmp)
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	// Header too small
+	copy(tmp, FSPTestHeaderRev3)
+	tmp[4] = byte(len(tmp) - 1)
+	tmp[5] = 0
+	tmp[6] = 0
+	tmp[7] = 0
+	_, err = NewInfoHeader(tmp)
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+
+	// Header Revision too small
+	copy(tmp, FSPTestHeaderRev3)
+	tmp[11] = 2
+	_, err = NewInfoHeader(tmp)
+	if err == nil {
+		t.Errorf("Expected an error")
+	}
+}
+
 func TestComponentAttribute(t *testing.T) {
 	ca := ComponentAttribute(0x3003)
 	if ca.IsDebugBuild() {
