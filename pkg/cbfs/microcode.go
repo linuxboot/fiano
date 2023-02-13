@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	if err := RegisterFileReader(&SegReader{Type: TypeMicroCode, Name: "microcode", New: NewCMOSLayout}); err != nil {
+	if err := RegisterFileReader(&SegReader{Type: TypeMicroCode, Name: "microcode", New: NewMicrocode}); err != nil {
 		log.Fatal(err)
 	}
 }
