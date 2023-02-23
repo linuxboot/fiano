@@ -15,5 +15,5 @@ require (
 	github.com/xaionaro-go/bytesextra v0.0.0-20220103144954-846e454ddea9
 	github.com/xaionaro-go/gosrc v0.0.0-20201124181305-3fdf8476a735
 	github.com/xaionaro-go/unsafetools v0.0.0-20210722164218-75ba48cf7b3c // indirect
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.3.8
 )
