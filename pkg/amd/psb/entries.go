@@ -261,7 +261,7 @@ func GetEntries(pspFirmware *amd_manifest.PSPFirmware, directory DirectoryType, 
 	return entries, nil
 }
 
-// GetRangeBytes converts firmware ragne to continues bytes sequence
+// GetRangeBytes converts firmware range to continues bytes sequence
 // TODO: should be moved to fiano's bytes2
 func GetRangeBytes(image []byte, start, length uint64) ([]byte, error) {
 	end := start + length

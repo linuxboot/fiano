@@ -310,7 +310,7 @@ func UpsertToken(tokenID TokenID, priorityMask PriorityMask, boardMask uint16, n
 	// we want to insert "addedBytes" bytes at insertionOffset that will invalidate all bytes after insertionOffset
 	// so copy invalidated bytes first
 	copy(apcbBinary[insertionOffset+addedBytes:], apcbBinary[insertionOffset:header.V2Header.SizeOfAPCB])
-	if err := writeNewToken(newFxedSizeBuffer(apcbBinary[insertionOffset:])); err != nil {
+	if err := writeNewToken(newFixedSizeBuffer(apcbBinary[insertionOffset:])); err != nil {
 		return err
 	}
 
@@ -552,7 +552,7 @@ type fixedSizeBuffer struct {
 	offset int
 }
 
-func newFxedSizeBuffer(buf []byte) io.Writer {
+func newFixedSizeBuffer(buf []byte) io.Writer {
 	return &fixedSizeBuffer{buffer: buf}
 }
 
@@ -567,5 +567,5 @@ func (fb *fixedSizeBuffer) Write(p []byte) (int, error) {
 }
 
 func writeFixedBuffer(buf []byte, v interface{}) error {
-	return binary.Write(newFxedSizeBuffer(buf), binary.LittleEndian, v)
+	return binary.Write(newFixedSizeBuffer(buf), binary.LittleEndian, v)
 }
