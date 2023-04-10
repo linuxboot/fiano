@@ -6,6 +6,7 @@ package cbfs
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,19 +42,13 @@ func NewFile(r io.ReadSeeker) (*File, error) {
 	if string(f.Magic[:]) != FileMagic {
 		return nil, CbfsHeaderMagicNotFound
 	}
-	Debug("It is %v type %v", f, f.Type)
-
-	Debug("Starting at %#02x", f.RecordStart)
-	nameStart, err := r.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return nil, fmt.Errorf("Getting file offset for name: %v", err)
-	}
+	Debug("Found CBFS file at %#02x is %v type %v", f.RecordStart, f, f.Type)
 
 	var nameSize uint32
 	if f.AttrOffset == 0 {
-		nameSize = f.SubHeaderOffset - (uint32(nameStart) - f.RecordStart)
+		nameSize = f.SubHeaderOffset - uint32(binary.Size(FileHeader{}))
 	} else {
-		nameSize = f.AttrOffset - (uint32(nameStart) - f.RecordStart)
+		nameSize = f.AttrOffset - uint32(binary.Size(FileHeader{}))
 	}
 	if err := ReadName(r, &f, nameSize); err != nil {
 		return nil, err
@@ -68,8 +63,7 @@ func NewFile(r io.ReadSeeker) (*File, error) {
 	return &f, nil
 }
 
-// ReadNameAndAttributes reads the variable CBFS file attribute after the fixed CBFS header
-// That is the filename, CBFS Attribute, Hashes, ...
+// ReadName reads the variable length CBFS name.
 func ReadName(r io.Reader, f *File, size uint32) error {
 	b := make([]byte, size)
 	n, err := r.Read(b)
@@ -91,6 +85,7 @@ func ReadName(r io.Reader, f *File, size uint32) error {
 	return nil
 }
 
+// ReadAttributes reads the variable length CBFS attribute list.
 func ReadAttributes(r io.Reader, f *File) error {
 	if f.AttrOffset == 0 {
 		return nil
@@ -112,6 +107,7 @@ func ReadAttributes(r io.Reader, f *File) error {
 	return nil
 }
 
+// ReadData reads the variable length CBFS file data.
 func ReadData(r io.ReadSeeker, f *File) error {
 	Debug("ReadData: Seek to %#x", int64(f.RecordStart+f.SubHeaderOffset))
 	if _, err := r.Seek(int64(f.RecordStart+f.SubHeaderOffset), io.SeekStart); err != nil {
