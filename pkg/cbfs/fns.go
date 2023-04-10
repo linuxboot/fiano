@@ -5,7 +5,6 @@
 package cbfs
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -129,67 +128,6 @@ func cleanString(n string) string {
 		}
 		return -1
 	}, n)
-}
-
-// ReadNameAndAttributes reads the variable CBFS file attribute after the fixed CBFS header
-// That is the filename, CBFS Attribute, Hashes, ...
-func ReadName(r io.Reader, f *File, size uint32) error {
-	b := make([]byte, size)
-	n, err := r.Read(b)
-	if err != nil {
-		Debug("ReadName failed:%v", err)
-		return err
-	}
-	fname := cleanString(string(b))
-	Debug("ReadName gets '%s' (%#02x)", fname, b)
-	if n != len(b) {
-		err = fmt.Errorf("ReadName: got %d, want %d for name", n, len(b))
-		Debug("ReadName short: %v", err)
-		return err
-	}
-	// discard trailing NULLs
-	z := bytes.Split(b, []byte{0})
-	Debug("ReadName stripped: '%s'", z)
-	f.Name = string(z[0])
-	return nil
-}
-
-func ReadAttributes(r io.Reader, f *File) error {
-	if f.AttrOffset == 0 {
-		return nil
-	}
-
-	b := make([]byte, f.SubHeaderOffset-f.AttrOffset)
-	n, err := r.Read(b)
-	if err != nil {
-		Debug("ReadAttributes failed:%v", err)
-		return err
-	}
-	Debug("ReadAttributes gets %#02x", b)
-	if n != len(b) {
-		err = fmt.Errorf("ReadAttributes: got %d, want %d for name", n, len(b))
-		Debug("ReadAttributes short: %v", err)
-		return err
-	}
-	f.Attr = b
-	return nil
-}
-
-func ReadData(r io.ReadSeeker, f *File) error {
-	Debug("ReadData: Seek to %#x", int64(f.RecordStart+f.SubHeaderOffset))
-	if _, err := r.Seek(int64(f.RecordStart+f.SubHeaderOffset), io.SeekStart); err != nil {
-		return err
-	}
-	Debug("ReadData: read %#x", f.Size)
-	b := make([]byte, f.Size)
-	n, err := r.Read(b)
-	if err != nil {
-		Debug("ReadData failed:%v", err)
-		return err
-	}
-	f.FData = b
-	Debug("ReadData gets %#02x", n)
-	return nil
 }
 
 func ffbyte(s uint32) []byte {
