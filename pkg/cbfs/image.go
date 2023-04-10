@@ -58,51 +58,32 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 	r := io.NewSectionReader(in, int64(i.Area.Offset), int64(i.Area.Size))
 
 	for off := int64(0); off < int64(i.Area.Size); {
-		var f File
+		var f *File
+
 		if _, err := r.Seek(off, io.SeekStart); err != nil {
 			return nil, err
 		}
-		err := Read(r, &f.FileHeader)
+		f, err := NewFile(r)
+		if err == CbfsHeaderMagicNotFound {
+			off = off + 16
+			continue
+		}
 		if err == io.EOF {
 			return i, nil
 		}
 		if err != nil {
 			return nil, err
 		}
-		if string(f.Magic[:]) != FileMagic {
-			off += 16
-			continue
-		}
+
 		Debug("It is %v type %v", f, f.Type)
-		f.RecordStart = uint32(off)
 		Debug("Starting at %#02x + %#02x", i.Area.Offset, f.RecordStart)
-		nameStart, err := r.Seek(0, io.SeekCurrent)
-		if err != nil {
-			return nil, fmt.Errorf("Getting file offset for name: %v", err)
-		}
+
 		sr, ok := SegReaders[f.Type]
-		// If we cant find any new match, break out of the loop.
 		if !ok {
 			Debug("No match found for type %v, %v", f.Type, ok)
 			sr = &SegReader{Type: f.Type, Name: "Unknown", New: NewUnknownRecord}
 		}
-		var nameSize uint32
-		if f.AttrOffset == 0 {
-			nameSize = f.SubHeaderOffset - (uint32(nameStart) - f.RecordStart)
-		} else {
-			nameSize = f.AttrOffset - (uint32(nameStart) - f.RecordStart)
-		}
-		if err := ReadName(r, &f, nameSize); err != nil {
-			return nil, err
-		}
-		if err := ReadAttributes(r, &f); err != nil {
-			return nil, err
-		}
-		if err := ReadData(r, &f); err != nil {
-			return nil, err
-		}
-		Debug("Found a SegReader for this %d size section: %v", f.Size, f.Name)
-		s, err := sr.New(&f)
+		s, err := sr.New(f)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +99,6 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 		}
 		// Force alignment.
 		off = (off + 15) & (^15)
-
 	}
 	return i, nil
 }
