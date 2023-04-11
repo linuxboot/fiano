@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -42,9 +43,26 @@ func TestCompression(t *testing.T) {
 			if f.Compression() != LZ4 {
 				t.Errorf("CBFS file '%s' has wrong compression '%s'", f.Name, f.Compression().String())
 			}
+			d, err := f.Decompress()
+			if err != nil {
+				t.Fatal(err)
+			}
+			data := []byte(strings.Repeat("FIANO ROCKS!\n", 1024))
+			if !bytes.Equal(data, d) {
+				t.Errorf("Decompressed file '%s' has unexpected contents: %s", f.Name, string(d)[0:12])
+			}
 		} else if f.Name == "compression_test2" {
 			if f.Compression() != LZMA {
 				t.Errorf("CBFS file '%s' has wrong compression '%s'", f.Name, f.Compression().String())
+			}
+			d, err := f.Decompress()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			data := []byte(strings.Repeat("FIANO ROCKS!\n", 1024))
+			if !bytes.Equal(data, d) {
+				t.Errorf("Decompressed file '%s' has unexpected contents: %s", f.Name, string(d)[0:12])
 			}
 		} else if f.Name == "fallback/bootblock" {
 			if f.Compression() != None {
