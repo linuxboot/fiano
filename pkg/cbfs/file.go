@@ -124,3 +124,55 @@ func ReadData(r io.ReadSeeker, f *File) error {
 	Debug("ReadData gets %#02x", n)
 	return nil
 }
+
+// FindAttribute returns the attribute with given tag as
+// []byte. It has the size as specified by the tag.
+// Returns an error if not found or could not read in total.
+func (f *File) FindAttribute(t Tag) ([]byte, error) {
+	buf := bytes.NewReader(f.Attr)
+	generic := FileAttr{}
+
+	for {
+		if err := binary.Read(buf, Endian, &generic); err != nil {
+			return nil, err
+		}
+		if generic.Tag == uint32(Unused) || generic.Tag == uint32(Unused2) {
+			return nil, fmt.Errorf("end tag found")
+		}
+		// Validate input
+		if generic.Size < uint32(binary.Size(generic)) || generic.Size == 0xffffffff {
+			return nil, fmt.Errorf("tag is malformed, aborting")
+		}
+		Debug("FindAttribute: Found attribute with tag %x", generic.Tag)
+
+		if Tag(generic.Tag) == t {
+			_, _ = buf.Seek(-int64(binary.Size(generic)), io.SeekCurrent)
+
+			ret := make([]byte, generic.Size)
+			err := binary.Read(buf, Endian, &ret)
+			return ret, err
+		} else {
+			_, err := buf.Seek(int64(generic.Size)-int64(binary.Size(generic)), io.SeekCurrent)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+}
+
+// Compression returns the algorithm used to compress FData.
+// If no compression attribute is found or on error it returns 'None'
+func (f *File) Compression() Compression {
+	cattr, err := f.FindAttribute(Compressed)
+	if err != nil {
+		Debug("Compression: No compression tag found: %v", err)
+		return None
+	}
+
+	comp := FileAttrCompression{}
+	if err := binary.Read(bytes.NewBuffer(cattr), Endian, &comp); err != nil {
+		Debug("Compression: failed to read compression tag: %v", err)
+		return None
+	}
+	return comp.Compression
+}

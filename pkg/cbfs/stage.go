@@ -49,18 +49,14 @@ type mStage struct {
 }
 
 func (h *LegacyStageRecord) MarshalJSON() ([]byte, error) {
-	c := h.Compression.String()
 	s := mStage{
-		Name:  h.File.Name,
-		Start: h.RecordStart,
-		Size:  h.Size,
-		Type:  h.Type.String(),
+		Name:        h.File.Name,
+		Start:       h.RecordStart,
+		Size:        h.Size,
+		Type:        h.Type.String(),
+		Compression: h.File.Compression().String(),
 	}
-	// For marshalling, just omit instead of using an ambiguous string
-	// FIXME: Currently, this leaves us with an empty string `""`.
-	if c != "none" {
-		s.Compression = c
-	}
+
 	return json.Marshal(s)
 }
 
@@ -74,7 +70,7 @@ func (h *StageHeader) String() string {
 }
 
 func (h *LegacyStageRecord) String() string {
-	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.Size, h.Compression.String())
+	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.Size, h.File.Compression().String())
 }
 
 func (r *LegacyStageRecord) Write(w io.Writer) error {
@@ -107,8 +103,7 @@ func (h *FileAttrStageHeader) String() string {
 }
 
 func (h *StageRecord) String() string {
-	// TODO read compression from Attributes
-	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.File.Size, "none")
+	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.File.Size, h.File.Compression().String())
 }
 
 func (r *StageRecord) Write(w io.Writer) error {
