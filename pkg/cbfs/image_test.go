@@ -26,6 +26,35 @@ func TestReadFile(t *testing.T) {
 	t.Logf("%s", i)
 }
 
+func TestCompression(t *testing.T) {
+	Debug = t.Logf
+	f, err := os.Open("testdata/coreboot.rom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	i, err := NewImage(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for s := range i.Segs {
+		f := i.Segs[s].GetFile()
+		if f.Name == "compression_test1" {
+			if f.Compression() != LZ4 {
+				t.Errorf("CBFS file '%s' has wrong compression '%s'", f.Name, f.Compression().String())
+			}
+		} else if f.Name == "compression_test2" {
+			if f.Compression() != LZMA {
+				t.Errorf("CBFS file '%s' has wrong compression '%s'", f.Name, f.Compression().String())
+			}
+		} else if f.Name == "fallback/bootblock" {
+			if f.Compression() != None {
+				t.Errorf("CBFS file '%s' has wrong compression '%s'", f.Name, f.Compression().String())
+			}
+		}
+	}
+	t.Logf("%s", i)
+}
+
 func TestBogusArchives(t *testing.T) {
 	var tests = []struct {
 		n    string

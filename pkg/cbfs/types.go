@@ -115,7 +115,6 @@ type mFile struct {
 type FileAttr struct {
 	Tag  uint32
 	Size uint32 // inclusize of Tag and Size
-	Data []byte
 }
 
 type Tag uint32
