@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/linuxboot/fiano/pkg/compression"
 )
 
 var CbfsHeaderMagicNotFound = errors.New("CBFS header magic doesn't match")
@@ -175,4 +177,20 @@ func (f *File) Compression() Compression {
 		return None
 	}
 	return comp.Compression
+}
+
+// Decompress returns the decompressed FData
+// If FData is not compressed it returns FData
+func (f *File) Decompress() ([]byte, error) {
+	c := f.Compression()
+	if c == None {
+		return f.FData, nil
+	} else if c == LZMA {
+		compressor := compression.LZMA{}
+		return compressor.Decode(f.FData)
+	} else if c == LZ4 {
+		compressor := compression.LZ4{}
+		return compressor.Decode(f.FData)
+	}
+	return nil, fmt.Errorf("Unknown compression")
 }
