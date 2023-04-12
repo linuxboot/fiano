@@ -7,6 +7,7 @@ require (
 	github.com/fatih/camelcase v1.0.0
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/pierrec/lz4 v2.6.1+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/tjfoc/gmsm v1.4.1
