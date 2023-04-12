@@ -25,6 +25,12 @@ var tests = []struct {
 		compressor:      &LZMA{},
 	},
 	{
+		name:            "random data LZ4",
+		encodedFilename: "testdata/random.bin.lz4",
+		decodedFilename: "testdata/random.bin",
+		compressor:      &LZ4{},
+	},
+	{
 		name:            "random data SystemLZMA",
 		encodedFilename: "testdata/random.bin.lzma",
 		decodedFilename: "testdata/random.bin",
