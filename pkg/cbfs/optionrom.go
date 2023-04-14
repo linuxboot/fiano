@@ -25,7 +25,7 @@ func (r *OptionROMRecord) Read(in io.ReadSeeker) error {
 }
 
 func (r *OptionROMRecord) String() string {
-	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, "none")
+	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, r.File.Compression().String())
 }
 
 func (r *OptionROMRecord) Write(w io.Writer) error {

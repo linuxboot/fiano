@@ -26,7 +26,7 @@ func (r *FSPRecord) Read(in io.ReadSeeker) error {
 }
 
 func (r *FSPRecord) String() string {
-	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, "none")
+	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, r.File.Compression().String())
 }
 
 func (r *FSPRecord) Write(w io.Writer) error {
