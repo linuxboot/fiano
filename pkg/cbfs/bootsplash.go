@@ -26,7 +26,7 @@ func (r *BootSplashRecord) Read(in io.ReadSeeker) error {
 }
 
 func (r *BootSplashRecord) String() string {
-	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, "none")
+	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, r.File.Compression().String())
 }
 
 func (r *BootSplashRecord) Write(w io.Writer) error {
