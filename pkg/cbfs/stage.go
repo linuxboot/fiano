@@ -5,7 +5,6 @@
 package cbfs
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -38,26 +37,6 @@ func (r *LegacyStageRecord) Read(in io.ReadSeeker) error {
 	}
 	Debug("Stage read %d bytes", n)
 	return nil
-}
-
-type mStage struct {
-	Name        string
-	Start       uint32
-	Size        uint32
-	Type        string
-	Compression string
-}
-
-func (h *LegacyStageRecord) MarshalJSON() ([]byte, error) {
-	s := mStage{
-		Name:        h.File.Name,
-		Start:       h.RecordStart,
-		Size:        h.Size,
-		Type:        h.Type.String(),
-		Compression: h.File.Compression().String(),
-	}
-
-	return json.Marshal(s)
 }
 
 func (h *StageHeader) String() string {

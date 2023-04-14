@@ -103,10 +103,11 @@ type File struct {
 }
 
 type mFile struct {
-	Name  string
-	Start uint32
-	Size  uint32
-	Type  string
+	Name        string
+	Start       uint32
+	Size        uint32
+	Type        string
+	Compression string
 }
 
 // The common fields of extended cbfs file attributes.
