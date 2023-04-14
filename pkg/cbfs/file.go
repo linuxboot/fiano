@@ -19,10 +19,11 @@ var CbfsHeaderMagicNotFound = errors.New("CBFS header magic doesn't match")
 
 func (f *File) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mFile{
-		Name:  f.Name,
-		Start: f.RecordStart,
-		Size:  f.FileHeader.Size,
-		Type:  f.FileHeader.Type.String(),
+		Name:        f.Name,
+		Start:       f.RecordStart,
+		Size:        f.FileHeader.Size,
+		Type:        f.FileHeader.Type.String(),
+		Compression: f.Compression().String(),
 	})
 }
 
