@@ -5,6 +5,7 @@
 package cbfs
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -59,6 +60,27 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 	return nil
 }
 
+// struct for PayloadRecord marshalling
+type mPayloadRecord struct {
+	Name        string
+	Start       uint32
+	Size        uint32
+	Type        string
+	Segments    []PayloadHeader
+	Compression string
+}
+
+func (r *PayloadRecord) MarshalJSON() ([]byte, error) {
+	return json.Marshal(mPayloadRecord{
+		Name:        r.Name,
+		Start:       r.RecordStart,
+		Size:        r.FileHeader.Size,
+		Type:        r.FileHeader.Type.String(),
+		Segments:    r.Segs,
+		Compression: r.File.Compression().String(),
+	})
+}
+
 func (h *PayloadRecord) String() string {
 	s := recString(h.File.Name, h.RecordStart, h.Type.String(), h.Size, "none")
 	for i, seg := range h.Segs {
@@ -66,6 +88,27 @@ func (h *PayloadRecord) String() string {
 		s += recString(fmt.Sprintf(" Seg #%d", i), seg.Offset, seg.Type.String(), seg.Size, seg.Compression.String())
 	}
 	return s
+}
+
+// struct for PayloadHeader marshalling
+type mPayloadHeader struct {
+	Type        string
+	Compression string
+	Offset      uint32
+	LoadAddress uint64
+	Size        uint32
+	MemSize     uint32
+}
+
+func (h *PayloadHeader) MarshalJSON() ([]byte, error) {
+	return json.Marshal(mPayloadHeader{
+		Type:        h.Type.String(),
+		Compression: h.Compression.String(),
+		Offset:      h.Offset,
+		LoadAddress: h.LoadAddress,
+		Size:        h.Size,
+		MemSize:     h.MemSize,
+	})
 }
 
 func (r *PayloadHeader) String() string {
