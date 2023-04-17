@@ -70,7 +70,7 @@ func (entry *EntryKeyManifestRecord) ParseData() (*bgkey.Manifest, *cbntkey.Mani
 // ParseKeyManifest returns a key manifest if it was able to
 // parse one.
 func (table Table) ParseKeyManifest(firmware []byte) (*bgkey.Manifest, *cbntkey.Manifest, error) {
-	hdr := table.First(EntryTypeBootPolicyManifest)
+	hdr := table.First(EntryTypeKeyManifestRecord)
 	if hdr == nil {
 		return nil, nil, ErrNotFound{}
 	}
