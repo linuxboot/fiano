@@ -48,6 +48,12 @@ var tests = []struct {
 		decodedFilename: "testdata/random.bin",
 		compressor:      &LZMAX86{&SystemLZMA{"xz"}},
 	},
+	{
+		name:            "random data ZLIB",
+		encodedFilename: "testdata/random.bin.zlib",
+		decodedFilename: "testdata/random.bin",
+		compressor:      &ZLIB{},
+	},
 }
 
 func TestEncodeDecode(t *testing.T) {
@@ -120,6 +126,13 @@ func TestCompressorFromGUID(t *testing.T) {
 			guid:            &LZMAX86GUID,
 			expected:        &LZMAX86{&SystemLZMA{"xz"}},
 			encodedFilename: "testdata/random.bin.lzma86",
+			decodedFilename: "testdata/random.bin",
+		},
+		{
+			name:            "zlib",
+			guid:            &ZLIBGUID,
+			expected:        &ZLIB{},
+			encodedFilename: "testdata/random.bin.zlib",
 			decodedFilename: "testdata/random.bin",
 		},
 	}
