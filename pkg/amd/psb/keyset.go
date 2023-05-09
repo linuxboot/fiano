@@ -95,7 +95,11 @@ func (kdb KeySet) KeysetFromType(keyType KeyType) (KeySet, error) {
 		if key == nil {
 			return NewKeySet(), newErrInvalidFormat(fmt.Errorf("KeySet in inconsistent state, no key is present with keyID %s", keyID.Hex()))
 		}
-		keySet.AddKey(key, keyType)
+
+		err := keySet.AddKey(key, keyType)
+		if err != nil {
+			return NewKeySet(), fmt.Errorf("unable to add key %s: %w", keyID, err)
+		}
 	}
 	return keySet, nil
 }
