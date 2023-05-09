@@ -20,10 +20,13 @@ type DirectoryType uint8
 const (
 	// PSPDirectoryLevel1 represents PSP directory table level 1
 	PSPDirectoryLevel1 DirectoryType = iota
+
 	// PSPDirectoryLevel2 represents PSP directory table level 2
 	PSPDirectoryLevel2
+
 	// BIOSDirectoryLevel1 represents BIOS directory table level 1
 	BIOSDirectoryLevel1
+
 	// BIOSDirectoryLevel2 represents BIOS directory table level 2
 	BIOSDirectoryLevel2
 )

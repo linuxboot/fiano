@@ -16,16 +16,13 @@ const pspHeaderSize = 0x100
 // signedDataStart indicates the start address of signed data content within a PSP binary
 const signedDataStart = 0x0
 
-// sizeSignedToSignatureParametersLen is the size of the header from sizeSigned field to signatureParameters
-const sizeSignedToSignatureParametersLen = 32
-
-// PspHeaderData emebds the data of PspHeader
-type PspHeaderData struct {
+// PSPHeaderData embeds the data of PspHeader
+type PSPHeaderData struct {
 	Nonce                 Buf16B
 	HeaderVersion         uint32
 	SizeSigned            uint32
 	EncryptionOptions     uint32
-	IkekType              uint8
+	IKEKType              uint8
 	Reserved0             Buf3B
 	EncryptionParameters  Buf16B
 	SignatureOption       uint32
@@ -54,7 +51,7 @@ type PspHeaderData struct {
 
 // PspHeader models the header pre-pended to PSP binaries
 type PspHeader struct {
-	data PspHeaderData
+	data PSPHeaderData
 
 	// There should be 48 bytes of padding after the last field of the header,
 	// which can be ignored. What we care about is the signature of the binary,
@@ -132,7 +129,7 @@ func (b *PSPBinary) getSignedBlob(keyDB KeySet) (*SignedBlob, error) {
 		sizeImage = b.header.data.SizeImage
 	} else {
 		// the image is compressed, SizeFWSigned is to be ignored and instead compressedImageSize should be
-		// taken into consideration and aligned to 16 bits. PSP header size is not included in compresseImageSize.
+		// taken into consideration and aligned to 16 bits. PSP header size is not included in compressedImageSize.
 		alignment := uint32(0x10)
 		sizeSignedImage = (b.header.data.CompressedImageSize+alignment-1) & ^(alignment-1) + pspHeaderSize
 		sizeImage = sizeSignedImage + sizeSignature

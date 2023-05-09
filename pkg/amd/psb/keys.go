@@ -310,7 +310,7 @@ func NewTokenKey(buff *bytes.Buffer, keySet KeySet) (*Key, error) {
 	// * modulus
 	// * signature.
 	//
-	// Exponent, modulus and signature are all of the same size. Only the latter is not signed, hence the lenght
+	// Exponent, modulus and signature are all of the same size. Only the latter is not signed, hence the length
 	// of the signed payload is header size + 2 * exponent/modulus size.
 	lenSigned := uint64(64 + 2*key.data.ModulusSize/8)
 	if uint64(len(raw)) < lenSigned {

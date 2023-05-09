@@ -14,8 +14,6 @@ import (
 	amd_manifest "github.com/linuxboot/fiano/pkg/amd/manifest"
 )
 
-const keydbHeaderSize = 80
-
 // KeyType represents the type of the key stored in KeySet
 type KeyType string
 
@@ -52,7 +50,7 @@ func (kdb *KeySet) String() string {
 // AddKey adds a key to the key set
 func (kdb KeySet) AddKey(k *Key, keyType KeyType) error {
 	if _, ok := kdb.db[k.data.KeyID]; ok {
-		return fmt.Errorf("canont add key id %s to set, key with same id already exists", k.data.KeyID.Hex())
+		return fmt.Errorf("cannot add key id %s to set, key with same id already exists", k.data.KeyID.Hex())
 	}
 
 	kdb.db[k.data.KeyID] = k
@@ -102,8 +100,8 @@ func (kdb KeySet) KeysetFromType(keyType KeyType) (KeySet, error) {
 	return keySet, nil
 }
 
-// keydbHeader represents the header pre-pended to keydb structure
-type keydbHeader struct {
+// keyDBHeader represents the header pre-pended to keydb structure
+type keyDBHeader struct {
 	DataSize        uint32
 	Version         uint32
 	Cookie          uint32
@@ -122,8 +120,8 @@ func readAndCountSize(r io.Reader, order binary.ByteOrder, data interface{}, cou
 }
 
 // extractKeydbHeader parses keydbHeader from binary buffer. KeyDB header is supposed to be 80 bytes long
-func extractKeydbHeader(buff io.Reader) (*keydbHeader, error) {
-	header := keydbHeader{}
+func extractKeydbHeader(buff io.Reader) (*keyDBHeader, error) {
+	header := keyDBHeader{}
 
 	if err := binary.Read(buff, binary.LittleEndian, &header); err != nil {
 		return nil, fmt.Errorf("could not read key database header: %w", err)
