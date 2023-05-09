@@ -9,7 +9,7 @@ import (
 )
 
 func reverse(s []byte) []byte {
-	if s == nil || len(s) == 0 {
+	if len(s) == 0 {
 		return nil
 	}
 	d := make([]byte, len(s))
@@ -24,10 +24,10 @@ func reverse(s []byte) []byte {
 
 func checkBoundaries(start, end uint64, blob []byte) error {
 	if start > uint64(len(blob)) {
-		return fmt.Errorf("boundary check error: start is beyond blob bondary (%d > %d)", start, len(blob))
+		return fmt.Errorf("boundary check error: start is beyond blob boundary (%d > %d)", start, len(blob))
 	}
 	if end > uint64(len(blob)) {
-		return fmt.Errorf("boundary check error: start is beyond blob bondary (%d > %d)", end, len(blob))
+		return fmt.Errorf("boundary check error: start is beyond blob boundary (%d > %d)", end, len(blob))
 	}
 	if start > end {
 		return fmt.Errorf("boundary check error: start > end (%d > %d)", start, end)

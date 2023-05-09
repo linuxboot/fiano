@@ -19,8 +19,8 @@ const (
 	// AMDPublicKeyEntry denotes AMD public key entry in PSP Directory table
 	AMDPublicKeyEntry amd_manifest.PSPDirectoryTableEntryType = 0x00
 
-	// PSPRecoveryBootlader is a recovery instance of PSP bootloader
-	PSPRecoveryBootlader amd_manifest.PSPDirectoryTableEntryType = 0x03
+	// PSPRecoveryBootloader is a recovery instance of PSP bootloader
+	PSPRecoveryBootloader amd_manifest.PSPDirectoryTableEntryType = 0x03
 
 	// SMUOffChipFirmwareEntry points to a region of firmware containing SMU offchip firmware
 	SMUOffChipFirmwareEntry amd_manifest.PSPDirectoryTableEntryType = 0x08

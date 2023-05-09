@@ -15,10 +15,10 @@ import (
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // APCB config consists of tokens, all tokens have the following attributes: ID, type, priority, boardMask, value
-// ID - is token's unqique identifier. Note APCB config may contain multiple tokens with same ID. The used one is determined by priority and board
+// ID - is token's unique identifier. Note APCB config may contain multiple tokens with same ID. The used one is determined by priority and board
 // Type - boolean, 1, 2 or 4 bytes value
 // Priority - see PriorityLevel
-// BoardMask - determines type of hardware for wich the token is aplicable
+// BoardMask - determines type of hardware for which the token is applicable
 // Value - token's value according to its type
 //
 // Structure of APCB/APCB recovery config is the following:
