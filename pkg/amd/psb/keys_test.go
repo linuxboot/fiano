@@ -50,7 +50,8 @@ func (suite *KeySuite) TestKeySetAddKey() {
 	assert.NoError(suite.T(), err)
 
 	keySet := NewKeySet()
-	keySet.AddKey(rootKey, AMDRootKey)
+	err = keySet.AddKey(rootKey, AMDRootKey)
+	assert.NoError(suite.T(), err)
 
 	assert.Equal(suite.T(), 1, len(keySet.AllKeyIDs()))
 	assert.NotNil(suite.T(), keySet.GetKey(KeyID(rootKeyID)))
@@ -85,7 +86,8 @@ func (suite *KeySuite) TestOEMKeyFields() {
 
 	// parse root key and use it to validate token key
 	keySet := NewKeySet()
-	keySet.AddKey(rootKey, AMDRootKey)
+	err = keySet.AddKey(rootKey, AMDRootKey)
+	assert.NoError(suite.T(), err)
 
 	key, err := NewTokenKey(bytes.NewBuffer(oemSigningKey), keySet)
 	assert.NoError(suite.T(), err)
