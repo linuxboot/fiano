@@ -18,11 +18,11 @@ import (
 )
 
 // EntrySACM represents a FIT entry of type "Startup AC Module Entry" (0x02)
-type EntrySACM struct{ EntryBase }
+type EntryStartupACM struct{ EntryBase }
 
-var _ EntryCustomGetDataSegmentSizer = (*EntrySACM)(nil)
+var _ EntryCustomGetDataSegmentSizer = (*EntryStartupACM)(nil)
 
-func (entry *EntrySACM) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64, error) {
+func (entry *EntryStartupACM) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64, error) {
 	offset, err := entry.Headers.getDataSegmentOffset(firmware)
 	if err != nil {
 		return 0, fmt.Errorf("unable to detect data segment offset: %w", err)
@@ -38,9 +38,9 @@ func (entry *EntrySACM) CustomGetDataSegmentSize(firmware io.ReadSeeker) (uint64
 	return uint64(size), nil
 }
 
-var _ EntryCustomRecalculateHeaderser = (*EntrySACM)(nil)
+var _ EntryCustomRecalculateHeaderser = (*EntryStartupACM)(nil)
 
-func (entry *EntrySACM) CustomRecalculateHeaders() error {
+func (entry *EntryStartupACM) CustomRecalculateHeaders() error {
 	// See 4.4.7 of the FIT specification.
 	entry.Headers.Size.SetUint32(0)
 	return nil
@@ -566,7 +566,7 @@ func EntrySACMParseSize(b []byte) (uint32, error) {
 }
 
 // ParseData parses SACM entry and returns EntrySACMData.
-func (entry *EntrySACM) ParseData() (*EntrySACMData, error) {
+func (entry *EntryStartupACM) ParseData() (*EntrySACMData, error) {
 	entryData := EntrySACMData{}
 	_, err := entryData.Read(entry.DataSegmentBytes)
 	if err != nil {
@@ -654,7 +654,7 @@ type entrySACMJSON struct {
 }
 
 // MarshalJSON implements json.Marshaler
-func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
+func (entry *EntryStartupACM) MarshalJSON() ([]byte, error) {
 	result := entrySACMJSON{}
 	result.DataParsed, result.DataParseError = entry.ParseData()
 	result.Headers = &entry.Headers
@@ -665,7 +665,7 @@ func (entry *EntrySACM) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaller
-func (entry *EntrySACM) UnmarshalJSON(b []byte) error {
+func (entry *EntryStartupACM) UnmarshalJSON(b []byte) error {
 	result := entrySACMJSON{}
 	err := json.Unmarshal(b, &result)
 	if err != nil {

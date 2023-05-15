@@ -70,7 +70,7 @@ func RegisterEntryType(entryTypeID EntryType, entryGoType Entry) {
 func init() {
 	RegisterEntryType(EntryTypeFITHeaderEntry, &EntryFITHeaderEntry{})
 	RegisterEntryType(EntryTypeMicrocodeUpdateEntry, &EntryMicrocodeUpdateEntry{})
-	RegisterEntryType(EntryTypeStartupACModuleEntry, &EntrySACM{})
+	RegisterEntryType(EntryTypeStartupACModuleEntry, &EntryStartupACM{})
 	RegisterEntryType(EntryTypeDiagnosticACModuleEntry, &EntryDiagnosticACM{})
 	RegisterEntryType(EntryTypeBIOSStartupModuleEntry, &EntryBIOSStartupModuleEntry{})
 	RegisterEntryType(EntryTypeTPMPolicyRecord, &EntryTPMPolicyRecord{})
