@@ -54,9 +54,23 @@ func getLeakedKeys() ([10][]byte, error) {
 
 type Manifest interface{}
 
+/*
+FIXME: Do address and offset really always exist? I don't think so...
+Example FIT:
+
+01c39980: 5f46 4954 5f20 2020 0700 0000 0001 0000  _FIT_   ........
+01c39990: 0004 bdff 0000 0000 0000 0000 0001 0100  ................
+01c399a0: 0028 c0ff 0000 0000 0000 0000 0001 0100  .(..............
+01c399b0: 0000 f8ff 0000 0000 0000 0000 0001 0200  ................
+01c399c0: 7000 7100 0104 7d00 0000 0000 0000 0a00  p.q...}.........
+01c399d0: 0046 feff 0000 0000 5503 0000 0001 0b00  .F......U.......
+01c399e0: 0041 feff 0000 0000 9504 0000 0001 0c00  .A..............
+
+*/
+
 type FEntry struct {
 	Type    string
-	Address fit.Address64
+	Address uint64
 	Offset  uint64
 	Size    uint32
 	Version fit.EntryVersion
@@ -65,8 +79,7 @@ type FEntry struct {
 type Meta struct {
 	Keym      Manifest
 	Polm      Manifest
-	Fit       []fit.Entry
-	Entries   []FEntry
+	Fit       []FEntry
 	LeakedKey string
 }
 
@@ -87,30 +100,35 @@ func main() {
 	}
 
 	var meta Meta
-	// TODO: the whole FIT is too verbose
-	// meta.Fit = entries
-
 	var bme fit.Entry
 	var kme fit.Entry
 	var txte fit.Entry
 	for idx, entry := range entries {
+		t := entry.GetEntryBase().Headers.Type()
 		// if entry.GetEntryBase().Headers.Type() == fit.EntryTypeStartupACModuleEntry {
-		if entry.GetEntryBase().Headers.Type() == fit.EntryTypeKeyManifestRecord {
+		if t == fit.EntryTypeKeyManifestRecord {
 			kme = entry
 			fmt.Fprintf(os.Stderr, "key manifest @ %v\n", idx)
 		}
-		if entry.GetEntryBase().Headers.Type() == fit.EntryTypeBootPolicyManifest {
+		if t == fit.EntryTypeBootPolicyManifest {
 			bme = entry
 			fmt.Fprintf(os.Stderr, "boot policy manifest @ %v\n", idx)
 		}
-		if entry.GetEntryBase().Headers.Type() == fit.EntryTypeTXTPolicyRecord {
+		if t == fit.EntryTypeTXTPolicyRecord {
 			txte = entry
 			fmt.Fprintf(os.Stderr, "TXT policy manifest @ %v\n", idx)
 		}
-		meta.Entries = append(meta.Entries, FEntry{
-			Type:    entry.GetEntryBase().Headers.Type().String(),
-			Address: entry.GetEntryBase().Headers.Address,
-			Offset:  entry.GetEntryBase().Headers.Address.Offset(uint64(len(data))),
+		var a uint64
+		var o uint64
+		if t != fit.EntryTypeFITHeaderEntry && t != fit.EntryTypeTXTPolicyRecord {
+			addr := entry.GetEntryBase().Headers.Address
+			a = addr.Pointer()
+			o = addr.Offset(uint64(len(data)))
+		}
+		meta.Fit = append(meta.Fit, FEntry{
+			Type:    t.String(),
+			Address: a,
+			Offset:  o,
 			Size:    entry.GetEntryBase().Headers.Size.Uint32(),
 			Version: entry.GetEntryBase().Headers.Version,
 		})
