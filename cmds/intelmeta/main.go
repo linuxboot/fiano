@@ -54,10 +54,19 @@ func getLeakedKeys() ([10][]byte, error) {
 
 type Manifest interface{}
 
+type FEntry struct {
+	Type    string
+	Address fit.Address64
+	Offset  uint64
+	Size    uint32
+	Version fit.EntryVersion
+}
+
 type Meta struct {
 	Keym      Manifest
 	Polm      Manifest
 	Fit       []fit.Entry
+	Entries   []FEntry
 	LeakedKey string
 }
 
@@ -77,8 +86,13 @@ func main() {
 		log.Fatalf("cannot parse input file: %v", err)
 	}
 
+	var meta Meta
+	// TODO: the whole FIT is too verbose
+	// meta.Fit = entries
+
 	var bme fit.Entry
 	var kme fit.Entry
+	var txte fit.Entry
 	for idx, entry := range entries {
 		// if entry.GetEntryBase().Headers.Type() == fit.EntryTypeStartupACModuleEntry {
 		if entry.GetEntryBase().Headers.Type() == fit.EntryTypeKeyManifestRecord {
@@ -89,10 +103,18 @@ func main() {
 			bme = entry
 			fmt.Fprintf(os.Stderr, "boot policy manifest @ %v\n", idx)
 		}
+		if entry.GetEntryBase().Headers.Type() == fit.EntryTypeTXTPolicyRecord {
+			txte = entry
+			fmt.Fprintf(os.Stderr, "TXT policy manifest @ %v\n", idx)
+		}
+		meta.Entries = append(meta.Entries, FEntry{
+			Type:    entry.GetEntryBase().Headers.Type().String(),
+			Address: entry.GetEntryBase().Headers.Address,
+			Offset:  entry.GetEntryBase().Headers.Address.Offset(uint64(len(data))),
+			Size:    entry.GetEntryBase().Headers.Size.Uint32(),
+			Version: entry.GetEntryBase().Headers.Version,
+		})
 	}
-
-	var meta Meta
-	meta.Fit = entries
 
 	if bme == nil {
 		fmt.Fprintf(os.Stderr, "no boot manifest entry\n")
@@ -184,4 +206,5 @@ func main() {
 	if meta.LeakedKey != "" {
 		fmt.Fprintf(os.Stderr, "LEAKED BG KEY USED: %x\n", meta.LeakedKey)
 	}
+	fmt.Fprintf(os.Stderr, "TXT policy manifest @ %v\n", txte)
 }
