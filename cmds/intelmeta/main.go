@@ -24,7 +24,7 @@ var (
 	flagJSON = flag.Bool("j", false, "Output as JSON")
 )
 
-func getLeakedKeys() [10][]byte {
+func getLeakedKeys() ([10][]byte, error) {
 	var keys = [10]string{
 		// https://github.com/binarly-io/SupplyChainAttacks/blob/main/MSI/MsiImpactedDevices.md
 		"77304b5179d0924e55060188495c80135da6be5a357234809e04a50c9629be6832f2d71be5e720a71bc9103b62413f91f98bf35723a358c5a24530fd46f6c89e6b3c22b77cd364b252bb0190cbc5ef6dd91811bfeff9a7308a6b5d60a4297dcfab6302d5d9db78103d4467d097bacce456b54c983f175c44bfd150b5121a589fa642308fd522471b6216afa0a9dbf8f158b0f7a787c0c6a58e70f2ebbff73708a880ae929bdc6097d6bc6463ab524c4ee6e9aa208ac845211b0e04fe8f2dca3799641af550e4740498ed7c3b4e9ceaf8e9256a30623cba4799ba8198cb3d53e28492c49ce3512856dfd4577992c6c7867eee353bbb38424ac83dcfc7dfba902bb41b180ded8026ac9591f3575cc4e2a6e228c4f12e978996984cb48bfd982067c00baa789447f56d63f52f4bc210025b239b92141592eb0734088647c14ff3df646bd0e629ccb0ec57bec4372700d1041cdd44ecf4e4067cc363e76af1d52fbffc8a6164b25d4c7611b57169c76717a940f387959916aa259a1064596bbc76a7",
@@ -45,18 +45,20 @@ func getLeakedKeys() [10][]byte {
 	for i, k := range keys {
 		bkeys[i], err = hex.DecodeString(k)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cannot decode key\n")
+			return bkeys, err
 		}
 	}
 
-	return bkeys
+	return bkeys, nil
 }
 
 type Manifest interface{}
 
 type Meta struct {
-	Keym Manifest
-	Polm Manifest
+	Keym      Manifest
+	Polm      Manifest
+	Fit       []fit.Entry
+	LeakedKey string
 }
 
 func main() {
@@ -90,6 +92,7 @@ func main() {
 	}
 
 	var meta Meta
+	meta.Fit = entries
 
 	if bme == nil {
 		fmt.Fprintf(os.Stderr, "no boot manifest entry\n")
@@ -141,26 +144,44 @@ func main() {
 		}
 	}
 
+	leakedKeys, err := getLeakedKeys()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR]: cannot decode list of presumably hex-encoded leaked keys\n")
+	}
+	if meta.Polm != nil {
+		// https://go.dev/tour/methods/15
+		_, ok := meta.Polm.(cbntbootpolicy.Manifest)
+		if ok == true {
+			pol := meta.Polm.(cbntbootpolicy.Manifest)
+			k := pol.PMSE.Key.Data[4:]
+			for _, lk := range leakedKeys {
+				if bytes.Equal(k, lk) {
+					meta.LeakedKey = hex.EncodeToString(lk[:8])
+				}
+			}
+		}
+		if ok == false {
+			p, ok := meta.Polm.(bgbootpolicy.Manifest)
+			if ok == true {
+				k := p.PMSE.Key.Data[4:]
+				for _, lk := range leakedKeys {
+					if bytes.Equal(k, lk) {
+						meta.LeakedKey = hex.EncodeToString(lk[:8])
+					}
+				}
+			}
+		}
+	}
+
 	if *flagJSON {
 		j, err := json.MarshalIndent(meta, "", "  ")
 		if err != nil {
-			log.Fatalf("cannot marshal JSON: %v", err)
-		}
-		if err != nil {
-			log.Fatalf("cannot marshal JSON: %v", err)
+			log.Fatalf("cannot marshal to JSON: %v", err)
 		}
 		fmt.Println(string(j))
 	}
 
-	leakedKeys := getLeakedKeys()
-	if meta.Polm != nil {
-		p := meta.Polm.(cbntbootpolicy.Manifest)
-		k := p.PMSE.Key.Data[4:]
-		// fmt.Fprintf(os.Stderr, "%v\n", k)
-		for _, lk := range leakedKeys {
-			if bytes.Equal(k, lk) {
-				fmt.Fprintf(os.Stderr, "LEAKED BG KEY USED: %x\n", lk[:8])
-			}
-		}
+	if meta.LeakedKey != "" {
+		fmt.Fprintf(os.Stderr, "LEAKED BG KEY USED: %x\n", meta.LeakedKey)
 	}
 }
