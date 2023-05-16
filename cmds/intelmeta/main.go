@@ -6,16 +6,19 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/linuxboot/fiano/pkg/intel/metadata/bg/bgbootpolicy"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/bg/bgkey"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntbootpolicy"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntkey"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit"
 	"github.com/linuxboot/fiano/pkg/log"
 )
@@ -67,6 +70,35 @@ Example FIT:
 01c399e0: 0041 feff 0000 0000 9504 0000 0001 0c00  .A..............
 
 */
+
+// https://edc.intel.com/content/www/us/en/design/products-and-solutions/software-and-services/firmware-and-bios/firmware-interface-table/1.4/intel-txt-policy-data-record-type-0xa-rules/
+type IndexIOAddress struct {
+	IndexRegisterAddress uint16
+	DataRegisterAddress  uint16
+	AccessWidthInBytes   uint8 // 1 -> 1-byte access, 2 -> 2-byte access
+	BitPosition          uint8 // e.g. 15 -> Bit15
+	Index                uint16
+}
+
+// PrettyString returns the content of the structure in an easy-to-read format.
+func (s *IndexIOAddress) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	var lines []string
+	if withHeader {
+		lines = append(lines, pretty.Header(depth, "Index IO Address", s))
+	}
+	if s == nil {
+		return strings.Join(lines, "\n")
+	}
+	lines = append(lines, pretty.SubValue(depth+1, "Index Register Address", "", &s.IndexRegisterAddress, opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "Data Register Address", "", &s.DataRegisterAddress, opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "Access Width", "", &s.AccessWidthInBytes, opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "Bit Position", "", &s.BitPosition, opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "Index", "", &s.Index, opts...)...)
+	if depth < 2 {
+		lines = append(lines, "")
+	}
+	return strings.Join(lines, "\n")
+}
 
 type FEntry struct {
 	Type    string
@@ -221,8 +253,24 @@ func main() {
 		fmt.Println(string(j))
 	}
 
+	if txte != nil {
+		var x IndexIOAddress
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, txte.GetEntryBase().Headers.Address.Pointer())
+		r := bytes.NewReader(b)
+		binary.Read(r, binary.LittleEndian, &x)
+		if *flagJSON {
+			j, err := json.MarshalIndent(x, "", "  ")
+			if err != nil {
+				log.Fatalf("cannot marshal to JSON: %v", err)
+			}
+			fmt.Fprintf(os.Stderr, "TXT Policy\n%v\n", string(j))
+		} else {
+			fmt.Fprintf(os.Stderr, "TXT Policy\n%+v\n", x.PrettyString(0, true))
+		}
+	}
+
 	if meta.LeakedKey != "" {
 		fmt.Fprintf(os.Stderr, "LEAKED BG KEY USED: %x\n", meta.LeakedKey)
 	}
-	fmt.Fprintf(os.Stderr, "TXT policy manifest @ %v\n", txte)
 }
