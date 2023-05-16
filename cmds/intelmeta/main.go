@@ -253,7 +253,7 @@ func main() {
 		fmt.Println(string(j))
 	}
 
-	if txte != nil {
+	if txte != nil && txte.GetEntryBase().Headers.Version.Major() == 0 {
 		var x IndexIOAddress
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, txte.GetEntryBase().Headers.Address.Pointer())
