@@ -225,7 +225,13 @@ func main() {
 		_, ok := meta.Polm.(cbntbootpolicy.Manifest)
 		if ok == true {
 			pol := meta.Polm.(cbntbootpolicy.Manifest)
-			k := pol.PMSE.Key.Data[4:]
+			key := pol.PMSE.Key
+			alg := pol.PMSE.Signature.HashAlg
+			err = key.PrintBPMPubKey(alg)
+			fmt.Fprintf(os.Stderr, "KEY CBNT policy key err: %v alg: %v\n", err, alg)
+			err = key.PrintKMPubKey(alg)
+			fmt.Fprintf(os.Stderr, "KEY CBNT manifest key err: %v alg: %v\n", err, alg)
+			k := key.Data[4:]
 			for _, lk := range leakedKeys {
 				if bytes.Equal(k, lk) {
 					meta.LeakedKey = hex.EncodeToString(lk[:8])
@@ -235,7 +241,9 @@ func main() {
 		if ok == false {
 			p, ok := meta.Polm.(bgbootpolicy.Manifest)
 			if ok == true {
-				k := p.PMSE.Key.Data[4:]
+				// the first 4 bytes are some sort of flags
+				key := p.PMSE.Key
+				k := key.Data[4:]
 				for _, lk := range leakedKeys {
 					if bytes.Equal(k, lk) {
 						meta.LeakedKey = hex.EncodeToString(lk[:8])
@@ -270,6 +278,7 @@ func main() {
 		}
 	}
 
+	fmt.Fprintf(os.Stderr, "key size: %v\n", len(leakedKeys[0])*8)
 	if meta.LeakedKey != "" {
 		fmt.Fprintf(os.Stderr, "LEAKED BG KEY USED: %x\n", meta.LeakedKey)
 	}
