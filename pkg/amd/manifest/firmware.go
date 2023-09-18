@@ -150,7 +150,7 @@ func parsePSPFirmware(firmware Firmware) (*PSPFirmware, error) {
 	return &result, nil
 }
 
-// NewAMDFirmware returns an AMDFirmware structure or an error if internal firmare structures cannot be parsed
+// NewAMDFirmware returns an AMDFirmware structure or an error if internal firmware structures cannot be parsed
 func NewAMDFirmware(firmware Firmware) (*AMDFirmware, error) {
 	pspFirmware, err := parsePSPFirmware(firmware)
 	if err != nil {
@@ -158,4 +158,28 @@ func NewAMDFirmware(firmware Firmware) (*AMDFirmware, error) {
 	}
 	return &AMDFirmware{firmware: firmware, pspFirmware: pspFirmware}, nil
 
+}
+
+// FirmwareImage implements Firmware given image content.
+type FirmwareImage []byte
+
+var _ Firmware = (*FirmwareImage)(nil)
+
+const basePhysAddr = 1 << 32 // "4GB"
+
+// ImageBytes returns image content.
+func (img FirmwareImage) ImageBytes() []byte {
+	return []byte(img)
+}
+
+// PhysAddrToOffset maps a physical address to the offset in the image.
+func (img FirmwareImage) PhysAddrToOffset(physAddr uint64) uint64 {
+	startAddr := uint64(basePhysAddr - len(img))
+	return physAddr - startAddr
+}
+
+// OffsetToPhysAddr maps an offset in the image to the physical address.
+func (img FirmwareImage) OffsetToPhysAddr(offset uint64) uint64 {
+	startAddr := uint64(basePhysAddr - len(img))
+	return offset + startAddr
 }
