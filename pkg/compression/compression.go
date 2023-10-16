@@ -15,6 +15,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/guid"
 )
 
+var brotliPath = flag.String("brotliPath", "brotli", "Path to system brotli command used for brotli encoding.")
 var xzPath = flag.String("xzPath", "xz", "Path to system xz command used for lzma encoding. If unset, an internal lzma implementation is used.")
 
 // Compressor defines a single compression scheme (such as LZMA).
@@ -29,6 +30,7 @@ type Compressor interface {
 
 // Well-known GUIDs for GUIDed sections containing compressed data.
 var (
+	BROTLIGUID  = *guid.MustParse("3D532050-5CDA-4FD0-879E-0F7F630D5AFB")
 	LZMAGUID    = *guid.MustParse("EE4E5898-3914-4259-9D6E-DC7BD79403CF")
 	LZMAX86GUID = *guid.MustParse("D42AE6BD-1352-4BFB-909A-CA72A6EAE889")
 	ZLIBGUID    = *guid.MustParse("CE3233F5-2CD6-4D87-9152-4A238BB6D1C4")
@@ -45,6 +47,8 @@ func CompressorFromGUID(guid *guid.GUID) Compressor {
 		lzma = &LZMA{}
 	}
 	switch *guid {
+	case BROTLIGUID:
+		return &SystemBROTLI{*brotliPath};
 	case LZMAGUID:
 		return lzma
 	case LZMAX86GUID:
