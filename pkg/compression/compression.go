@@ -48,7 +48,7 @@ func CompressorFromGUID(guid *guid.GUID) Compressor {
 	}
 	switch *guid {
 	case BROTLIGUID:
-		return &SystemBROTLI{*brotliPath};
+		return &SystemBROTLI{*brotliPath}
 	case LZMAGUID:
 		return lzma
 	case LZMAX86GUID:
