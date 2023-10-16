@@ -282,6 +282,8 @@ func CreateSection(t SectionType, buf []byte, encap []Firmware, g *guid.GUID) (*
 		guidDefHeader := &SectionGUIDDefined{}
 		guidDefHeader.GUID = *g
 		switch *g {
+		case compression.BROTLIGUID:
+			guidDefHeader.Compression = "BROTLI"
 		case compression.LZMAGUID:
 			guidDefHeader.Compression = "LZMA"
 		case compression.LZMAX86GUID:
