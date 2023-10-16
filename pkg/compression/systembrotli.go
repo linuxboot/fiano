@@ -53,7 +53,7 @@ func (c *SystemBROTLI) Encode(decodedData []byte) ([]byte, error) {
 	}
 
 	// This seems to be the buffer size needed by the UEFI decompressor
-	header := []byte{0x00, 0x00, 0x00, 0x02,0,0,0,0}
+	header := []byte{0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0}
 
 	header = append(buf.Bytes(), header...)
 
