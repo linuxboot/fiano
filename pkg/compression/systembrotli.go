@@ -38,7 +38,7 @@ func (c *SystemBROTLI) Decode(encodedData []byte) ([]byte, error) {
 
 // Encode encodes a byte slice with BROTLI.
 func (c *SystemBROTLI) Encode(decodedData []byte) ([]byte, error) {
-	cmd := exec.Command(c.brotliPath, "--stdout")
+	cmd := exec.Command(c.brotliPath, "--stdout", "-q", "9")
 	cmd.Stdin = bytes.NewBuffer(decodedData)
 
 	encodedData, err := cmd.Output()
@@ -47,15 +47,16 @@ func (c *SystemBROTLI) Encode(decodedData []byte) ([]byte, error) {
 	}
 
 	// Generate the size of the decoded data for the header
-	buf := &bytes.Buffer{}
-	if err := binary.Write(buf, binary.LittleEndian, uint64(len(decodedData))); err != nil {
+	decodedSize := &bytes.Buffer{}
+	if err := binary.Write(decodedSize, binary.LittleEndian, uint64(len(decodedData))); err != nil {
 		return nil, err
 	}
 
 	// This seems to be the buffer size needed by the UEFI decompressor
-	header := []byte{0x00, 0x00, 0x00, 0x02, 0, 0, 0, 0}
-
-	header = append(buf.Bytes(), header...)
+	// 0x03000000 should suffice. The EDK2 base tools generates this header
+	// using Brotli internals. This needs to be tuned somehow
+	scratchBufferSize := []byte{0x00, 0x00, 0x00, 0x03, 0, 0, 0, 0}
+	header := append(decodedSize.Bytes(), scratchBufferSize...)
 
 	encodedData = append(header, encodedData...)
 
