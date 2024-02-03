@@ -35,6 +35,9 @@ type FlashDescriptor struct {
 
 	//Metadata for extraction and recovery
 	ExtractPath string
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // FindSignature searches for an Intel flash signature.
@@ -76,6 +79,11 @@ func (fd *FlashDescriptor) Apply(v Visitor) error {
 // ApplyChildren calls the visitor on each child node of FlashDescriptor.
 func (fd *FlashDescriptor) ApplyChildren(v Visitor) error {
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (fd *FlashDescriptor) Position() uint64 {
+	return fd.AbsOffSet
 }
 
 // ParseFlashDescriptor parses the ifd from the buffer
@@ -129,6 +137,9 @@ type FlashImage struct {
 	// Metadata for extraction and recovery
 	ExtractPath string
 	FlashSize   uint64
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // Buf returns the buffer.
@@ -159,6 +170,11 @@ func (f *FlashImage) ApplyChildren(v Visitor) error {
 		}
 	}
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (f *FlashImage) Position() uint64 {
+	return f.AbsOffSet
 }
 
 // IsPCH returns whether the flash image has the more recent PCH format, or not.

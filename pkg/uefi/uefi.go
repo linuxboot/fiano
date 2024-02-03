@@ -84,6 +84,8 @@ type Firmware interface {
 	// Apply a visitor to all the direct children of the Firmware
 	// (excluding the Firmware itself).
 	ApplyChildren(v Visitor) error
+
+	Position() uint64
 }
 
 // TypedFirmware includes the Firmware interface's type when exporting it to
@@ -168,6 +170,18 @@ func UnmarshalFirmware(b []byte) (Firmware, error) {
 // implement any parser itself, but it calls known parsers that implement the
 // Firmware interface.
 func Parse(buf []byte) (Firmware, error) {
+	f, err := parse(buf)
+	if err != nil {
+		return f, err
+	}
+	err = (&PositionUpdater{}).Run(f)
+	if err != nil {
+		return nil, fmt.Errorf("unable to update offsets: %s", err)
+	}
+	return f, nil
+}
+
+func parse(buf []byte) (Firmware, error) {
 	if _, err := FindSignature(buf); err == nil {
 		// Intel rom.
 		return NewFlashImage(buf)

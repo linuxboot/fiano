@@ -14,6 +14,9 @@ type RawRegion struct {
 	FRegion *FlashRegion
 	// Region Type as per the IFD
 	RegionType FlashRegionType
+
+	// the Absolute Offset from the beginning of the firmware.
+	AbsOffSet uint64
 }
 
 // SetFlashRegion sets the flash region.
@@ -59,4 +62,9 @@ func (rr *RawRegion) Apply(v Visitor) error {
 // ApplyChildren calls the visitor on each child node of RawRegion.
 func (rr *RawRegion) ApplyChildren(v Visitor) error {
 	return nil
+}
+
+// Position returns the absolution position of the node in the firmware image.
+func (rr *RawRegion) Position() uint64 {
+	return rr.AbsOffSet
 }
