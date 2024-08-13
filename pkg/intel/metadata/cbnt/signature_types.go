@@ -10,6 +10,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/asn1"
 	"fmt"
 	"math/big"
 
@@ -30,26 +31,23 @@ func NewSignatureData(
 ) (SignatureDataInterface, error) {
 	if signAlgo == 0 {
 		// auto-detect the sign algorithm, based on the provided signing key
-		switch k := privKey.(type) {
-		case *rsa.PrivateKey:
+		pubKey := privKey.Public()
+		switch k := pubKey.(type) {
+		case *rsa.PublicKey:
 			switch k.Size() {
 			case 2048:
 				signAlgo = AlgRSASSA
 			case 3072:
 				signAlgo = AlgRSAPSS
 			}
-		case *ecdsa.PrivateKey:
+		case *ecdsa.PublicKey:
 			signAlgo = AlgECDSA
-		case *sm2.PrivateKey:
+		case *sm2.PublicKey:
 			signAlgo = AlgSM2
 		}
 	}
 	switch signAlgo {
 	case AlgRSAPSS:
-		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
-		if !ok {
-			return nil, fmt.Errorf("expected private RSA key (type %T), but received %T", rsaPrivateKey, privKey)
-		}
 		h := sha512.New384()
 		_, _ = h.Write(signedData)
 		bpmHash := h.Sum(nil)
@@ -58,20 +56,16 @@ func NewSignatureData(
 			SaltLength: rsa.PSSSaltLengthAuto,
 			Hash:       crypto.SHA384,
 		}
-		data, err := rsa.SignPSS(RandReader, rsaPrivateKey, crypto.SHA384, bpmHash, &pss)
+		data, err := privKey.Sign(RandReader, bpmHash, &pss)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with RSAPSS the data: %w", err)
 		}
 		return SignatureRSAPSS(data), nil
 	case AlgRSASSA:
-		rsaPrivateKey, ok := privKey.(*rsa.PrivateKey)
-		if !ok {
-			return nil, fmt.Errorf("expected private RSA key (type %T), but received %T", rsaPrivateKey, privKey)
-		}
 		h := sha256.New()
 		_, _ = h.Write(signedData)
 		bpmHash := h.Sum(nil)
-		data, err := rsa.SignPKCS1v15(RandReader, rsaPrivateKey, crypto.SHA256, bpmHash)
+		data, err := privKey.Sign(RandReader, bpmHash, crypto.SHA256)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with RSASSA the data: %w", err)
 		}
@@ -81,13 +75,16 @@ func NewSignatureData(
 		if !ok {
 			return nil, fmt.Errorf("expected private ECDSA key (type %T), but received %T", eccPrivateKey, privKey)
 		}
-		var data SignatureECDSA
-		var err error
-		data.R, data.S, err = ecdsa.Sign(RandReader, eccPrivateKey, signedData)
+		var ecdsaSig SignatureECDSA
+		data, err := privKey.Sign(RandReader, signedData, nil)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign with ECDSA the data: %w", err)
 		}
-		return data, nil
+		_, err = asn1.Unmarshal(data, &ecdsaSig)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read ECDSA signature")
+		}
+		return ecdsaSig, nil
 	case AlgSM2:
 		eccPrivateKey, ok := privKey.(*sm2.PrivateKey)
 		if !ok {
