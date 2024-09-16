@@ -22,7 +22,7 @@ var (
 // EntryHeaders implements a "FIT Entry Format".
 //
 // See "Table 1-1" in "1.2 Firmware Interface Table" in "Firmware Interface Table" specification:
-//  * https://www.intel.com/content/dam/www/public/us/en/documents/guides/fit-bios-specification.pdf
+//   - https://www.intel.com/content/dam/www/public/us/en/documents/guides/fit-bios-specification.pdf
 //
 // Descriptions of the fields are adapted descriptions from the document by the link above.
 type EntryHeaders struct {
@@ -220,10 +220,10 @@ func (size SizeM16) Size() uint     { return uint(size) << 4 }
 func (size SizeM16) String() string { return fmt.Sprintf("0x%x*0x10", uint16(size)) }
 
 // TypeAndIsChecksumValid combines two fields:
-// * "C_V" -- Checksum Valid bit. This is a one bit field that indicates,
-//            whether component has a valid checksum. CPU must ignore
-//            "Checksum" field, if C_V bit is not set.
-// * EntryType (see "entry_type.go").
+//   - "C_V" -- Checksum Valid bit. This is a one bit field that indicates,
+//     whether component has a valid checksum. CPU must ignore
+//     "Checksum" field, if C_V bit is not set.
+//   - EntryType (see "entry_type.go").
 type TypeAndIsChecksumValid uint8
 
 // IsChecksumValid returns bit "C_V" of the FIT entry.

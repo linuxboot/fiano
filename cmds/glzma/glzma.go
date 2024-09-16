@@ -5,13 +5,15 @@
 // glzma compresses and decompresses in the same manner as EDK2's LzmaCompress.
 //
 // Synopsis:
-//     glzma -o OUTPUT_FILE (-d|-e) [-f86] INPUT_FILE
+//
+//	glzma -o OUTPUT_FILE (-d|-e) [-f86] INPUT_FILE
 //
 // Options:
-//     -d: decode
-//     -e: encode
-//     -f86: Use the x86 branch/call/jump filter. See `man xz` for more information.
-//     -o OUTPUT_FILE: output file
+//
+//	-d: decode
+//	-e: encode
+//	-f86: Use the x86 branch/call/jump filter. See `man xz` for more information.
+//	-o OUTPUT_FILE: output file
 package main
 
 import (

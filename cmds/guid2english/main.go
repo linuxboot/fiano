@@ -5,19 +5,22 @@
 // guid2english replace GUIDs with their English representation.
 //
 // Synopsis:
-//     guid2english [-t TEMPLATE] [FILE]
+//
+//	guid2english [-t TEMPLATE] [FILE]
 //
 // Options:
-//     -t TEMPLATE:
-//         A template used to replace GUIDS. The template can refer to the
-//         following variables:
-//             * {{.Guid}}: The GUID being mapped
-//             * {{.Name}}: The English name of the GUID or "UNKNOWN"
-//             * {{.IsKnown}}: Set to true when the English name is not known
-//         The default template is "{{.GUID}} ({{.Name}})".
+//
+//	-t TEMPLATE:
+//	    A template used to replace GUIDS. The template can refer to the
+//	    following variables:
+//	        * {{.Guid}}: The GUID being mapped
+//	        * {{.Name}}: The English name of the GUID or "UNKNOWN"
+//	        * {{.IsKnown}}: Set to true when the English name is not known
+//	    The default template is "{{.GUID}} ({{.Name}})".
 //
 // Description:
-//     If FILE is not specified, stdin is used.
+//
+//	If FILE is not specified, stdin is used.
 package main
 
 import (

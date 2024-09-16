@@ -104,19 +104,18 @@ func TestExtractAssembleExtract(t *testing.T) {
 				}
 			}
 
-			t.Logf("walk %q and check against %q", dir1, dir2)
 			if err := filepath.Walk(dir1, func(n1 string, s1 fs.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
 				n2, err := filepath.Rel(dir1, n1)
 				if err != nil {
-					return fmt.Errorf("%q: can not get relative to %q:%v", n1, dir1, err)
+					return fmt.Errorf("filepath.Rel(%q,%q):got %v, want nil", n1, dir1, err)
 				}
 				n2 = filepath.Join(dir2, n2)
 				s2, err := os.Stat(n2)
 				if err != nil {
-					return fmt.Errorf("%q: expected it to exist, got %w", n2, err)
+					return fmt.Errorf("Stat %q: got %w, want nil", n2, err)
 				}
 				if s2.IsDir() != s1.IsDir() {
 					return fmt.Errorf("%q.IsDir() != %q.Isdir:%w", s1, s2, os.ErrInvalid)
@@ -126,20 +125,20 @@ func TestExtractAssembleExtract(t *testing.T) {
 				}
 				d1, err := os.ReadFile(n1)
 				if err != nil {
-					return fmt.Errorf("Reading %q:%v", n1, err)
+					return fmt.Errorf("Reading %q:got %v, want nil", n1, err)
 				}
 				d1 = szre.ReplaceAll(d1, []byte{})
 				d2, err := os.ReadFile(n2)
 				if err != nil {
-					return fmt.Errorf("Reading %q:%v", n2, err)
+					return fmt.Errorf("Reading %q:got %v, want nil", n2, err)
 				}
 				d2 = szre.ReplaceAll(d2, []byte{})
 				if string(d1) != string(d2) {
-					return fmt.Errorf("%q has value %q; %q has value %q; expected the to be equal:%w", n1, d1, n2, d2, os.ErrInvalid)
+					return fmt.Errorf("%q(%q) != %q(%q):%w", n1, d1, n2, d2, os.ErrInvalid)
 				}
 				return nil
 			}); err != nil {
-				t.Fatalf("%q and %q are not equal:%v", dir1, dir2, os.ErrInvalid)
+				t.Fatalf("%q != %q:%v", dir1, dir2, os.ErrInvalid)
 			}
 
 		})
