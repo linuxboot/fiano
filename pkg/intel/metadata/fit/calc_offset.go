@@ -11,8 +11,9 @@ import "github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
 // to BasePhysAddr.
 //
 // Examples:
-//     CalculatePhysAddrFromOffset(0x01, 0x2000) ==  0xffffe001
-//     CalculatePhysAddrFromOffset(0x40, 0x2000) ==  0xffffe040
+//
+//	CalculatePhysAddrFromOffset(0x01, 0x2000) ==  0xffffe001
+//	CalculatePhysAddrFromOffset(0x40, 0x2000) ==  0xffffe040
 func CalculatePhysAddrFromOffset(offset uint64, imageSize uint64) uint64 {
 	startAddr := consts.BasePhysAddr - imageSize
 	return startAddr + offset
@@ -23,8 +24,9 @@ func CalculatePhysAddrFromOffset(offset uint64, imageSize uint64) uint64 {
 // the SPI chip).
 //
 // Examples:
-//     CalculateOffsetFromPhysAddr(0xffffffff, 0x1000) == 0xfff
-//     CalculateOffsetFromPhysAddr(0xffffffc0, 0x1000) == 0xfc0
+//
+//	CalculateOffsetFromPhysAddr(0xffffffff, 0x1000) == 0xfff
+//	CalculateOffsetFromPhysAddr(0xffffffc0, 0x1000) == 0xfc0
 func CalculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
 	startAddr := consts.BasePhysAddr - imageSize
 	return physAddr - startAddr
@@ -35,8 +37,9 @@ func CalculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
 // the SPI chip).
 //
 // Examples:
-//     CalculateTailOffsetFromPhysAddr(0xffffffff) == 0x01
-//     CalculateTailOffsetFromPhysAddr(0xffffffc0) == 0x40
+//
+//	CalculateTailOffsetFromPhysAddr(0xffffffff) == 0x01
+//	CalculateTailOffsetFromPhysAddr(0xffffffc0) == 0x40
 func CalculateTailOffsetFromPhysAddr(physAddr uint64) uint64 {
 	return consts.BasePhysAddr - physAddr
 }

@@ -15,7 +15,7 @@ import (
 // registered in the FIT table.
 type EntryType uint8
 
-//noinspection GoSnakeCaseUsage
+// noinspection GoSnakeCaseUsage
 const (
 	EntryTypeFITHeaderEntry              = EntryType(0x00)
 	EntryTypeMicrocodeUpdateEntry        = EntryType(0x01)

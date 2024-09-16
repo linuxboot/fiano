@@ -77,7 +77,8 @@ func ExecuteCLI(f uefi.Firmware, v []uefi.Visitor) error {
 
 // ListCLI prints out the help entries in the visitor struct
 // as a newline-separated string in the form:
-//   name: help
+//
+//	name: help
 func ListCLI() string {
 	var s string
 	names := []string{}

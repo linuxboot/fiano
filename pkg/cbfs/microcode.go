@@ -15,7 +15,7 @@ func init() {
 	}
 }
 
-//NewMicrocode returns a ReadWriter interface for the CBFS type TypeMicroCode
+// NewMicrocode returns a ReadWriter interface for the CBFS type TypeMicroCode
 func NewMicrocode(f *File) (ReadWriter, error) {
 	rec := &MicrocodeRecord{File: *f}
 	return rec, nil
@@ -33,7 +33,7 @@ func (r *MicrocodeRecord) Write(w io.Writer) error {
 	return Write(w, r.FData)
 }
 
-//Header returns a pointer to the corresponding File
+// Header returns a pointer to the corresponding File
 func (r *MicrocodeRecord) GetFile() *File {
 	return &r.File
 }

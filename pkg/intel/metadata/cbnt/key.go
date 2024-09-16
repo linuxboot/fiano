@@ -156,7 +156,7 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 	return fmt.Errorf("unexpected key type: %T", key)
 }
 
-//PrintBPMPubKey prints the BPM public signing key hash to fuse into the Intel ME
+// PrintBPMPubKey prints the BPM public signing key hash to fuse into the Intel ME
 func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 	buf := new(bytes.Buffer)
 	if len(k.Data) > 1 {
@@ -190,7 +190,7 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 	return nil
 }
 
-//PrintKMPubKey prints the KM public signing key hash to fuse into the Intel ME
+// PrintKMPubKey prints the KM public signing key hash to fuse into the Intel ME
 func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
 	buf := new(bytes.Buffer)
 	if len(k.Data) > 1 {

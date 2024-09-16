@@ -5,24 +5,26 @@
 // Fmap parses flash maps.
 //
 // Synopsis:
-//     fmap checksum [md5|sha1|sha256] FILE
-//     fmap extract [index|name] FILE
-//     fmap jget JSONFILE FILE
-//     fmap jput JSONFILE FILE
-//     fmap summary FILE
-//     fmap usage FILE
-//     fmap verify FILE
+//
+//	fmap checksum [md5|sha1|sha256] FILE
+//	fmap extract [index|name] FILE
+//	fmap jget JSONFILE FILE
+//	fmap jput JSONFILE FILE
+//	fmap summary FILE
+//	fmap usage FILE
+//	fmap verify FILE
 //
 // Description:
-//     checksum: Print a checksum using the given hash function.
-//     extract:  Print the i-th area or area name from the flash.
-//     jget:     Write json representation of the fmap to JSONFILE.
-//     jput:     Replace current fmap with json representation in JSONFILE.
-//     summary:  Print a human readable summary.
-//     usage:    Print human readable usage stats.
-//     verify:   Return 1 if the flash map is invalid.
 //
-//     This implementation is based off of https://github.com/dhendrix/flashmap.
+//	checksum: Print a checksum using the given hash function.
+//	extract:  Print the i-th area or area name from the flash.
+//	jget:     Write json representation of the fmap to JSONFILE.
+//	jput:     Replace current fmap with json representation in JSONFILE.
+//	summary:  Print a human readable summary.
+//	usage:    Print human readable usage stats.
+//	verify:   Return 1 if the flash map is invalid.
+//
+//	This implementation is based off of https://github.com/dhendrix/flashmap.
 package main
 
 import (

@@ -27,9 +27,10 @@ const (
 var Endian = binary.BigEndian
 
 // These are standard component types for well known
-//   components (i.e - those that coreboot needs to consume.
-//   Users are welcome to use any other value for their
-//   components.
+//
+//	components (i.e - those that coreboot needs to consume.
+//	Users are welcome to use any other value for their
+//	components.
 type FileType uint32
 
 const (

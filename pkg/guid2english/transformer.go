@@ -32,9 +32,9 @@ type Mapper interface {
 
 // TemplateMapper implements mapper using Go's text/template package. The
 // template can refer to the following variables:
-//   * {{.Guid}}: The GUID being mapped
-//   * {{.Name}}: The English name of the GUID or "UNKNOWN"
-//   * {{.IsKnown}}: Set to true when the English name is not known
+//   - {{.Guid}}: The GUID being mapped
+//   - {{.Name}}: The English name of the GUID or "UNKNOWN"
+//   - {{.IsKnown}}: Set to true when the English name is not known
 type TemplateMapper struct {
 	tmpl *template.Template
 }
