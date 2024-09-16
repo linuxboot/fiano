@@ -8,13 +8,12 @@
 package bytes
 
 import (
-	"reflect"
 	"unsafe"
 )
 
 // IsZeroFilled returns true if b consists of zeros only.
 func IsZeroFilled(b []byte) bool {
-	hdr := (*reflect.SliceHeader)((unsafe.Pointer)(&b))
+	hdr := unsafe.Slice(&b)
 	data := unsafe.Pointer(hdr.Data)
 	length := hdr.Len
 	if length == 0 {
