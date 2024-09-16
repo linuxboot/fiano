@@ -80,8 +80,9 @@ func (v *Assemble) Visit(f uefi.Firmware) error {
 		for _, file := range f.Files {
 			fileBuf := file.Buf()
 			fileLen := uint64(len(fileBuf))
+			log.Warnf("adding %v ", file.Header.GUID)
 			if fileLen == 0 {
-				log.Fatalf("%v", file.Header.GUID)
+				log.Warnf("%v empty?", file.Header.GUID)
 			}
 
 			// Pad to the 8 byte alignments.
