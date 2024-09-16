@@ -7,9 +7,11 @@ package utk_test
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -58,6 +60,11 @@ func TestExtractAssembleExtract(t *testing.T) {
 	// For debugging, uncomment the next line and comment out os.RemoveAll
 	// t.Logf("temp %v", tmpDir)
 	defer os.RemoveAll(tmpDir)
+	re := `"Size".*:.*[0-9].*\n`
+	szre, err := regexp.Compile(re)
+	if err != nil {
+		t.Fatalf("Compiling re %q: got %v, want nil", re, err)
+	}
 
 	for _, tt := range romList(t) {
 		t.Run(tt, func(t *testing.T) {
@@ -68,11 +75,9 @@ func TestExtractAssembleExtract(t *testing.T) {
 
 			// Test paths
 			var (
-				dir1         = filepath.Join(tmpDirT, "dir1")
-				tmpRom       = filepath.Join(tmpDirT, "tmp.rom")
-				dir2         = filepath.Join(tmpDirT, "dir2")
-				summary1Json = filepath.Join(dir1, "summary.json")
-				summary2Json = filepath.Join(dir2, "summary.json")
+				dir1   = filepath.Join(tmpDirT, "dir1")
+				tmpRom = filepath.Join(tmpDirT, "tmp.rom")
+				dir2   = filepath.Join(tmpDirT, "dir2")
 			)
 
 			// Extract
@@ -99,27 +104,44 @@ func TestExtractAssembleExtract(t *testing.T) {
 				}
 			}
 
-			sedRemove := func(path string) {
-				sedCmd := exec.Command("sed", "-i", "/\"Size\": [0-9]*.*/d", path)
-				sedCmd.Stderr = os.Stderr
-				sedCmd.Stdout = os.Stdout
-				if err := sedCmd.Run(); err != nil {
-					t.Error(fmt.Sprintf("Sed failed for %s, error: %s", path, err.Error()))
+			t.Logf("walk %q and check against %q", dir1, dir2)
+			if err := filepath.Walk(dir1, func(n1 string, s1 fs.FileInfo, err error) error {
+				if err != nil {
+					return err
 				}
+				n2, err := filepath.Rel(dir1, n1)
+				if err != nil {
+					return fmt.Errorf("%q: can not get relative to %q:%v", n1, dir1, err)
+				}
+				n2 = filepath.Join(dir2, n2)
+				s2, err := os.Stat(n2)
+				if err != nil {
+					return fmt.Errorf("%q: expected it to exist, got %w", n2, err)
+				}
+				if s2.IsDir() != s1.IsDir() {
+					return fmt.Errorf("%q.IsDir() != %q.Isdir:%w", s1, s2, os.ErrInvalid)
+				}
+				if s2.IsDir() {
+					return nil
+				}
+				d1, err := os.ReadFile(n1)
+				if err != nil {
+					return fmt.Errorf("Reading %q:%v", n1, err)
+				}
+				d1 = szre.ReplaceAll(d1, []byte{})
+				d2, err := os.ReadFile(n2)
+				if err != nil {
+					return fmt.Errorf("Reading %q:%v", n2, err)
+				}
+				d2 = szre.ReplaceAll(d2, []byte{})
+				if string(d1) != string(d2) {
+					return fmt.Errorf("%q has value %q; %q has value %q; expected the to be equal:%w", n1, d1, n2, d2, os.ErrInvalid)
+				}
+				return nil
+			}); err != nil {
+				t.Fatalf("%q and %q are not equal:%v", dir1, dir2, os.ErrInvalid)
 			}
-			// Remove all occurences of Size from JSON file
-			// compressed sizes are different
-			// diff will always fail if this is not done.
-			sedRemove(summary1Json)
-			sedRemove(summary2Json)
 
-			// Recursively test for equality.
-			cmd := exec.Command("diff", "-r", dir1, dir2)
-			cmd.Stderr = os.Stderr
-			cmd.Stdout = os.Stdout
-			if err := cmd.Run(); err != nil {
-				t.Error("directories did not recursively compare equal")
-			}
 		})
 	}
 }
@@ -128,7 +150,7 @@ func TestExtractAssembleExtract(t *testing.T) {
 // which affects the tree, you must commit changes to the golden JSON files
 // with:
 //
-//     utk integration/roms/OVMF.rom json > integration/roms/OVMF.json
+//	utk integration/roms/OVMF.rom json > integration/roms/OVMF.json
 //
 // Otherwise, this test will fail. This gives you a chance to review how your
 // code affects the tree and identify any mistakes.
