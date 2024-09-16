@@ -11,7 +11,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	fp "path/filepath"
@@ -77,7 +76,7 @@ func TestFuzzInputs(t *testing.T) {
 		}
 		name := fmt.Sprintf("%03d_%s", i, n)
 		t.Run(name, func(t *testing.T) {
-			data, err := ioutil.ReadAll(tr)
+			data, err := io.ReadAll(tr)
 			if err != nil {
 				t.Error(err)
 			}
