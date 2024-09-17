@@ -179,7 +179,7 @@ type ThreeUint8 [3]uint8
 
 func (t *ThreeUint8) UnmarshalJSON(b []byte) error {
 	if copy(t[:], b) == 0 {
-		return fmt.Errorf("Cannot unmarshal 3 uint8 from %v\n", b)
+		return fmt.Errorf("cannot unmarshal 3 uint8 from %v", b)
 	}
 	return nil
 }
