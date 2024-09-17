@@ -36,7 +36,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 	// ReadSeeker on a []byte.
 	b, err := io.ReadAll(rs)
 	if err != nil {
-		return nil, fmt.Errorf("ReadAll: %v", err)
+		return nil, fmt.Errorf("failed to read: %w", err)
 	}
 	in := bytes.NewReader(b)
 	f, m, err := fmap.Read(in)
@@ -53,7 +53,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 		}
 	}
 	if i.Area == nil {
-		return nil, fmt.Errorf("No CBFS in fmap")
+		return nil, fmt.Errorf("no CBFS in fmap")
 	}
 	r := io.NewSectionReader(in, int64(i.Area.Offset), int64(i.Area.Size))
 
@@ -89,7 +89,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 		}
 		Debug("Segment: %v", s)
 		if err := s.Read(bytes.NewReader(f.FData)); err != nil {
-			return nil, fmt.Errorf("Reading %#x byte subheader, type %v: %v", len(f.FData), f.Type, err)
+			return nil, fmt.Errorf("reading %#x byte subheader, type %v: %w", len(f.FData), f.Type, err)
 		}
 		Debug("Segment was readable")
 		i.Segs = append(i.Segs, s)
@@ -120,7 +120,7 @@ func (i *Image) Update() error {
 			return err
 		}
 		if _, err := b.Write(s.GetFile().Attr); err != nil {
-			return fmt.Errorf("Writing attr to cbfs record for %v: %v", s, err)
+			return fmt.Errorf("writing attr to cbfs record for %v: %w", s, err)
 		}
 		if err := s.Write(&b); err != nil {
 			return err
@@ -128,7 +128,7 @@ func (i *Image) Update() error {
 		// This error should not happen but we need to check just in case.
 		end := uint32(len(b.Bytes())) + s.GetFile().RecordStart
 		if end > i.Area.Size {
-			return fmt.Errorf("Region [%#x, %#x] outside of CBFS [%#x, %#x]", s.GetFile().RecordStart, end, s.GetFile().RecordStart, i.Area.Size)
+			return fmt.Errorf("region [%#x, %#x] outside of CBFS [%#x, %#x]", s.GetFile().RecordStart, end, s.GetFile().RecordStart, i.Area.Size)
 		}
 
 		Debug("Copy %s %d bytes to i.Data[%d]", s.GetFile().Type.String(), len(b.Bytes()), i.Area.Offset+s.GetFile().RecordStart)
