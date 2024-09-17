@@ -26,8 +26,6 @@ var (
 	version    = flag.String("version", "1.0", "File version")
 	guidString = flag.String("guid", "", "File GUID")
 	depex      = flag.String("depex", "", "Space or comma separated protocol guid dependencies or TRUE")
-	compress   = flag.Bool("compress", false, "Wrap section data in a compressed section")
-	auto       = flag.Bool("auto", false, "Attempt to determine section types from file extensions")
 
 	printf = func(string, ...interface{}) {}
 )
