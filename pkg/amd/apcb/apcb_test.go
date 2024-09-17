@@ -8,7 +8,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
 	"path"
 	"testing"
 
@@ -111,7 +112,7 @@ func findToken(tokenID TokenID, tokens []Token) *Token {
 }
 
 func getFile(filename string) ([]byte, error) {
-	compressedImage, err := ioutil.ReadFile(path.Join("testdata", filename))
+	compressedImage, err := os.ReadFile(path.Join("testdata", filename))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read firmware image: %w", err)
 	}
@@ -121,7 +122,7 @@ func getFile(filename string) ([]byte, error) {
 		return nil, fmt.Errorf("unable to create an xz reader for a cached image: %w", err)
 	}
 
-	decompressedImage, err := ioutil.ReadAll(r)
+	decompressedImage, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decompress the image: %w", err)
 	}
