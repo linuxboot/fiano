@@ -1,0 +1,11 @@
+linters:
+  disable-all: true
+  enable:
+    - staticcheck
+    - stylecheck
+
+linters-settings:
+  staticcheck:
+    checks: ["all", "-SA1019"]
+  stylecheck:
+    checks: ["all", "-ST1003", "-ST1012", "-ST1016"]
