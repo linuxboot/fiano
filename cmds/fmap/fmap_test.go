@@ -13,7 +13,7 @@ import (
 	"github.com/u-root/u-root/pkg/testutil"
 )
 
-const testFlash = "fake_test.flash"
+const testFlash = "testdata/fake_test.flash"
 
 var tests = []struct {
 	cmd string
@@ -64,7 +64,7 @@ func TestFmap(t *testing.T) {
 		}
 
 		// Filter out null characters which may be present in fmap strings.
-		out = bytes.Replace(out, []byte{0}, []byte{}, -1)
+		out = bytes.ReplaceAll(out, []byte{0}, []byte{})
 		if string(out) != tt.out {
 			t.Errorf("expected:\n%s\ngot:\n%s", tt.out, string(out))
 		}
@@ -72,11 +72,7 @@ func TestFmap(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "fmap_json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
+	tmpDir := t.TempDir()
 
 	jsonFile := filepath.Join(tmpDir, "tmp.json")
 	if err := testutil.Command(t, "jget", jsonFile, testFlash).Run(); err != nil {
