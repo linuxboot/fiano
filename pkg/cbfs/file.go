@@ -193,5 +193,5 @@ func (f *File) Decompress() ([]byte, error) {
 		compressor := compression.LZ4{}
 		return compressor.Decode(f.FData)
 	}
-	return nil, fmt.Errorf("Unknown compression")
+	return nil, fmt.Errorf("unknown compression")
 }

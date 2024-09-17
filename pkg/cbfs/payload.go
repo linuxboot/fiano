@@ -38,7 +38,7 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 	// Seek to offset (after the header); the remainder is the actual payload.
 	offset, err := in.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return fmt.Errorf("Finding location in stream: %v", err)
+		return fmt.Errorf("finding location in stream: %w", err)
 	}
 	bodySize := int64(p.Size) - offset
 	Debug("Payload size: %v, body size: %v, offset: %v", p.Size, bodySize, offset)
