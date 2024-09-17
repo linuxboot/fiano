@@ -63,7 +63,7 @@ func (v *Display) Visit(f uefi.Firmware) error {
 		wid := 256*squareSize
 		ht := squareSize*(numblocks/256)
 		// Initialize the draw context with a dynamically-sized window
-		d, err := draw.Init(nil, "", v.Name, fmt.Sprintf("%dx%d", wid+50, ht+20))
+		d, err := draw.Init(nil, "", v.Name, fmt.Sprintf("%dx%d", wid+100, ht+20))
 		if err != nil {
 			return fmt.Errorf("failed to initialize draw: %w", err)
 		}
@@ -74,18 +74,14 @@ func (v *Display) Visit(f uefi.Firmware) error {
 		//log.Fatalf("failed to initialize mouse: %v", err)
 		//}
 
-		// Determine the window size from the screen image
-		winWidth := wid
-		winHeight := ht
-
 		// Get color images for red and green
 		grn := d.AllocImageMix(draw.Green, draw.Opaque)
 		red := d.AllocImageMix(draw.Red, draw.Opaque)
 
 		var buf [uefi.RegionBlockSize]byte
 		done:
-		for y := 0; y < winHeight; y++ {
-			for x := 0; x < winWidth; x++ {
+		for y := 0; y < ht; y++ {
+			for x := 0; x < wid; x++ {
 				// Calculate the top-left corner of the square
 				pt := draw.Pt(20+x*squareSize, 20+y*squareSize)
 				rect := draw.Rect(pt.X, pt.Y, pt.X+squareSize, pt.Y+squareSize)
