@@ -56,13 +56,14 @@ func (v *Display) Visit(f uefi.Firmware) error {
 
 		b := bytes.NewBuffer(f.Buf())
 		os.WriteFile(v.Name, f.Buf(), 0644)
-		// The display is 256KiB x however many rows we need.
+		numblocks := b.Len()/uefi.RegionBlockSize
+		// The display is 256 blocks x however many rows we need.
 		// So that's len(buf) / (256x1024)
-		squareSize := 1
-		wid := 100 + 256*squareSize
-		ht := 100 + squareSize*b.Len()/(wid*1024)
+		squareSize := 2
+		wid := 256*squareSize
+		ht := squareSize*(numblocks/256)
 		// Initialize the draw context with a dynamically-sized window
-		d, err := draw.Init(nil, "", v.Name, fmt.Sprintf("256x%d", ht))
+		d, err := draw.Init(nil, "", v.Name, fmt.Sprintf("%dx%d", wid+50, ht+20))
 		if err != nil {
 			return fmt.Errorf("failed to initialize draw: %w", err)
 		}
@@ -86,7 +87,7 @@ func (v *Display) Visit(f uefi.Firmware) error {
 		for y := 0; y < winHeight; y++ {
 			for x := 0; x < winWidth; x++ {
 				// Calculate the top-left corner of the square
-				pt := draw.Pt(50+x*squareSize, 50+y*squareSize)
+				pt := draw.Pt(20+x*squareSize, 20+y*squareSize)
 				rect := draw.Rect(pt.X, pt.Y, pt.X+squareSize, pt.Y+squareSize)
 				n, err := b.Read(buf[:])
 				if err != nil && err != io.EOF {
