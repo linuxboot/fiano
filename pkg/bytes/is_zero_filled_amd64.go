@@ -8,18 +8,16 @@
 package bytes
 
 import (
-	"reflect"
 	"unsafe"
 )
 
 // IsZeroFilled returns true if b consists of zeros only.
 func IsZeroFilled(b []byte) bool {
-	hdr := (*reflect.SliceHeader)((unsafe.Pointer)(&b))
-	data := unsafe.Pointer(hdr.Data)
-	length := hdr.Len
+	length := len(b)
 	if length == 0 {
 		return true
 	}
+	var data = unsafe.Pointer(&b[0])
 
 	if uintptr(data)&0x07 != 0 {
 		// the data is not aligned, fallback to a simple way
