@@ -6,17 +6,16 @@ package fit
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
-	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func randBytes(size uint) []byte {
-	rand.Seed(0)
 	b := make([]byte, int(size))
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return b
 }
 
