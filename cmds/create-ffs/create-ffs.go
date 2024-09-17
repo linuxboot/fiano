@@ -167,7 +167,9 @@ func main() {
 	mainSection := &uefi.Section{}
 	mainSection.SetType(secType)
 	mainSection.SetBuf(secData)
-	mainSection.GenSecHeader()
+	// It is not clear why the author felt it was OK to ignore
+	// the error.
+	_ = mainSection.GenSecHeader()
 	file.Sections = append(file.Sections, mainSection)
 	printf("selected section type: %v", mainSection.Header.Type)
 
