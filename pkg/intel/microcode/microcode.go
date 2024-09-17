@@ -86,26 +86,26 @@ func ParseIntelMicrocode(r io.Reader) (*Microcode, error) {
 	var m Microcode
 
 	if err := binary.Read(r, binary.LittleEndian, &m.Header); err != nil {
-		return nil, fmt.Errorf("Failed to read header: %v", err)
+		return nil, fmt.Errorf("failed to read header: %w", err)
 	}
 
 	// Sanitychecks
 	if getTotalSize(m.Header) < getDataSize(m.Header)+uint32(binary.Size(Header{})) {
-		return nil, fmt.Errorf("Bad data file size")
+		return nil, fmt.Errorf("bad data file size")
 	}
 	if m.HeaderLoaderRevision != 1 || m.HeaderVersion != 1 {
-		return nil, fmt.Errorf("Invalid version or revision")
+		return nil, fmt.Errorf("invalid version or revision")
 	}
 	if getDataSize(m.Header)%4 > 0 {
-		return nil, fmt.Errorf("Data size not 32bit aligned")
+		return nil, fmt.Errorf("data size not 32bit aligned")
 	}
 	if getTotalSize(m.Header)%4 > 0 {
-		return nil, fmt.Errorf("Total size not 32bit aligned")
+		return nil, fmt.Errorf("total size not 32bit aligned")
 	}
 	// Read data
 	m.Data = make([]byte, getDataSize(m.Header))
 	if err := binary.Read(r, binary.LittleEndian, &m.Data); err != nil {
-		return nil, fmt.Errorf("Failed to read data: %v", err)
+		return nil, fmt.Errorf("failed to read data: %w", err)
 	}
 
 	// Calculcate checksum
@@ -123,7 +123,7 @@ func ParseIntelMicrocode(r io.Reader) (*Microcode, error) {
 		checksum += data
 	}
 	if checksum != 0 {
-		return nil, fmt.Errorf("Checksum is not null: %#x", checksum)
+		return nil, fmt.Errorf("checksum is not null: %#x", checksum)
 	}
 
 	if getTotalSize(m.Header) <= getDataSize(m.Header)+uint32(binary.Size(Header{})) {
@@ -132,12 +132,12 @@ func ParseIntelMicrocode(r io.Reader) (*Microcode, error) {
 
 	// Read extended header
 	if err := binary.Read(r, binary.LittleEndian, &m.ExtSigTable); err != nil {
-		return nil, fmt.Errorf("Failed to read extended sig table: %v", err)
+		return nil, fmt.Errorf("failed to read extended sig table: %w", err)
 	}
 	for i := uint32(0); i < m.ExtSigTable.Count; i++ {
 		var signature ExtendedSignature
 		if err := binary.Read(r, binary.LittleEndian, &signature); err != nil {
-			return nil, fmt.Errorf("Failed to read extended signature: %v", err)
+			return nil, fmt.Errorf("failed to read extended signature: %w", err)
 		}
 		m.ExtendedSignatures = append(m.ExtendedSignatures, signature)
 	}
@@ -160,7 +160,7 @@ func ParseIntelMicrocode(r io.Reader) (*Microcode, error) {
 		checksum += data
 	}
 	if checksum != 0 {
-		return nil, fmt.Errorf("Extended header checksum is not null: %#x", checksum)
+		return nil, fmt.Errorf("extended header checksum is not null: %#x", checksum)
 	}
 
 	return &m, nil
