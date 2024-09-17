@@ -37,6 +37,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/jessevdk/go-flags"
 
 	"github.com/linuxboot/fiano/cmds/fittool/commands"
@@ -67,5 +69,7 @@ func main() {
 	}
 
 	// parse arguments and execute the appropriate command
-	flagsParser.Parse()
+	if _, err := flagsParser.Parse(); err != nil {
+		log.Fatal(err)
+	}
 }
