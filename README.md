@@ -87,10 +87,10 @@ Example usage:
     go version
 
     # For UTK:
-    go install github.com/linuxboot/fiano/cmds/utk
+    go install github.com/linuxboot/fiano/cmds/utk@latest
 
     # For fmap:
-    go install github.com/linuxboot/fiano/cmds/fmap
+    go install github.com/linuxboot/fiano/cmds/fmap@latest
 
 The executables are installed in `$HOME/go/bin`.
 

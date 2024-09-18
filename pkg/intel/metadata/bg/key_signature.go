@@ -19,12 +19,12 @@ type KeySignature struct {
 }
 
 // Verify verifies the builtin signature with the builtin public key.
-func (m *KeySignature) Verify(signedData []byte) error {
-	sig, err := m.Signature.SignatureData()
+func (ks *KeySignature) Verify(signedData []byte) error {
+	sig, err := ks.Signature.SignatureData()
 	if err != nil {
 		return fmt.Errorf("invalid signature: %w", err)
 	}
-	pk, err := m.Key.PubKey()
+	pk, err := ks.Key.PubKey()
 	if err != nil {
 		return fmt.Errorf("invalid public key: %w", err)
 	}

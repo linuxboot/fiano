@@ -22,7 +22,7 @@ func NewPayloadRecord(f *File) (ReadWriter, error) {
 	return p, nil
 }
 
-func (p *PayloadRecord) Read(in io.ReadSeeker) error {
+func (r *PayloadRecord) Read(in io.ReadSeeker) error {
 	for {
 		var h PayloadHeader
 		if err := Read(in, &h); err != nil {
@@ -30,7 +30,7 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 			return err
 		}
 		Debug("Got PayloadHeader %s", h.String())
-		p.Segs = append(p.Segs, h)
+		r.Segs = append(r.Segs, h)
 		if h.Type == SegEntry {
 			break
 		}
@@ -40,8 +40,8 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 	if err != nil {
 		return fmt.Errorf("finding location in stream: %w", err)
 	}
-	bodySize := int64(p.Size) - offset
-	Debug("Payload size: %v, body size: %v, offset: %v", p.Size, bodySize, offset)
+	bodySize := int64(r.Size) - offset
+	Debug("Payload size: %v, body size: %v, offset: %v", r.Size, bodySize, offset)
 	if bodySize < 0 {
 		// This should not happen. Tolerate a potential error.
 		return nil
@@ -51,8 +51,8 @@ func (p *PayloadRecord) Read(in io.ReadSeeker) error {
 		Debug("Payload empty, nothing to read")
 		return nil
 	}
-	p.FData = make([]byte, bodySize)
-	n, err := in.Read(p.FData)
+	r.FData = make([]byte, bodySize)
+	n, err := in.Read(r.FData)
 	if err != nil {
 		return err
 	}
@@ -81,9 +81,9 @@ func (r *PayloadRecord) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (h *PayloadRecord) String() string {
-	s := recString(h.File.Name, h.RecordStart, h.Type.String(), h.Size, "none")
-	for i, seg := range h.Segs {
+func (r *PayloadRecord) String() string {
+	s := recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, "none")
+	for i, seg := range r.Segs {
 		s += "\n"
 		s += recString(fmt.Sprintf(" Seg #%d", i), seg.Offset, seg.Type.String(), seg.Size, seg.Compression.String())
 	}
@@ -111,14 +111,14 @@ func (h *PayloadHeader) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (r *PayloadHeader) String() string {
+func (h *PayloadHeader) String() string {
 	return fmt.Sprintf("Type %#x Compression %#x Offset %#x LoadAddress %#x Size %#x MemSize %#x",
-		r.Type,
-		r.Compression,
-		r.Offset,
-		r.LoadAddress,
-		r.Size,
-		r.MemSize)
+		h.Type,
+		h.Compression,
+		h.Offset,
+		h.LoadAddress,
+		h.Size,
+		h.MemSize)
 }
 
 func (r *PayloadRecord) Write(w io.Writer) error {
