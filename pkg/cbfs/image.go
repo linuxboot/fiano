@@ -64,7 +64,7 @@ func NewImage(rs io.ReadSeeker) (*Image, error) {
 			return nil, err
 		}
 		f, err := NewFile(r)
-		if err == CbfsHeaderMagicNotFound {
+		if err == ErrCBFSHeaderMagicNotFound {
 			off = off + 16
 			continue
 		}
