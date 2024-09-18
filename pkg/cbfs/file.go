@@ -15,7 +15,7 @@ import (
 	"github.com/linuxboot/fiano/pkg/compression"
 )
 
-var CbfsHeaderMagicNotFound = errors.New("CBFS header magic doesn't match")
+var ErrCBFSHeaderMagicNotFound = errors.New("CBFS header magic doesn't match")
 
 func (f *File) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mFile{
@@ -43,7 +43,7 @@ func NewFile(r io.ReadSeeker) (*File, error) {
 		return nil, err
 	}
 	if string(f.Magic[:]) != FileMagic {
-		return nil, CbfsHeaderMagicNotFound
+		return nil, ErrCBFSHeaderMagicNotFound
 	}
 	Debug("Found CBFS file at %#02x is %v type %v", f.RecordStart, f, f.Type)
 
