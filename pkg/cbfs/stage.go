@@ -48,8 +48,8 @@ func (h *StageHeader) String() string {
 		h.MemSize)
 }
 
-func (h *LegacyStageRecord) String() string {
-	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.Size, h.File.Compression().String())
+func (r *LegacyStageRecord) String() string {
+	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.Size, r.File.Compression().String())
 }
 
 func (r *LegacyStageRecord) Write(w io.Writer) error {
@@ -81,8 +81,8 @@ func (h *FileAttrStageHeader) String() string {
 		h.MemSize)
 }
 
-func (h *StageRecord) String() string {
-	return recString(h.File.Name, h.RecordStart, h.Type.String(), h.File.Size, h.File.Compression().String())
+func (r *StageRecord) String() string {
+	return recString(r.File.Name, r.RecordStart, r.Type.String(), r.File.Size, r.File.Compression().String())
 }
 
 func (r *StageRecord) Write(w io.Writer) error {

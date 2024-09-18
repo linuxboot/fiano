@@ -8,4 +8,4 @@ linters-settings:
   staticcheck:
     checks: ["all", "-SA1019"]
   stylecheck:
-    checks: ["all", "-ST1003", "-ST1012", "-ST1016"]
+    checks: ["all", "-ST1003", "-ST1012"]
