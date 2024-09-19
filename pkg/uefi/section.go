@@ -343,6 +343,16 @@ func (s *Section) GenSecHeader() error {
 	return nil
 }
 
+//ErrOversizeHdr is the error returned by NewSection when the header is oversize.
+type ErrOversizeHdr struct {
+	hdrsiz uintptr
+	bufsiz int
+}
+
+func (e *ErrOversizeHdr) Error() string {
+	return fmt.Sprintf("Header size %#x larger than available data %#x", e.hdrsiz, e.bufsiz)
+}
+
 // NewSection parses a sequence of bytes and returns a Section
 // object, if a valid one is passed, or an error.
 func NewSection(buf []byte, fileOrder int) (*Section, error) {
@@ -436,13 +446,22 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		}
 
 	case SectionTypeUserInterface:
+		if len(s.buf) <= int(headerSize) {
+			return nil, &ErrOversizeHdr{hdrsiz: headerSize, bufsiz: len(s.buf)}
+		}
 		s.Name = unicode.UCS2ToUTF8(s.buf[headerSize:])
 
 	case SectionTypeVersion:
+		if len(s.buf) <= int(headerSize+2) {
+			return nil, &ErrOversizeHdr{hdrsiz: headerSize + 2, bufsiz: len(s.buf)}
+		}
 		s.BuildNumber = binary.LittleEndian.Uint16(s.buf[headerSize : headerSize+2])
 		s.Version = unicode.UCS2ToUTF8(s.buf[headerSize+2:])
 
 	case SectionTypeFirmwareVolumeImage:
+		if len(s.buf) <= int(headerSize) {
+			return nil, &ErrOversizeHdr{hdrsiz: headerSize, bufsiz: len(s.buf)}
+		}
 		fv, err := NewFirmwareVolume(s.buf[headerSize:], 0, true)
 		if err != nil {
 			return nil, err
@@ -450,6 +469,9 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		s.Encapsulated = []*TypedFirmware{MakeTyped(fv)}
 
 	case SectionTypeDXEDepEx, SectionTypePEIDepEx, SectionMMDepEx:
+		if len(s.buf) <= int(headerSize) {
+			return nil, &ErrOversizeHdr{hdrsiz: headerSize, bufsiz: len(s.buf)}
+		}
 		var err error
 		if s.DepEx, err = parseDepEx(s.buf[headerSize:]); err != nil {
 			log.Warnf("%v", err)

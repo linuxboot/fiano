@@ -6,7 +6,8 @@ package uefi
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
+	"os"
 	"testing"
 )
 
@@ -43,20 +44,17 @@ var (
 
 func TestFindSignature(t *testing.T) {
 	var tests = []struct {
+		name   string
 		buf    []byte
 		offset int
-		msg    string
+		err    error
 	}{
-		{nil, -1,
-			fmt.Sprintf("flash signature not found: first 0 bytes are:\n%s", hex.Dump(nil))},
-		{[]byte{1, 2, 3}, -1,
-			fmt.Sprintf("flash signature not found: first 3 bytes are:\n%s", hex.Dump([]byte{1, 2, 3}))},
-		{emptySig, -1,
-			fmt.Sprintf("flash signature not found: first 20 bytes are:\n%s", hex.Dump(emptySig[:20]))},
-		{ichSig, 4, ""},
-		{pchSig, 20, ""},
-		{misalignedSig, -1,
-			fmt.Sprintf("flash signature not found: first 20 bytes are:\n%s", hex.Dump(misalignedSig[:20]))},
+		{"empty buffer", nil, -1, ErrTooShort},
+		{"short buffer", []byte{1, 2, 3}, -1, ErrTooShort},
+		{"empty signature", emptySig, -1, os.ErrNotExist},
+		{"ichSign", ichSig, 4, nil},
+		{"pchSig", pchSig, 20, nil},
+		{"misaligned sig", misalignedSig, -1, os.ErrNotExist},
 	}
 	for _, test := range tests {
 		f := FlashImage{buf: test.buf}
@@ -64,10 +62,8 @@ func TestFindSignature(t *testing.T) {
 		if offset != test.offset {
 			t.Errorf("Offset was not correct, expected %v, got %v", test.offset, offset)
 		}
-		if err == nil && test.msg != "" {
-			t.Errorf("Error was not returned, expected %v", test.msg)
-		} else if err != nil && err.Error() != test.msg {
-			t.Errorf("Mismatched Error returned, expected \n%v\n got \n%v\n", test.msg, err.Error())
+		if !errors.Is(err, test.err) {
+			t.Errorf("%s: got %v, want %v", test.name, err, test.err)
 		}
 	}
 }

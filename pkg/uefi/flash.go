@@ -7,7 +7,9 @@ package uefi
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 )
 
@@ -15,6 +17,7 @@ import (
 // start with.
 var (
 	FlashSignature = []byte{0x5a, 0xa5, 0xf0, 0x0f}
+	ErrTooShort    = errors.New("too small to be firmware")
 )
 
 const (
@@ -39,7 +42,10 @@ type FlashDescriptor struct {
 
 // FindSignature searches for an Intel flash signature.
 func FindSignature(buf []byte) (int, error) {
-	if len(buf) >= 16+len(FlashSignature) && bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
+	if len(buf) < 20 {
+		return -1, ErrTooShort
+	}
+	if bytes.Equal(buf[16:16+len(FlashSignature)], FlashSignature) {
 		// 16 + 4 since the descriptor starts after the signature
 		return 20, nil
 	}
@@ -52,8 +58,8 @@ func FindSignature(buf []byte) (int, error) {
 	if len(buf) < firstBytesCnt {
 		firstBytesCnt = len(buf)
 	}
-	return -1, fmt.Errorf("flash signature not found: first %d bytes are:\n%s",
-		firstBytesCnt, hex.Dump(buf[:firstBytesCnt]))
+	return -1, fmt.Errorf("flash signature not found: first %d bytes are:\n%s:%w",
+		firstBytesCnt, hex.Dump(buf[:firstBytesCnt]), os.ErrNotExist)
 }
 
 // Buf returns the buffer.
@@ -99,7 +105,11 @@ func (fd *FlashDescriptor) ParseFlashDescriptor() error {
 
 	// Region
 	fd.RegionStart = uint(fd.DescriptorMap.RegionBase) * 0x10
-	region, err := NewFlashRegionSection(fd.buf[fd.RegionStart : fd.RegionStart+uint(FlashRegionSectionSize)])
+	regionEnd := fd.RegionStart + uint(FlashRegionSectionSize)
+	if buflen := uint(len(fd.buf)); fd.RegionStart >= buflen || regionEnd >= buflen {
+		return fmt.Errorf("flash descriptor region out of bounds: range [%#x:%#x], buflen %#x", fd.RegionStart, regionEnd, buflen)
+	}
+	region, err := NewFlashRegionSection(fd.buf[fd.RegionStart:regionEnd])
 	if err != nil {
 		return err
 	}
@@ -230,10 +240,7 @@ func (f *FlashImage) fillRegionGaps() error {
 // mode.
 func NewFlashImage(buf []byte) (*FlashImage, error) {
 	if len(buf) < FlashDescriptorLength {
-		return nil, fmt.Errorf("flash Descriptor Map size too small: expected %v bytes, got %v",
-			FlashDescriptorLength,
-			len(buf),
-		)
+		return nil, fmt.Errorf("NewFlashImage: need at least %d bytes, only %d provided:%w", FlashDescriptorLength, len(buf), ErrTooShort)
 	}
 	f := FlashImage{FlashSize: uint64(len(buf))}
 
