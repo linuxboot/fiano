@@ -32,16 +32,6 @@ func romList(t *testing.T) []string {
 	return roms
 }
 
-// Create a temporary directory.
-func createTempDir(t *testing.T) string {
-	// Create temporary directory for test files.
-	tmpDir, err := os.MkdirTemp("", "utk-test")
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-	return tmpDir
-}
-
 // TestExtractAssembleExtract tests the extract and assemble subcommand of UTK.
 // The subcommands are run in this order:
 //
@@ -55,11 +45,8 @@ func createTempDir(t *testing.T) string {
 // compression algorithm being used). To compare the ROMs logically, step 3 is
 // required to decompresses it.
 func TestExtractAssembleExtract(t *testing.T) {
-	// Create a temporary directory.
-	tmpDir := createTempDir(t)
-	// For debugging, uncomment the next line and comment out os.RemoveAll
-	// t.Logf("temp %v", tmpDir)
-	defer os.RemoveAll(tmpDir)
+	tmpDir := t.TempDir()
+	// For debugging, use os.Exit to prevent deletion of tmpDir
 	re := `"Size".*:.*[0-9].*\n`
 	szre, err := regexp.Compile(re)
 	if err != nil {
@@ -154,9 +141,7 @@ func TestExtractAssembleExtract(t *testing.T) {
 // Otherwise, this test will fail. This gives you a chance to review how your
 // code affects the tree and identify any mistakes.
 func TestRegressionJson(t *testing.T) {
-	// Create a temporary directory.
-	tmpDir := createTempDir(t)
-	defer os.RemoveAll(tmpDir)
+	tmpDir := t.TempDir()
 
 	for _, tt := range romList(t) {
 		t.Run(tt, func(t *testing.T) {
