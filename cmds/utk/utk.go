@@ -108,6 +108,7 @@ func main() {
 		}
 	}
 
+	log.Warnf("%v", args)
 	if err := utk.Run(args...); err != nil {
 		log.Fatalf("%v", err)
 	}
