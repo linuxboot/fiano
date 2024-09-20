@@ -20,7 +20,7 @@ workflows:
 jobs:
   clean-code:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.22
     steps:
       - checkout
       - run:
@@ -38,7 +38,7 @@ jobs:
           command: test -z "$(gofmt -s -l cmds pkg)"
   test:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.22
     steps:
       - checkout
       - run:
@@ -51,7 +51,7 @@ jobs:
     resource_class: medium
   race:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.22
     steps:
       - checkout
       - run:
@@ -59,7 +59,7 @@ jobs:
           command: go test -race ./...
   coverage:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.22
     steps:
       - checkout
       - run:
@@ -80,7 +80,7 @@ jobs:
           command: bash <(curl -s https://codecov.io/bash)
   check_licenses:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.22
     steps:
       - checkout
       - run:

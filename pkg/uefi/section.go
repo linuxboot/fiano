@@ -343,7 +343,7 @@ func (s *Section) GenSecHeader() error {
 	return nil
 }
 
-//ErrOversizeHdr is the error returned by NewSection when the header is oversize.
+// ErrOversizeHdr is the error returned by NewSection when the header is oversize.
 type ErrOversizeHdr struct {
 	hdrsiz uintptr
 	bufsiz int
