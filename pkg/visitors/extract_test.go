@@ -5,25 +5,11 @@
 package visitors
 
 import (
-	"os"
 	"testing"
 
-	"github.com/linuxboot/fiano/pkg/log"
+	utk_test "github.com/linuxboot/fiano/integration"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
-
-var (
-	// FV examples
-	sampleFV []byte // Sample FV from OVMF
-)
-
-func init() {
-	var err error
-	sampleFV, err = os.ReadFile("../../integration/roms/ovmfSECFV.fv")
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-}
 
 var (
 	// File headers
@@ -93,12 +79,7 @@ func TestExtractAssembleFile(t *testing.T) {
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := os.MkdirTemp("", "section-test")
-
-			if err != nil {
-				t.Fatalf("could not create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
+			tmpDir := t.TempDir()
 
 			f, err := uefi.NewFile(test.origBuf)
 			if err != nil {
@@ -133,18 +114,13 @@ func TestExtractAssembleFV(t *testing.T) {
 		origBuf []byte
 		newBuf  []byte
 	}{
-		{"sampleFV", sampleFV, sampleFV},
+		{"sampleFV", utk_test.OVMFSecFV, utk_test.OVMFSecFV},
 	}
 	// Set erasepolarity to FF
 	uefi.Attributes.ErasePolarity = 0xFF
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := os.MkdirTemp("", "section-test")
-
-			if err != nil {
-				t.Fatalf("could not create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
+			tmpDir := t.TempDir()
 
 			fv, err := uefi.NewFirmwareVolume(test.origBuf, 0, false)
 			if err != nil {
@@ -188,12 +164,7 @@ func TestExtractAssembleSection(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tmpDir, err := os.MkdirTemp("", "section-test")
-
-			if err != nil {
-				t.Fatalf("could not create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
+			tmpDir := t.TempDir()
 
 			s, err := uefi.NewSection(test.buf, test.fileOrder)
 			if err != nil {

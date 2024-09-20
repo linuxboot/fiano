@@ -7,6 +7,7 @@ package visitors
 import (
 	"testing"
 
+	utk_test "github.com/linuxboot/fiano/integration"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -16,7 +17,7 @@ func TestValidateFV(t *testing.T) {
 		buf  []byte
 		msgs []string
 	}{
-		{"sampleFV", sampleFV, nil},
+		{"sampleFV", utk_test.OVMFSecFV, nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
