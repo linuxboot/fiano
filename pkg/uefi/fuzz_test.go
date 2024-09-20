@@ -19,7 +19,7 @@ import (
 	"github.com/ulikunitz/xz"
 )
 
-//no-op writer to minimize logging overhead
+// no-op writer to minimize logging overhead
 type nopWriter struct{}
 
 func (n *nopWriter) Write(_ []byte) (int, error) { return 0, nil }
