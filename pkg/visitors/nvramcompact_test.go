@@ -5,7 +5,6 @@
 package visitors
 
 import (
-	"os"
 	"testing"
 
 	"github.com/linuxboot/fiano/pkg/uefi"
@@ -13,13 +12,6 @@ import (
 
 func TestNVRamCompact(t *testing.T) {
 	path := "../../integration/roms/nvartest/"
-
-	tmpDir, err := os.MkdirTemp("", "section-test")
-
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
 
 	var parsedRoot uefi.Firmware
 	// Call ParseDir
