@@ -15,13 +15,6 @@ func TestNVarInvalidate(t *testing.T) {
 
 	path := "../../integration/roms/nvartest/"
 
-	tmpDir, err := os.MkdirTemp("", "section-test")
-
-	if err != nil {
-		t.Fatalf("could not create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
 	var parsedRoot uefi.Firmware
 	// Call ParseDir
 	pd := ParseDir{BasePath: path}
