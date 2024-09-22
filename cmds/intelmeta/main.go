@@ -223,7 +223,7 @@ func main() {
 	if meta.Polm != nil {
 		// https://go.dev/tour/methods/15
 		_, ok := meta.Polm.(cbntbootpolicy.Manifest)
-		if ok == true {
+		if ok {
 			pol := meta.Polm.(cbntbootpolicy.Manifest)
 			key := pol.PMSE.Key
 			alg := pol.PMSE.Signature.HashAlg
@@ -237,10 +237,9 @@ func main() {
 					meta.LeakedKey = hex.EncodeToString(lk[:8])
 				}
 			}
-		}
-		if ok == false {
+		} else {
 			p, ok := meta.Polm.(bgbootpolicy.Manifest)
-			if ok == true {
+			if ok {
 				// the first 4 bytes are some sort of flags
 				key := p.PMSE.Key
 				k := key.Data[4:]
