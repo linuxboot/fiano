@@ -31,7 +31,7 @@ func main() {
 		log.Fatalf("cannot read input file: %x", err)
 	}
 
-	ACBPMagic := []byte("__ACBP__")
+	acbpMagic := []byte("__ACBP__")
 	// __IBBS__ also seen in the next 16 bytes; not sure what that is
 	offset := bytes.Index(data, ACBPMagic)
 	if offset == -1 {
@@ -39,8 +39,7 @@ func main() {
 	}
 
 	m := bgbootpolicy.Manifest{}
-	_, err = m.ReadFrom(bytes.NewReader(data[offset:]))
-	if err != nil {
+	if _, err = m.ReadFrom(bytes.NewReader(data[offset:])); err != nil {
 		log.Fatalf("%v", err)
 	}
 
