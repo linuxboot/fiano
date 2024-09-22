@@ -31,10 +31,9 @@ func main() {
 		log.Fatalf("cannot read input file: %v", err)
 	}
 
-	KEYMMagic := []byte("__KEYM__")
-	offset := bytes.Index(data, KEYMMagic)
-	if offset == -1 {
-		log.Fatalf("no %v magic (%x) found", string(KEYMMagic), KEYMMagic)
+	keymMagic := []byte("__KEYM__")
+	if !bytes.Contains(data, keymMagic) {
+		log.Fatalf("no %v magic (%x) found", string(keymMagic), keymMagic)
 	}
 
 	m := cbntkey.Manifest{}
