@@ -33,9 +33,9 @@ func main() {
 
 	acbpMagic := []byte("__ACBP__")
 	// __IBBS__ also seen in the next 16 bytes; not sure what that is
-	offset := bytes.Index(data, ACBPMagic)
+	offset := bytes.Index(data, acbpMagic)
 	if offset == -1 {
-		log.Fatalf("no %v (%x) magic found", string(ACBPMagic), ACBPMagic)
+		log.Fatalf("no %v (%x) magic found", string(acbpMagic), acbpMagic)
 	}
 
 	m := bgbootpolicy.Manifest{}
