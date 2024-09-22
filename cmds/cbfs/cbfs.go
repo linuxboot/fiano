@@ -6,7 +6,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,41 +20,42 @@ import (
 
 var debug = flag.BoolP("debug", "d", false, "enable debug prints")
 
-func main() {
-	flag.Parse()
+var errUsage = errors.New("usage: cbfs <firmware-file> <json,list,extract <directory-name>>")
+var errMissingDirectory = errors.New("provide a directory name")
 
-	if *debug {
+func run(stdout io.Writer, debug bool, args []string) error {
+	if debug {
 		cbfs.Debug = log.Printf
 	}
 
-	a := flag.Args()
-	if len(a) < 2 {
-		log.Fatal("Usage: cbfs <firmware-file> <json,list,extract <directory-name>>")
+	if len(args) < 2 {
+		return errUsage
 	}
 
-	i, err := cbfs.Open(a[0])
+	i, err := cbfs.Open(args[0])
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	switch a[1] {
+	switch args[1] {
 	case "list":
-		fmt.Printf("%s", i.String())
+		fmt.Fprintf(stdout, "%s", i.String())
 	case "json":
 		j, err := json.MarshalIndent(i, "  ", "  ")
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		fmt.Printf("%s", string(j))
+		fmt.Fprintf(stdout, "%s", string(j))
 	case "extract":
-		if len(a) != 3 {
-			log.Fatal("provide a directory name")
+		if len(args) != 3 {
+			return errMissingDirectory
 		}
-		dir := filepath.Join(".", a[2])
+		dir := filepath.Join(".", args[2])
 		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
+
 		base := i.Area.Offset
 		log.Printf("FMAP base at %x", base)
 		for s := range i.Segs {
@@ -64,19 +67,27 @@ func main() {
 				log.Printf("Skipping empty/deleted file at 0x%x", o)
 			} else {
 				log.Printf("Extracting %v from 0x%x, compression: %v", n, o, c)
-				fpath := filepath.Join(dir, strings.Replace(n, "/", "_", -1))
+				fpath := filepath.Join(dir, strings.ReplaceAll(n, "/", "_"))
 				d, err := f.Decompress()
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 				err = os.WriteFile(fpath, d, 0644)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 		}
 	default:
-		log.Fatal("?")
+		return errUsage
 	}
 
+	return nil
+}
+
+func main() {
+	flag.Parse()
+	if err := run(os.Stdout, *debug, flag.Args()); err != nil {
+		log.Fatal(err)
+	}
 }
