@@ -24,10 +24,10 @@ import (
 // https://github.com/mostav02/Remove_IntelME_FPT
 // https://io.netgarage.org/me/
 
-// MEFTPSignature is the sequence of bytes that an ME Flash Partition
+// MEFPTSignature is the sequence of bytes that an ME Flash Partition
 // Table is expected to start with ie "$FPT".
 var (
-	MEFTPSignature = []byte{0x24, 0x46, 0x50, 0x54}
+	MEFPTSignature = []byte{0x24, 0x46, 0x50, 0x54}
 )
 
 const (
@@ -99,17 +99,17 @@ func (e MEPartitionEntry) Type() string {
 	return fmt.Sprintf("Unknown (%d)", t)
 }
 
-// FindMEDescriptor searches for an Intel ME FTP signature
+// FindMEDescriptor searches for an Intel ME FPT signature
 func FindMEDescriptor(buf []byte) (int, error) {
-	if bytes.Equal(buf[16:16+len(MEFTPSignature)], MEFTPSignature) {
+	if bytes.Equal(buf[16:16+len(MEFPTSignature)], MEFPTSignature) {
 		// 16 + 4 since the descriptor starts after the signature
-		return 16 + len(MEFTPSignature), nil
+		return 16 + len(MEFPTSignature), nil
 	}
-	if bytes.Equal(buf[:len(MEFTPSignature)], MEFTPSignature) {
+	if bytes.Equal(buf[:len(MEFPTSignature)], MEFPTSignature) {
 		// + 4 since the descriptor starts after the signature
-		return len(MEFTPSignature), nil
+		return len(MEFPTSignature), nil
 	}
-	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found: first 20 bytes are:\n%s", MEFTPSignature, hex.Dump(buf[:20]))
+	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found: first 20 bytes are:\n%s", MEFPTSignature, hex.Dump(buf[:20]))
 }
 
 // Buf returns the buffer.
