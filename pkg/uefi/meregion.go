@@ -101,13 +101,13 @@ func (e MEPartitionEntry) Type() string {
 
 // FindMEDescriptor searches for an Intel ME FPT signature
 func FindMEDescriptor(buf []byte) (int, error) {
-	if bytes.Equal(buf[16:16+len(MEFPTSignature)], MEFPTSignature) {
-		// 16 + 4 since the descriptor starts after the signature
-		return 16 + len(MEFPTSignature), nil
-	}
-	if bytes.Equal(buf[:len(MEFPTSignature)], MEFPTSignature) {
-		// + 4 since the descriptor starts after the signature
-		return len(MEFPTSignature), nil
+	// In some images, the signature may occur right at the start,
+	// in others, it occurs in the second 16 bytes, and
+	// in some cases, it appears somewhere else in the ME region.
+	// NOTE: This library excludes the signature from the descriptor.
+	fptOffset := bytes.Index(buf, MEFPTSignature)
+	if fptOffset >= 0 {
+		return fptOffset + len(MEFPTSignature), nil
 	}
 	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found: first 20 bytes are:\n%s", MEFPTSignature, hex.Dump(buf[:20]))
 }
