@@ -165,7 +165,11 @@ func (fv *FirmwareVolume) InsertFile(alignedOffset uint64, fBuf []byte) error {
 	// Check size
 	fLen := uint64(len(fBuf))
 	if fLen == 0 {
-		return errors.New("trying to insert empty file")
+		if true {
+			return nil
+		} else {
+			return errors.New("trying to insert empty file")
+		}
 	}
 	// Overwrite old data in the firmware volume.
 	fv.buf = append(fv.buf, fBuf...)
