@@ -16,7 +16,13 @@ import (
 // ME Partition parsing, the goal is to spot a padding in the ME Region
 // after the ME partitions so that this region can be shrunk in the IFD.
 //
-// ME partition informations from http://me.bios.io/ME_blob_format
+// Information taken from multiple sources:
+// https://web.archive.org/web/20200523203129/https://me.bios.io/ME_blob_format
+// https://github.com/platomav/MEAnalyzer/
+// https://fahrplan.events.ccc.de/congress/2017/Fahrplan/system/event_attachments/attachments/000/003/391/original/Intel_ME_myths_and_reality.pdf
+// https://github.com/corna/me_cleaner/wiki/How-does-it-work%3F
+// https://github.com/mostav02/Remove_IntelME_FPT
+// https://io.netgarage.org/me/
 
 // MEFTPSignature is the sequence of bytes that an ME Flash Partition
 // Table is expected to start with ie "$FPT".
