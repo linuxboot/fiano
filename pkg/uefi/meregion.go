@@ -7,7 +7,6 @@ package uefi
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/linuxboot/fiano/pkg/log"
@@ -109,7 +108,7 @@ func FindMEDescriptor(buf []byte) (int, error) {
 	if fptOffset >= 0 {
 		return fptOffset + len(MEFPTSignature), nil
 	}
-	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found: first 20 bytes are:\n%s", MEFPTSignature, hex.Dump(buf[:20]))
+	return -1, fmt.Errorf("ME Flash Partition Table signature %#02x not found", MEFPTSignature)
 }
 
 // Buf returns the buffer.
