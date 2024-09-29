@@ -59,3 +59,35 @@ func TestMEName_UnmarshalText(t *testing.T) {
 		})
 	}
 }
+
+func TestFindFPTSignature(t *testing.T) {
+	var empty16 = make([]byte, 16)
+	var empty12 = make([]byte, 12)
+	var empty = make([]byte, 128)
+
+	var firstRow = append(MEFPTSignature, empty12...)
+	var secondRow = append(empty16, firstRow...)
+	var elsewhere = append(empty, firstRow...)
+
+	var tests = []struct {
+		name string
+		blob []byte
+		res  int
+	}{
+		{"beginning", firstRow, 4},
+		{"2nd row", secondRow, 20},
+		{"elsewhere", elsewhere, 132},
+		{"nowhere", empty, -1},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r, e := FindMEDescriptor(test.blob)
+			if r != test.res {
+				t.Errorf("got position %d want %d (%q)", r, test.res, e)
+			}
+			if test.res == -1 && e == nil {
+				t.Errorf("expected error")
+			}
+		})
+	}
+}
