@@ -3,6 +3,7 @@ module github.com/linuxboot/fiano
 go 1.21
 
 require (
+	9fans.net/go v0.0.7
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/camelcase v1.0.0
 	github.com/hashicorp/go-multierror v1.1.1
