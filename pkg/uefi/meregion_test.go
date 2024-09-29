@@ -5,6 +5,7 @@
 package uefi
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -90,4 +91,27 @@ func TestFindFPTSignature(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseFPT(t *testing.T) {
+	t.Run("parse ME FPT", func(t *testing.T) {
+		fixtureFile := "../../data/PurleySiliconBinPkg/MeFirmware/IgnitionFirmware/MeRegion.bin"
+		meRegion, err := os.ReadFile(fixtureFile)
+		if err != nil {
+			t.Fatalf("could not read test fixture %q", fixtureFile)
+		}
+		expectedEntries := 10
+
+		fpt, err := NewMEFPT(meRegion)
+		if err != nil {
+			t.Fatalf("reading ME FPT: got %v, want nil", err)
+		}
+		entries := len(fpt.Entries)
+		if entries != expectedEntries {
+			t.Errorf("len(fpt.Entries): got %d, want %d", entries, expectedEntries)
+		}
+		if entries != int(fpt.PartitionCount) {
+			t.Errorf("fpt.PartitionCount: got %d, want %d (matching number of entries)", fpt.PartitionCount, entries)
+		}
+	})
 }
