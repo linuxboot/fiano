@@ -171,6 +171,7 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 			if _, err := hash.Write(buf.Bytes()); err != nil {
 				return fmt.Errorf("unable to hash: %w", err)
 			}
+			fmt.Printf("   Boot Policy Manifest Pubkey: 0x%x\n", buf)
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 		} else if k.KeyAlg == AlgSM2 || k.KeyAlg == AlgECC {
 			if err := binary.Write(buf, binary.LittleEndian, k.Data); err != nil {
@@ -179,6 +180,7 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 			if _, err := hash.Write(buf.Bytes()); err != nil {
 				return fmt.Errorf("unable to hash: %w", err)
 			}
+			fmt.Printf("   Boot Policy Manifest Pubkey: 0x%x\n", buf)
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 		} else {
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: Unknown Algorithm\n")
@@ -211,6 +213,7 @@ func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
 			if _, err := hash.Write(buf.Bytes()); err != nil {
 				return fmt.Errorf("unable to hash: %w", err)
 			}
+			fmt.Printf("   Key Manifest Pubkey: 0x%x\n", buf)
 			fmt.Printf("   Key Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
 			// On SKL and KBL the exponent is not included in the KM hash
 			buf.Truncate(len(k.Data[4:]))
