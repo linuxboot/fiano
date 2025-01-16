@@ -110,6 +110,9 @@ const (
 
 	// ACHeaderVersion3 is version "3.0 – for SINIT ACM of converge of BtG and TXT"
 	ACHeaderVersion3 = ACModuleHeaderVersion(0x00030000)
+
+	// ACHeaderVersion4 is version "4.0 for SINIT ACM of BtG"
+	ACHeaderVersion4 = ACModuleHeaderVersion(0x00040000)
 )
 
 func (ver ACModuleHeaderVersion) GoString() string {
@@ -483,6 +486,77 @@ type EntrySACMData struct {
 	UserArea []byte
 }
 
+type EntrySACMData4 struct {
+	EntrySACMDataCommon
+
+	RSAPubKey  [384]byte
+	RSASig     [384]byte
+	XMSSPubKey [64]byte
+	XMSSSig    [2692]byte
+	Reserved   [60]byte
+	Scratch    [3584]byte
+}
+
+var entrySACMData4Size = uint(binary.Size(EntrySACMData4{}))
+
+// Read parses the ACM v3 headers
+func (entryData *EntrySACMData4) Read(b []byte) (int, error) {
+	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// ReadFrom parses the ACM v3 headers
+func (entryData *EntrySACMData4) ReadFrom(r io.Reader) (int64, error) {
+	err := binary.Read(r, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData3Size), nil
+}
+
+// Write compiles the SACM v3 headers into a binary representation
+func (entryData *EntrySACMData4) Write(b []byte) (int, error) {
+	n, err := entryData.WriteTo(bytesextra.NewReadWriteSeeker(b))
+	return int(n), err
+}
+
+// WriteTo compiles the SACM v3 headers into a binary representation
+func (entryData *EntrySACMData4) WriteTo(w io.Writer) (int64, error) {
+	err := binary.Write(w, binary.LittleEndian, entryData)
+	if err != nil {
+		return -1, err
+	}
+	return int64(entrySACMData4Size), nil
+}
+
+// GetRSAPubKey returns the RSA public key
+func (entryData *EntrySACMData4) GetRSAPubKey() rsa.PublicKey {
+	pubKey := rsa.PublicKey{
+		N: big.NewInt(0),
+		E: 0x10001, // see Table 9. "RSAPubExp" of https://www.intel.com/content/www/us/en/software-developers/txt-software-development-guide.html
+	}
+	pubKey.N.SetBytes(entryData.RSAPubKey[:])
+	return pubKey
+}
+
+// GetRSASig returns the RSA signature.
+func (entryData *EntrySACMData4) GetRSASig() []byte { return entryData.RSASig[:] }
+
+// RSASigBinaryOffset returns the RSA signature offset
+func (entryData *EntrySACMData4) RSASigBinaryOffset() uint64 {
+	return uint64(binary.Size(entryData.EntrySACMDataCommon)) +
+		uint64(binary.Size(entryData.RSAPubKey))
+}
+
+// GetXMSSPubKey returns the XMSS public key
+func (entryData *EntrySACMData4) GetXMSSPubKey() []byte { return entryData.XMSSPubKey[:] }
+
+// GetXMSSSig returns the XMSS signature.
+func (entryData *EntrySACMData4) GetXMSSSig() []byte { return entryData.XMSSSig[:] }
+
+// GetScratch returns the Scratch field value
+func (entryData *EntrySACMData4) GetScratch() []byte { return entryData.Scratch[:] }
+
 // Read parses the ACM
 func (entryData *EntrySACMData) Read(b []byte) (int, error) {
 	n, err := entryData.ReadFrom(bytesextra.NewReadWriteSeeker(b))
@@ -535,6 +609,8 @@ func (entryData *EntrySACMData) GetCommon() *EntrySACMDataCommon {
 	case *EntrySACMData0:
 		return &data.EntrySACMDataCommon
 	case *EntrySACMData3:
+		return &data.EntrySACMDataCommon
+	case *EntrySACMData4:
 		return &data.EntrySACMDataCommon
 	}
 	return nil
@@ -594,6 +670,9 @@ func ParseSACMData(r io.Reader) (*EntrySACMData, error) {
 	case ACHeaderVersion3:
 		result.EntrySACMDataInterface = &EntrySACMData3{EntrySACMDataCommon: common}
 		requiredKeySize = uint64(len(EntrySACMData3{}.RSAPubKey))
+	case ACHeaderVersion4:
+		result.EntrySACMDataInterface = &EntrySACMData4{EntrySACMDataCommon: common}
+		requiredKeySize = uint64(len(EntrySACMData4{}.RSAPubKey))
 	default:
 		return result, &ErrUnknownACMHeaderVersion{ACHeaderVersion: common.HeaderVersion}
 	}
@@ -629,9 +708,9 @@ func ParseSACMData(r io.Reader) (*EntrySACMData, error) {
 	// Read UserArea
 
 	// `UserArea` has variable length and therefore was not included into
-	// `EntrySACMData0` and `EntrySACMData3`, but it is in the tail,
+	// `EntrySACMData0` and `EntrySACMData3/4`, but it is in the tail,
 	// so we just calculate the startIndex as the end of
-	// EntrySACMData0/EntrySACMData3.
+	// EntrySACMData0/EntrySACMData3/4.
 	userAreaStartIdx := uint64(binary.Size(result.EntrySACMDataInterface))
 	userAreaEndIdx := result.EntrySACMDataInterface.GetSize().Size()
 	if userAreaEndIdx > userAreaStartIdx {
