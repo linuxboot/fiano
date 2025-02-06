@@ -119,6 +119,48 @@ func (s *SectionGUIDDefined) GetBinHeaderLen() uint32 {
 	return uint32(unsafe.Sizeof(s.SectionGUIDDefinedHeader))
 }
 
+// SectionCompressionHeader contains the fields for a EFI_SECTION_COMPRESSION
+// encapsulated section header.
+type SectionCompressionHeader struct {
+	UncompressedLength uint32
+	CompressionType    uint8
+}
+
+// SectionCompression contains the type specific fields for a
+// EFI_SECTION_COMPRESSION section.
+type SectionCompression struct {
+	SectionCompressionHeader
+
+	// Metadata
+	Compression string
+}
+
+// GetBinHeaderLen returns the length of the binary typ specific header
+func (s *SectionCompression) GetBinHeaderLen() uint32 {
+	return uint32(unsafe.Sizeof(s.SectionCompressionHeader))
+}
+
+// SectionCompressionHeader contains the fields for a EFI_SECTION_COMPRESSION
+// encapsulated section header.
+type SectionCompressionExtHeader struct {
+	UncompressedLength uint32
+	CompressionType    uint8
+}
+
+// SectionCompression contains the type specific fields for a
+// EFI_SECTION_COMPRESSION section.
+type SectionCompressionExt struct {
+	SectionCompressionExtHeader
+
+	// Metadata
+	Compression string
+}
+
+// GetBinHeaderLen returns the length of the binary typ specific header
+func (s *SectionCompressionExt) GetBinHeaderLen() uint32 {
+	return uint32(unsafe.Sizeof(s.SectionCompressionExtHeader))
+}
+
 // TypeHeader interface forces type specific headers to report their length
 type TypeHeader interface {
 	GetBinHeaderLen() uint32
@@ -194,6 +236,7 @@ type Section struct {
 	// Metadata for extraction and recovery
 	ExtractPath string
 	FileOrder   int `json:"-"`
+	Offset      uint64
 
 	// Type specific fields
 	// TODO: It will be simpler if this was not an interface
@@ -355,8 +398,8 @@ func (e *ErrOversizeHdr) Error() string {
 
 // NewSection parses a sequence of bytes and returns a Section
 // object, if a valid one is passed, or an error.
-func NewSection(buf []byte, fileOrder int) (*Section, error) {
-	s := Section{FileOrder: fileOrder}
+func NewSection(buf []byte, offset uint64, fileOrder int) (*Section, error) {
+	s := Section{FileOrder: fileOrder, Offset: offset}
 	// Read in standard header.
 	r := bytes.NewReader(buf)
 	if err := binary.Read(r, binary.LittleEndian, &s.Header.SectionHeader); err != nil {
@@ -407,8 +450,23 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		copy(s.buf, newBuf)
 	}
 
+	DEBUG := true
+
 	// Section type specific data
 	switch s.Header.Type {
+	case SectionTypeCompression:
+		// NOTE: HERE BE DRAGONS
+		if DEBUG {
+			log.Warnf("[section] Compressed Section:\n  %+v", s.Header)
+		}
+		typeSpec := &SectionCompression{}
+		if err := binary.Read(r, binary.LittleEndian, &typeSpec.SectionCompressionHeader); err != nil {
+			return nil, err
+		}
+		s.TypeSpecific = &TypeSpecificHeader{Type: SectionTypeCompression, Header: typeSpec}
+		if DEBUG {
+			log.Warnf("[section] SectionCompression:\n  %+v", typeSpec)
+		}
 	case SectionTypeGUIDDefined:
 		typeSpec := &SectionGUIDDefined{}
 		if err := binary.Read(r, binary.LittleEndian, &typeSpec.SectionGUIDDefinedHeader); err != nil {
@@ -434,7 +492,7 @@ func NewSection(buf []byte, fileOrder int) (*Section, error) {
 		}
 
 		for i, offset := 0, uint64(0); offset < uint64(len(encapBuf)); i++ {
-			encapS, err := NewSection(encapBuf[offset:], i)
+			encapS, err := NewSection(encapBuf[offset:], offset, i)
 			if err != nil {
 				return nil, fmt.Errorf("error parsing encapsulated section #%d at offset %d: %v",
 					i, offset, err)
