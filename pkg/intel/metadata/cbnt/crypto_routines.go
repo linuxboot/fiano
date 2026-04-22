@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:generate manifestcodegen
-
 package cbnt
 
 import (
@@ -12,31 +10,14 @@ import (
 	_ "crypto/sha1"
 	_ "crypto/sha256"
 	_ "crypto/sha512"
+	"encoding/binary"
 	"fmt"
 	"hash"
+	"io"
 	"strings"
 
+	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
 	"github.com/tjfoc/gmsm/sm3"
-)
-
-// Algorithm represents a crypto algorithm value.
-type Algorithm uint16
-
-// Supported algorithms
-const (
-	AlgUnknown Algorithm = 0x0000
-	AlgRSA     Algorithm = 0x0001
-	AlgSHA1    Algorithm = 0x0004
-	AlgSHA256  Algorithm = 0x000B
-	AlgSHA384  Algorithm = 0x000C
-	AlgSHA512  Algorithm = 0x000D
-	AlgNull    Algorithm = 0x0010
-	AlgSM3     Algorithm = 0x0012
-	AlgRSASSA  Algorithm = 0x0014
-	AlgRSAPSS  Algorithm = 0x0016
-	AlgECDSA   Algorithm = 0x0018
-	AlgSM2     Algorithm = 0x001b
-	AlgECC     Algorithm = 0x0023
 )
 
 var hashInfo = []struct {
@@ -49,6 +30,8 @@ var hashInfo = []struct {
 	{AlgSHA512, crypto.SHA512.New},
 	{AlgSM3, sm3.New},
 }
+
+type Algorithm uint16
 
 // IsNull returns true if a is AlgNull or zero (unset).
 func (a Algorithm) IsNull() bool {
@@ -86,7 +69,7 @@ func (a Algorithm) String() string {
 	case AlgSHA512:
 		_, err = s.WriteString("SHA512")
 	case AlgSM3:
-		_, err = s.WriteString("SM3_256")
+		_, err = s.WriteString("SM3")
 	case AlgNull:
 		_, err = s.WriteString("AlgNull")
 	case AlgRSASSA:
@@ -138,4 +121,24 @@ func GetAlgFromString(name string) (Algorithm, error) {
 	default:
 		return AlgNull, fmt.Errorf("algorithm name provided unknown")
 	}
+}
+
+// PrettyString returns the bits of the flags in an easy-to-read format.
+func (a Algorithm) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	return a.String()
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (a Algorithm) TotalSize() uint64 {
+	return uint64(binary.Size(a))
+}
+
+// WriteTo writes the Algorithm into 'w' in binary format.
+func (a Algorithm) WriteTo(w io.Writer) (int64, error) {
+	return int64(a.TotalSize()), binary.Write(w, binary.LittleEndian, a)
+}
+
+// ReadFrom reads the Algorithm from 'r' in binary format.
+func (a *Algorithm) ReadFrom(r io.Reader) (int64, error) {
+	return int64(a.TotalSize()), binary.Read(r, binary.LittleEndian, a)
 }
