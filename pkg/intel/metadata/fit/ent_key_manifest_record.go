@@ -10,9 +10,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/bg/bgkey"
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntkey"
-	"github.com/linuxboot/fiano/pkg/intel/metadata/common/bgheader"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
+	keymanifest "github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/keymanifest"
 )
 
 // EntryKeyManifestRecord represents a FIT entry of type "Key Manifest Record" (0x0B)
@@ -41,27 +40,33 @@ func (entry *EntryKeyManifestRecord) Reader() *bytes.Reader {
 }
 
 // ParseData creates EntryKeyManifestRecord from EntryKeyManifest
-func (entry *EntryKeyManifestRecord) ParseData() (*bgkey.Manifest, *cbntkey.Manifest, error) {
+func (entry *EntryKeyManifestRecord) ParseData() (*keymanifest.Manifest, *keymanifest.Manifest, error) {
 	r := bytes.NewReader(entry.DataSegmentBytes)
-	version, err := bgheader.DetectBGV(r)
+	version, err := cbnt.DetectBGV(r)
 	if err != nil {
 		return nil, nil, err
 	}
 	switch version {
-	case bgheader.Version10:
-		manifest := bgkey.NewManifest()
+	case cbnt.Version10:
+		manifest, err := keymanifest.NewManifest(cbnt.Version10)
+		if err != nil {
+			return nil, nil, err
+		}
 		_, err = manifest.ReadFrom(r)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, nil, err
 		}
-		return manifest, nil, nil
-	case bgheader.Version20:
-		manifest := cbntkey.NewManifest()
+		return &manifest, nil, nil
+	case cbnt.Version20:
+		manifest, err := keymanifest.NewManifest(cbnt.Version20)
+		if err != nil {
+			return nil, nil, err
+		}
 		_, err = manifest.ReadFrom(r)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, nil, err
 		}
-		return nil, manifest, nil
+		return nil, &manifest, nil
 	default:
 		return nil, nil, fmt.Errorf("failed to parse KeyManifest, err: %v", err)
 	}
@@ -69,7 +74,7 @@ func (entry *EntryKeyManifestRecord) ParseData() (*bgkey.Manifest, *cbntkey.Mani
 
 // ParseKeyManifest returns a key manifest if it was able to
 // parse one.
-func (table Table) ParseKeyManifest(firmware []byte) (*bgkey.Manifest, *cbntkey.Manifest, error) {
+func (table Table) ParseKeyManifest(firmware []byte) (*keymanifest.Manifest, *keymanifest.Manifest, error) {
 	hdr := table.First(EntryTypeKeyManifestRecord)
 	if hdr == nil {
 		return nil, nil, ErrNotFound{}
