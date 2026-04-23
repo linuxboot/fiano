@@ -18,10 +18,10 @@ func GetEntries(firmware []byte) (Entries, error) {
 
 // GetEntriesFrom returns parsed FIT-entries
 func GetEntriesFrom(firmware io.ReadSeeker) (Entries, error) {
-	table, err := GetTableFrom(firmware)
+	table, firmwareSizeUsed, err := GetTableFrom(firmware)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get FIT table: %w", err)
 	}
 
-	return table.GetEntriesFrom(firmware), nil
+	return table.GetEntriesFrom(firmware, firmwareSizeUsed), nil
 }
