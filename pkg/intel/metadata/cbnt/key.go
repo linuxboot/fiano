@@ -14,40 +14,20 @@ import (
 	"crypto/rsa"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math/big"
+	"strings"
 
+	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
 	"github.com/tjfoc/gmsm/sm2"
 )
 
-// Key is a public key of an asymmetric crypto keypair.
 type Key struct {
+	Common
 	KeyAlg  Algorithm `json:"keyAlg"`
 	Version uint8     `require:"0x10"  json:"keyVersion"`
 	KeySize BitSize   `json:"keyBitsize"`
 	Data    []byte    `countValue:"keyDataSize()" json:"keyData"`
-}
-
-// BitSize is a size in bits.
-type BitSize uint16
-
-// InBits returns the size in bits.
-func (ks BitSize) InBits() uint16 {
-	return uint16(ks)
-}
-
-// InBytes returns the size in bytes.
-func (ks BitSize) InBytes() uint16 {
-	return uint16(ks >> 3)
-}
-
-// SetInBits sets the size in bits.
-func (ks *BitSize) SetInBits(amountOfBits uint16) {
-	*ks = BitSize(amountOfBits)
-}
-
-// SetInBytes sets the size in bytes.
-func (ks *BitSize) SetInBytes(amountOfBytes uint16) {
-	*ks = BitSize(amountOfBytes << 3)
 }
 
 // keyDataSize returns the expected length of Data for specified
@@ -76,7 +56,7 @@ func (k Key) PubKey() (crypto.PublicKey, error) {
 	case AlgRSA:
 		result := &rsa.PublicKey{
 			N: new(big.Int).SetBytes(reverseBytes(k.Data[4:])),
-			E: int(binaryOrder.Uint32(k.Data)),
+			E: int(endianess.Uint32(k.Data)),
 		}
 		return result, nil
 	case AlgECC:
@@ -112,7 +92,7 @@ func (k *Key) SetPubKey(key crypto.PublicKey) error {
 		n := key.N.Bytes()
 		k.KeySize.SetInBytes(uint16(len(n)))
 		k.Data = make([]byte, 4+len(n))
-		binaryOrder.PutUint32(k.Data, uint32(key.E))
+		endianess.PutUint32(k.Data, uint32(key.E))
 		copy(k.Data[4:], reverseBytes(n))
 		return nil
 
@@ -164,7 +144,8 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 		if err != nil {
 			return err
 		}
-		if k.KeyAlg == AlgRSA {
+		switch k.KeyAlg {
+		case AlgRSA:
 			if err := binary.Write(buf, binary.LittleEndian, k.Data[4:]); err != nil {
 				return err
 			}
@@ -172,7 +153,7 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 				return fmt.Errorf("unable to hash: %w", err)
 			}
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
-		} else if k.KeyAlg == AlgSM2 || k.KeyAlg == AlgECC {
+		case AlgSM2, AlgECC:
 			if err := binary.Write(buf, binary.LittleEndian, k.Data); err != nil {
 				return err
 			}
@@ -180,7 +161,7 @@ func (k *Key) PrintBPMPubKey(bpmAlg Algorithm) error {
 				return fmt.Errorf("unable to hash: %w", err)
 			}
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: 0x%x\n", hash.Sum(nil))
-		} else {
+		default:
 			fmt.Printf("   Boot Policy Manifest Pubkey Hash: Unknown Algorithm\n")
 		}
 	} else {
@@ -227,4 +208,154 @@ func (k *Key) PrintKMPubKey(kmAlg Algorithm) error {
 	}
 
 	return nil
+}
+
+// NewKey returns a new instance of Key with
+// all default values set.
+func NewKey() *Key {
+	s := &Key{}
+	// Set through tag "required":
+	s.Version = 0x10
+	return s
+}
+
+func (k *Key) Layout() []LayoutField {
+	return []LayoutField{
+		{
+			ID:    0,
+			Name:  "Key Alg",
+			Size:  func() uint64 { return 2 },
+			Value: func() any { return &k.KeyAlg },
+			Type:  ManifestFieldEndValue,
+		},
+		{
+			ID:    1,
+			Name:  "Version",
+			Size:  func() uint64 { return 1 },
+			Value: func() any { return &k.Version },
+			Type:  ManifestFieldEndValue,
+		},
+		{
+			ID:    2,
+			Name:  "Key Size",
+			Size:  func() uint64 { return 2 },
+			Value: func() any { return &k.KeySize },
+			Type:  ManifestFieldEndValue,
+		},
+		{
+			ID:    3,
+			Name:  "Data",
+			Size:  func() uint64 { return uint64(k.keyDataSize()) },
+			Value: func() any { return &k.Data },
+			Type:  ManifestFieldArrayDynamicWithSize,
+		},
+	}
+}
+
+// Validate (recursively) checks the structure if there are any unexpected
+// values. It returns an error if so.
+func (k *Key) Validate() error {
+	// See tag "require"
+	if k.Version != 0x10 {
+		return fmt.Errorf("field 'Version' expects value '0x10', but has %v", k.Version)
+	}
+
+	return nil
+}
+
+// ReadFrom reads the Key from 'r' in format defined in the document #575623.
+func (k *Key) ReadFrom(r io.Reader) (int64, error) {
+	totalN, err := k.Common.ReadFrom(r, k)
+	if err != nil {
+		return 0, err
+	}
+
+	return totalN, nil
+}
+
+// WriteTo writes the Key into 'w' in format defined in
+// the document #575623.
+func (k *Key) WriteTo(w io.Writer) (int64, error) {
+	return k.Common.WriteTo(w, k)
+}
+
+func (k *Key) SizeOf(id int) (uint64, error) {
+	ret, err := k.Common.SizeOf(k, id)
+	if err != nil {
+		// normally it would be 0, but ret is already 0 if we land here
+		return ret, fmt.Errorf("Key: %v", err)
+	}
+
+	return ret, nil
+}
+
+func (k *Key) OffsetOf(id int) (uint64, error) {
+	ret, err := k.Common.OffsetOf(k, id)
+	if err != nil {
+		return ret, fmt.Errorf("Key: %v", err)
+	}
+
+	return ret, nil
+}
+
+// Size returns the total size of the Key.
+func (k *Key) TotalSize() uint64 {
+	if k == nil {
+		return 0
+	}
+
+	return k.Common.TotalSize(k)
+}
+
+// PrettyString returns the content of the structure in an easy-to-read format.
+func (k *Key) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	return Common{}.PrettyString(depth, withHeader, k, "Key", opts...)
+}
+
+type BitSize uint16
+
+// InBits returns the size in bits.
+func (ks BitSize) InBits() uint16 {
+	return uint16(ks)
+}
+
+// InBytes returns the size in bytes.
+func (ks BitSize) InBytes() uint16 {
+	return uint16(ks >> 3)
+}
+
+// SetInBits sets the size in bits.
+func (ks *BitSize) SetInBits(amountOfBits uint16) {
+	*ks = BitSize(amountOfBits)
+}
+
+// SetInBytes sets the size in bytes.
+func (ks *BitSize) SetInBytes(amountOfBytes uint16) {
+	*ks = BitSize(amountOfBytes << 3)
+}
+
+// PrettyString returns the bits of the flags in an easy-to-read format.
+func (ks BitSize) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	var lines []string
+	if withHeader {
+		lines = append(lines, pretty.Header(depth, "Bit Size", ks))
+	}
+	lines = append(lines, pretty.SubValue(depth+1, "In Bits", "", ks.InBits(), opts...)...)
+	lines = append(lines, pretty.SubValue(depth+1, "In Bytes", "", ks.InBytes(), opts...)...)
+	return strings.Join(lines, "\n")
+}
+
+// TotalSize returns the total size measured through binary.Size.
+func (ks BitSize) TotalSize() uint64 {
+	return uint64(binary.Size(ks))
+}
+
+// WriteTo writes the BitSize into 'w' in binary format.
+func (ks BitSize) WriteTo(w io.Writer) (int64, error) {
+	return int64(ks.TotalSize()), binary.Write(w, binary.LittleEndian, ks)
+}
+
+// ReadFrom reads the BitSize from 'r' in binary format.
+func (ks BitSize) ReadFrom(r io.Reader) (int64, error) {
+	return int64(ks.TotalSize()), binary.Read(r, binary.LittleEndian, ks)
 }
