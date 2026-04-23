@@ -7,7 +7,7 @@ package fit
 import (
 	"fmt"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
 )
 
 // ErrACMInvalidKeySize means ACM entry has invalid key size
@@ -47,7 +47,7 @@ type ErrExpectedFITHeadersMagic struct {
 
 func (err *ErrExpectedFITHeadersMagic) Error() string {
 	return fmt.Sprintf("string '%s' was expected as the Address value of the FIT header entry, but received: '%s'",
-		consts.FITHeadersMagic, err.Received)
+		cbnt.FITHeadersMagic, err.Received)
 }
 
 // ErrNotFound literally means "not found".
