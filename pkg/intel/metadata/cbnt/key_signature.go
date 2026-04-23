@@ -1,18 +1,19 @@
-// Copyright 2017-2021 the LinuxBoot Authors. All rights reserved
+// Copyright 2017-2026 the LinuxBoot Authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
-//go:generate manifestcodegen
 
 package cbnt
 
 import (
 	"crypto"
 	"fmt"
+	"io"
+
+	"github.com/linuxboot/fiano/pkg/intel/metadata/common/pretty"
 )
 
-// KeySignature combines a public key and a signature in a single structure.
 type KeySignature struct {
+	Common
 	Version   uint8     `require:"0x10" json:"ksVersion,omitempty"`
 	Key       Key       `json:"ksKey"`
 	Signature Signature `json:"ksSignature"`
@@ -78,4 +79,105 @@ func (s *KeySignature) FillSignature(signAlgo Algorithm, pubKey crypto.PublicKey
 	}
 
 	return s.Signature.FillSignature(signAlgo, pubKey, signedData, hashAlgo)
+}
+
+// NewKeySignature returns a new instance of KeySignature with
+// all default values set.
+func NewKeySignature() *KeySignature {
+	s := &KeySignature{}
+	// Set through tag "required":
+	s.Version = 0x10
+	// Recursively initializing a child structure:
+	s.Key = *NewKey()
+	// Recursively initializing a child structure:
+	s.Signature = *NewSignature()
+	return s
+}
+
+// Validate (recursively) checks the structure if there are any unexpected
+// values. It returns an error if so.
+func (s *KeySignature) Validate() error {
+	// See tag "require"
+	if s.Version != 0x10 {
+		return fmt.Errorf("field 'Version' expects value '0x10', but has %v", s.Version)
+	}
+	// Recursively validating a child structure:
+	if err := s.Key.Validate(); err != nil {
+		return fmt.Errorf("error on field 'Key': %w", err)
+	}
+	// Recursively validating a child structure:
+	if err := s.Signature.Validate(); err != nil {
+		return fmt.Errorf("error on field 'Signature': %w", err)
+	}
+
+	return nil
+}
+
+// ReadFrom reads the KeySignature from 'r' in format defined in the document #575623.
+func (s *KeySignature) ReadFrom(r io.Reader) (int64, error) {
+	return s.Common.ReadFrom(r, s)
+}
+
+// WriteTo writes the KeySignature into 'w' in format defined in
+// the document #575623.
+func (s *KeySignature) WriteTo(w io.Writer) (int64, error) {
+	return s.Common.WriteTo(w, s)
+}
+
+func (s *KeySignature) Layout() []LayoutField {
+	return []LayoutField{
+		{
+			ID:    0,
+			Name:  "Version",
+			Size:  func() uint64 { return 1 },
+			Value: func() any { return &s.Version },
+			Type:  ManifestFieldEndValue,
+		},
+		{
+			ID:    1,
+			Name:  "Key",
+			Size:  func() uint64 { return s.Key.Common.TotalSize(&s.Key) },
+			Value: func() any { return &s.Key },
+			Type:  ManifestFieldSubStruct,
+		},
+		{
+			ID:    2,
+			Name:  "Signature",
+			Size:  func() uint64 { return s.Signature.Common.TotalSize(&s.Signature) },
+			Value: func() any { return &s.Signature },
+			Type:  ManifestFieldSubStruct,
+		},
+	}
+}
+
+func (s *KeySignature) SizeOf(id int) (uint64, error) {
+	ret, err := s.Common.SizeOf(s, id)
+	if err != nil {
+		return ret, fmt.Errorf("HashList: %v", err)
+	}
+
+	return ret, nil
+}
+
+func (s *KeySignature) OffsetOf(id int) (uint64, error) {
+	ret, err := s.Common.OffsetOf(s, id)
+	if err != nil {
+		return ret, fmt.Errorf("HashList: %v", err)
+	}
+
+	return ret, nil
+}
+
+// Size returns the total size of the KeySignature.
+func (s *KeySignature) TotalSize() uint64 {
+	if s == nil {
+		return 0
+	}
+
+	return s.Common.TotalSize(s)
+}
+
+// PrettyString returns the content of the structure in an easy-to-read format.
+func (s *KeySignature) PrettyString(depth uint, withHeader bool, opts ...pretty.Option) string {
+	return Common{}.PrettyString(depth, withHeader, s, "Key Signature", opts...)
 }
