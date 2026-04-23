@@ -300,12 +300,17 @@ func (f *TypeAndIsChecksumValid) UnmarshalJSON(b []byte) error {
 
 // GetEntry returns a full entry (headers + data)
 func (hdr EntryHeaders) GetEntry(firmware []byte) Entry {
-	return hdr.GetEntryFrom(bytesextra.NewReadWriteSeeker(firmware))
+	rw := bytesextra.NewReadWriteSeeker(firmware)
+	firmwareSizeUsed := uint64(len(firmware))
+	if ifdSize, ifdErr := flashSizeFromIFD(rw, firmwareSizeUsed); ifdErr == nil && ifdSize > 0 && ifdSize <= firmwareSizeUsed {
+		firmwareSizeUsed = ifdSize
+	}
+	return hdr.GetEntryFrom(rw, firmwareSizeUsed)
 }
 
 // GetEntryFrom returns a full entry (headers + data)
-func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker) Entry {
-	return NewEntry(hdr.copy(), firmware)
+func (hdr EntryHeaders) GetEntryFrom(firmware io.ReadSeeker, firmwareSizeUsed uint64) Entry {
+	return NewEntry(hdr.copy(), firmware, firmwareSizeUsed)
 }
 
 // Type returns the type of the FIT entry
@@ -365,15 +370,11 @@ func (hdr *EntryHeaders) CalculateChecksum() uint8 {
 	return result
 }
 
-// getDataSegmentCoordinates returns the offset of the data segment
-// associated with the entry.
-func (hdr *EntryHeaders) getDataSegmentOffset(firmware io.Seeker) (uint64, error) {
-	firmwareSize, err := firmware.Seek(0, io.SeekEnd)
-	if err != nil {
-		return 0, fmt.Errorf("unable to get the size of the firmware: %w", err)
+func (hdr *EntryHeaders) getDataSegmentOffset(firmwareSizeUsed uint64) (uint64, error) {
+	if firmwareSizeUsed == 0 {
+		return 0, fmt.Errorf("firmware size is zero")
 	}
-
-	return hdr.Address.Offset(uint64(firmwareSize)), nil
+	return hdr.Address.Offset(firmwareSizeUsed), nil
 }
 
 // mostCommonGetDataSegmentCoordinates returns the length of the data segment

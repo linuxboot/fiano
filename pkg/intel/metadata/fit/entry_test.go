@@ -10,7 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/cbntkey"
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
+	keymanifest "github.com/linuxboot/fiano/pkg/intel/metadata/cbnt/keymanifest"
 	"github.com/stretchr/testify/require"
 	"github.com/xaionaro-go/bytesextra"
 )
@@ -51,7 +52,7 @@ func TestRehashEntry(t *testing.T) {
 
 			// Validating that DataSize() calculates sizes consistently with RehashEntry()
 			if entryType != EntryTypeStartupACModuleEntry {
-				dataSize, err := EntryDataSegmentSize(entry, nil)
+				dataSize, err := EntryDataSegmentSize(entry, nil, 0)
 				require.NoError(t, err)
 				if dataSize != 0 && dataSize != uint64(len(entry.GetEntryBase().DataSegmentBytes)) {
 					t.Errorf("wrong DataSize 0x%X for type %s", dataSize, entryType)
@@ -68,9 +69,10 @@ func getSampleEntries(t *testing.T) Entries {
 
 	kmEntry := &EntryKeyManifestRecord{}
 	{
-		km := cbntkey.NewManifest()
+		km, err := keymanifest.NewManifest(cbnt.Version20)
+		require.NoError(t, err)
 		var buf bytes.Buffer
-		_, err := km.WriteTo(&buf)
+		_, err = km.WriteTo(&buf)
 		require.NoError(t, err)
 		kmEntry.DataSegmentBytes = buf.Bytes()
 	}

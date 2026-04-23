@@ -11,8 +11,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/linuxboot/fiano/pkg/intel/metadata/cbnt"
 	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/check"
-	"github.com/linuxboot/fiano/pkg/intel/metadata/fit/consts"
+	"github.com/linuxboot/fiano/pkg/uefi"
 	"github.com/xaionaro-go/bytesextra"
 )
 
@@ -22,13 +23,18 @@ type Table []EntryHeaders
 
 // GetEntries returns parsed FIT-entries
 func (table Table) GetEntries(firmware []byte) (result Entries) {
-	return table.GetEntriesFrom(bytesextra.NewReadWriteSeeker(firmware))
+	rw := bytesextra.NewReadWriteSeeker(firmware)
+	firmwareSizeUsed := uint64(len(firmware))
+	if ifdSize, ifdErr := flashSizeFromIFD(rw, firmwareSizeUsed); ifdErr == nil && ifdSize > 0 && ifdSize <= firmwareSizeUsed {
+		firmwareSizeUsed = ifdSize
+	}
+	return table.GetEntriesFrom(rw, firmwareSizeUsed)
 }
 
-// GetEntriesFrom returns parsed FIT-entries
-func (table Table) GetEntriesFrom(firmware io.ReadSeeker) (result Entries) {
+// GetEntriesFrom returns parsed FIT-entries using provided firmware size.
+func (table Table) GetEntriesFrom(firmware io.ReadSeeker, firmwareSizeUsed uint64) (result Entries) {
 	for _, headers := range table {
-		result = append(result, headers.GetEntryFrom(firmware))
+		result = append(result, headers.GetEntryFrom(firmware, firmwareSizeUsed))
 	}
 	return
 }
@@ -91,7 +97,7 @@ func (table Table) WriteTo(w io.Writer) (n int64, err error) {
 
 // WriteToFirmwareImage finds the position of FIT in a firmware image and writes the table there.
 func (table Table) WriteToFirmwareImage(w io.ReadWriteSeeker) (n int64, err error) {
-	startIdx, _, err := GetHeadersTableRangeFrom(w)
+	startIdx, _, _, err := GetHeadersTableRangeFrom(w)
 	if err != nil {
 		return 0, fmt.Errorf("unable to find the beginning of the FIT: %w", err)
 	}
@@ -131,14 +137,14 @@ func ParseTable(b []byte) (Table, error) {
 // GetPointerCoordinates returns the position of the FIT pointer within
 // the firmware.
 func GetPointerCoordinates(firmwareSize uint64) (startIdx, endIdx int64) {
-	startIdx = int64(firmwareSize) - consts.FITPointerOffset
-	endIdx = startIdx + consts.FITPointerSize
+	startIdx = int64(firmwareSize) - cbnt.FITPointerOffset
+	endIdx = startIdx + cbnt.FITPointerSize
 	return
 }
 
-// GetHeadersTableRangeFrom returns the starting and ending indexes of the FIT
-// headers table within the firmware image.
-func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, err error) {
+// GetHeadersTableRangeFromWithSize returns the starting and ending indexes of the FIT
+// headers table within the firmware image and firmware size used.
+func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx, firmwareSizeUsed uint64, err error) {
 
 	/*
 		An example:
@@ -180,22 +186,27 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 
 	firmwareSize, err := firmware.Seek(0, io.SeekEnd)
 	if err != nil || firmwareSize < 0 {
-		return 0, 0, fmt.Errorf("unable to determine firmware size; result: %d; err: %w", firmwareSize, err)
+		return 0, 0, 0, fmt.Errorf("unable to determine firmware size; result: %d; err: %w", firmwareSize, err)
 	}
 
-	fitPointerStartIdx, fitPointerEndIdx := GetPointerCoordinates(uint64(firmwareSize))
-
-	if err := check.BytesRange(uint(firmwareSize), int(fitPointerStartIdx), int(fitPointerEndIdx)); err != nil {
-		return 0, 0, fmt.Errorf("invalid fit pointer bytes range: %w", err)
+	firmwareSizeUsed = uint64(firmwareSize)
+	if ifdSize, ifdErr := flashSizeFromIFD(firmware, firmwareSizeUsed); ifdErr == nil && ifdSize > 0 && ifdSize <= uint64(firmwareSize) {
+		firmwareSizeUsed = ifdSize
 	}
 
-	fitPointerBytes, err := sliceOrCopyBytesFrom(firmware, uint64(fitPointerStartIdx), uint64(fitPointerEndIdx))
+	fitPointerStartIdx, fitPointerEndIdx := GetPointerCoordinates(firmwareSizeUsed)
+
+	if err := check.BytesRange(uint(firmwareSizeUsed), int(fitPointerStartIdx), int(fitPointerEndIdx)); err != nil {
+		return 0, 0, firmwareSizeUsed, fmt.Errorf("invalid fit pointer bytes range: %w", err)
+	}
+
+	fitPointerBytes, err := sliceOrCopyBytesFrom(firmware, uint64(fitPointerStartIdx), uint64(fitPointerEndIdx), firmwareSizeUsed)
 	if err != nil {
-		return 0, 0, fmt.Errorf("unable to get FIT pointer value: %w", err)
+		return 0, 0, firmwareSizeUsed, fmt.Errorf("unable to get FIT pointer value: %w", err)
 	}
 	fitPointerValue := binary.LittleEndian.Uint64(fitPointerBytes)
 	fitPointerOffset := CalculateTailOffsetFromPhysAddr(fitPointerValue)
-	startIdx = uint64(firmwareSize) - fitPointerOffset
+	startIdx = firmwareSizeUsed - fitPointerOffset
 
 	// OK, now we need to calculate the end of the headers...
 	//
@@ -203,7 +214,7 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 	// size is the size of the table. So let's just use it.
 
 	firstHeaderEndIdx := startIdx + uint64(entryHeadersSize)
-	if err = check.BytesRange(uint(firmwareSize), int(startIdx), int(firstHeaderEndIdx)); err != nil {
+	if err = check.BytesRange(uint(firmwareSizeUsed), int(startIdx), int(firstHeaderEndIdx)); err != nil {
 		err = fmt.Errorf("invalid the first entry bytes range: %w", err)
 		return
 	}
@@ -229,7 +240,7 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 		err = fmt.Errorf("unable to read the Address value of the FIT header entry: %w", err)
 		return
 	}
-	if !bytes.Equal([]byte(consts.FITHeadersMagic), buf.Bytes()) {
+	if !bytes.Equal([]byte(cbnt.FITHeadersMagic), buf.Bytes()) {
 		err = &ErrExpectedFITHeadersMagic{Received: buf.Bytes()}
 		return
 	}
@@ -238,7 +249,7 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 	// parseHeaders it.
 
 	endIdx = startIdx + uint64(tableMeta.Size.Uint32()<<4) // See 4.2.5
-	if err = check.BytesRange(uint(firmwareSize), int(startIdx), int(endIdx)); err != nil {
+	if err = check.BytesRange(uint(firmwareSizeUsed), int(startIdx), int(endIdx)); err != nil {
 		err = fmt.Errorf("invalid entries bytes range: %w", err)
 		return
 	}
@@ -246,27 +257,65 @@ func GetHeadersTableRangeFrom(firmware io.ReadSeeker) (startIdx, endIdx uint64, 
 	return
 }
 
+func flashSizeFromIFD(firmware io.ReadSeeker, firmwareSize uint64) (uint64, error) {
+	if firmwareSize < uefi.FlashDescriptorLength {
+		return 0, fmt.Errorf("firmware size too small for flash descriptor: %d", firmwareSize)
+	}
+
+	buf, err := sliceOrCopyBytesFrom(firmware, 0, uefi.FlashDescriptorLength, firmwareSize)
+	if err != nil {
+		return 0, fmt.Errorf("unable to read flash descriptor: %w", err)
+	}
+
+	fd := uefi.FlashDescriptor{}
+	fd.SetBuf(buf)
+	if err := fd.ParseFlashDescriptor(); err != nil {
+		return 0, err
+	}
+
+	var maxEnd uint64
+	for _, fr := range fd.Region.FlashRegions {
+		if !fr.Valid() {
+			continue
+		}
+		end := uint64(fr.EndOffset())
+		if end > maxEnd {
+			maxEnd = end
+		}
+	}
+	if maxEnd == 0 {
+		return 0, fmt.Errorf("no valid regions in flash descriptor")
+	}
+
+	return maxEnd, nil
+}
+
 // GetTable returns the table of FIT entries of the firmware image.
 func GetTable(firmware []byte) (Table, error) {
-	return GetTableFrom(bytesextra.NewReadWriteSeeker(firmware))
+	table, _, err := GetTableFrom(bytesextra.NewReadWriteSeeker(firmware))
+	if err != nil {
+		return nil, err
+	}
+
+	return table, nil
 }
 
 // GetTableFrom returns the table of FIT entries of the firmware image.
-func GetTableFrom(firmware io.ReadSeeker) (Table, error) {
-	startIdx, endIdx, err := GetHeadersTableRangeFrom(firmware)
+func GetTableFrom(firmware io.ReadSeeker) (Table, uint64, error) {
+	startIdx, endIdx, firmwareSizeUsed, err := GetHeadersTableRangeFrom(firmware)
 	if err != nil {
-		return nil, fmt.Errorf("unable to locate the table coordinates (does the image contain FIT?): %w", err)
+		return nil, 0, fmt.Errorf("unable to locate the table coordinates (does the image contain FIT?): %w", err)
 	}
 
-	tableBytes, err := sliceOrCopyBytesFrom(firmware, startIdx, endIdx)
+	tableBytes, err := sliceOrCopyBytesFrom(firmware, startIdx, endIdx, firmwareSizeUsed)
 	if err != nil {
-		return nil, fmt.Errorf("unable to copy bytes from the firmware: %w", err)
+		return nil, 0, fmt.Errorf("unable to copy bytes from the firmware: %w", err)
 	}
 
 	result, err := ParseTable(tableBytes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse the table: %w", err)
+		return nil, 0, fmt.Errorf("unable to parse the table: %w", err)
 	}
 
-	return result, nil
+	return result, firmwareSizeUsed, nil
 }
