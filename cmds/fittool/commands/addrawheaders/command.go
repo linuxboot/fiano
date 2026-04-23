@@ -58,7 +58,7 @@ func (cmd *Command) Execute(args []string) error {
 		return fmt.Errorf("unable to open the firmware image file '%s': %w", cmd.UEFIPath, err)
 	}
 
-	table, err := fit.GetTableFrom(file)
+	table, _, err := fit.GetTableFrom(file)
 	if err != nil {
 		return fmt.Errorf("unable to get FIT from the firmware image: %w", err)
 	}
