@@ -398,18 +398,17 @@ func (s *ManifestBG) OffsetOf(id int) (uint64, error) {
 
 // ReadFrom reads the Manifest from 'r' in format defined in the document #575623.
 // Note that the BPM is a special case: we do not use common way of handling the reading here.
-func (s *ManifestBG) ReadFrom(r io.Reader) (returnN int64, returnErr error) {
+func (s *ManifestBG) ReadFrom(r io.Reader) (int64, error) {
 	var missingFieldsByIndices = [4]bool{
 		0: true,
 		3: true,
 	}
+
+	var err error
 	defer func() {
-		if returnErr != nil {
-			return
-		}
 		for fieldIndex, v := range missingFieldsByIndices {
 			if v {
-				returnErr = fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
+				err = fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
 				break
 			}
 		}
@@ -418,7 +417,7 @@ func (s *ManifestBG) ReadFrom(r io.Reader) (returnN int64, returnErr error) {
 	previousFieldIndex := int(-1)
 	for {
 		var structInfo cbnt.StructInfoBG
-		err := binary.Read(r, binary.LittleEndian, &structInfo)
+		err = binary.Read(r, binary.LittleEndian, &structInfo)
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			return totalN, nil
 		}
@@ -801,19 +800,17 @@ func (s *ManifestCBnT) OffsetOf(id int) (uint64, error) {
 }
 
 // ReadFrom reads the Manifest from 'r' in format defined in the document #575623.
-// Same note as above: this is an exception from the rule of usijg common approach.
-func (s *ManifestCBnT) ReadFrom(r io.Reader) (returnN int64, returnErr error) {
+// Same note as above: this is an exception from the rule of using common approach.
+func (s *ManifestCBnT) ReadFrom(r io.Reader) (int64, error) {
 	var missingFieldsByIndices = [7]bool{
 		0: true,
 		6: true,
 	}
+	var err error
 	defer func() {
-		if returnErr != nil {
-			return
-		}
 		for fieldIndex, v := range missingFieldsByIndices {
 			if v {
-				returnErr = fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
+				err = fmt.Errorf("field '%s' is missing", s.fieldNameByIndex(fieldIndex))
 				break
 			}
 		}
@@ -822,7 +819,7 @@ func (s *ManifestCBnT) ReadFrom(r io.Reader) (returnN int64, returnErr error) {
 	previousFieldIndex := int(-1)
 	for {
 		var structInfo cbnt.StructInfoCBNT
-		err := binary.Read(r, binary.LittleEndian, &structInfo)
+		err = binary.Read(r, binary.LittleEndian, &structInfo)
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			return totalN, nil
 		}
