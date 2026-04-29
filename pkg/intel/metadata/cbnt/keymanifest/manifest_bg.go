@@ -24,6 +24,7 @@ type BGManifest struct {
 	KeyAndSignature   cbnt.KeySignature  `json:"kmKeySignature"`
 }
 
+// Setter for the Key signature.
 func (m *BGManifest) SetSignature(
 	algo cbnt.Algorithm,
 	hashAlgo cbnt.Algorithm,
@@ -38,6 +39,7 @@ func (m *BGManifest) SetSignature(
 	return nil
 }
 
+// ValidateBPMKey returns an error if BPKey does not match Key Signature from BPM.
 func (m *BGManifest) ValidateBPMKey(bpmKS cbnt.KeySignature) error {
 	h, err := m.BPKey.HashAlg.Hash()
 	if err != nil {
@@ -107,6 +109,7 @@ func (m *BGManifest) WriteTo(w io.Writer) (int64, error) {
 	return m.Common.WriteTo(w, m)
 }
 
+// Layout returns the structure's layout descriptor
 func (m *BGManifest) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -154,6 +157,7 @@ func (m *BGManifest) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (m *BGManifest) SizeOf(id int) (uint64, error) {
 	ret, err := m.Common.SizeOf(m, id)
 	if err != nil {
@@ -163,6 +167,7 @@ func (m *BGManifest) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (m *BGManifest) OffsetOf(id int) (uint64, error) {
 	ret, err := m.Common.OffsetOf(m, id)
 	if err != nil {
@@ -186,6 +191,7 @@ func (m *BGManifest) PrettyString(depth uint, withHeader bool, opts ...pretty.Op
 	return m.Common.PrettyString(depth, withHeader, m, "BG Key Manifest", opts...)
 }
 
+// Print prints the Key Manifest
 func (m *BGManifest) Print() {
 	if len(m.KeyAndSignature.Signature.Data) < 1 {
 		fmt.Printf("%v\n", m.PrettyString(1, true, pretty.OptionOmitKeySignature(true)))

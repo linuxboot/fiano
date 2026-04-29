@@ -36,6 +36,7 @@ func (s *Reserved) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *Reserved) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -55,6 +56,7 @@ func (s *Reserved) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *Reserved) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -64,6 +66,7 @@ func (s *Reserved) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *Reserved) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

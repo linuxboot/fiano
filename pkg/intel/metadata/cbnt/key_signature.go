@@ -124,6 +124,7 @@ func (s *KeySignature) WriteTo(w io.Writer) (int64, error) {
 	return s.Common.WriteTo(w, s)
 }
 
+// Layout returns the structure's layout descriptor
 func (s *KeySignature) Layout() []LayoutField {
 	return []LayoutField{
 		{
@@ -150,6 +151,7 @@ func (s *KeySignature) Layout() []LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *KeySignature) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -159,6 +161,7 @@ func (s *KeySignature) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *KeySignature) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

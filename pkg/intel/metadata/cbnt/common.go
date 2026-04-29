@@ -26,6 +26,8 @@ type LayoutProvider interface {
 // All types implementing Structure should embed it.
 type Common struct{}
 
+// TotalSize returns the sum of size of all fields from a provided Layout
+// descriptor.
 func (Common) TotalSize(p LayoutProvider) uint64 {
 	var total uint64
 	for _, f := range p.Layout() {
@@ -34,6 +36,8 @@ func (Common) TotalSize(p LayoutProvider) uint64 {
 	return total
 }
 
+// SizeOf returns the size of the field from a provided Layout descriptor,
+// of a given id.
 func (Common) SizeOf(p LayoutProvider, id int) (uint64, error) {
 	for _, f := range p.Layout() {
 		if f.ID == id {
@@ -44,6 +48,8 @@ func (Common) SizeOf(p LayoutProvider, id int) (uint64, error) {
 	return 0, fmt.Errorf("has no field of ID %d", id)
 }
 
+// OffsetOf returns the size of the field from a provided Layout descriptor,
+// of a given id.
 func (Common) OffsetOf(p LayoutProvider, id int) (uint64, error) {
 	var offset uint64
 
@@ -57,6 +63,8 @@ func (Common) OffsetOf(p LayoutProvider, id int) (uint64, error) {
 	return 0, fmt.Errorf("has no field of ID %d", id)
 }
 
+// PrettyString returns the content of the provided Layout descriptor in an
+// easy-to-read format.
 func (Common) PrettyString(depth uint, withHeader bool, p LayoutProvider, structName string, opts ...pretty.Option) string {
 	var lines []string
 
@@ -80,6 +88,8 @@ func (Common) PrettyString(depth uint, withHeader bool, p LayoutProvider, struct
 	return strings.Join(lines, "\n")
 }
 
+// ReadFrom reads the 'r' and fills the fields of the provided Layout
+// descriptor in format defined in the document #575623.
 func (Common) ReadFrom(r io.Reader, p LayoutProvider) (int64, error) {
 	totalN := int64(0)
 
@@ -136,6 +146,8 @@ func (Common) ReadFrom(r io.Reader, p LayoutProvider) (int64, error) {
 	return totalN, nil
 }
 
+// WriteTo writes the fields from the provided Layout descriptor into 'w'
+// in format defined in the document #575623.
 func (Common) WriteTo(w io.Writer, p LayoutProvider) (int64, error) {
 	totalN := int64(0)
 

@@ -54,6 +54,7 @@ func (s *Signature) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *Signature) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -73,6 +74,7 @@ func (s *Signature) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *Signature) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -82,6 +84,7 @@ func (s *Signature) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *Signature) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

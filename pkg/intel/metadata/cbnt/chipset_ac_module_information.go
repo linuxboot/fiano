@@ -82,6 +82,7 @@ func (s *ChipsetACModuleInformation) WriteTo(w io.Writer) (int64, error) {
 	return s.Common.WriteTo(w, s)
 }
 
+// Layout returns the structure's layout descriptor
 func (s *ChipsetACModuleInformation) Layout() []LayoutField {
 	return []LayoutField{
 		{
@@ -171,6 +172,7 @@ func (s *ChipsetACModuleInformation) Layout() []LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *ChipsetACModuleInformation) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -180,6 +182,7 @@ func (s *ChipsetACModuleInformation) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *ChipsetACModuleInformation) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -189,6 +192,7 @@ func (s *ChipsetACModuleInformation) OffsetOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// Size returns the total size of the manifest
 func (s *ChipsetACModuleInformation) TotalSize() uint64 {
 	if s == nil {
 		return 0

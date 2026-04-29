@@ -61,6 +61,7 @@ func (l *HashList) Structures() []cbnt.Structure {
 	return out
 }
 
+// Setter for the Key Signature.
 func (m *CBnTManifest) SetSignature(
 	algo cbnt.Algorithm,
 	hashAlgo cbnt.Algorithm,
@@ -76,6 +77,8 @@ func (m *CBnTManifest) SetSignature(
 	return nil
 }
 
+// ValidateBPMKey returns an error if any of the keys in BPM does not match
+// the ones in KM.
 func (m *CBnTManifest) ValidateBPMKey(bpmKS cbnt.KeySignature) error {
 	hashCount := 0
 	for _, hashEntry := range m.Hash {
@@ -115,6 +118,7 @@ func (m *CBnTManifest) ValidateBPMKey(bpmKS cbnt.KeySignature) error {
 	return nil
 }
 
+// Validate (recursively) checks the structure if there are any unexpected values.
 func (m *CBnTManifest) Validate() error {
 	v, err := m.OffsetOf(8)
 	if err != nil {
@@ -178,6 +182,7 @@ func (m *CBnTManifest) WriteTo(w io.Writer) (int64, error) {
 	return m.Common.WriteTo(w, m)
 }
 
+// Layout returns the structure's layout descriptor
 func (m *CBnTManifest) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -286,6 +291,7 @@ func (m *CBnTManifest) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (m *CBnTManifest) SizeOf(id int) (uint64, error) {
 	ret, err := m.Common.SizeOf(m, id)
 	if err != nil {
@@ -295,6 +301,7 @@ func (m *CBnTManifest) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (m *CBnTManifest) OffsetOf(id int) (uint64, error) {
 	ret, err := m.Common.OffsetOf(m, id)
 	if err != nil {

@@ -33,6 +33,7 @@ func (s StructInfoCBNT) ReadFrom(r io.Reader) (int64, error) {
 	return totalN, nil
 }
 
+// Validate (recursively) checks the structure if there are any unexpected values.
 func (s StructInfoCBNT) Validate() error {
 	// ID, version and element size might differ, only thing that we can always validate is
 	// Variable0.
@@ -48,6 +49,7 @@ func (s StructInfoCBNT) WriteTo(w io.Writer) (int64, error) {
 	return s.Common.WriteTo(w, s)
 }
 
+// Layout returns the structure's layout descriptor
 func (s StructInfoCBNT) Layout() []LayoutField {
 	return []LayoutField{
 		{
@@ -81,6 +83,7 @@ func (s StructInfoCBNT) Layout() []LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s StructInfoCBNT) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -90,6 +93,7 @@ func (s StructInfoCBNT) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s StructInfoCBNT) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

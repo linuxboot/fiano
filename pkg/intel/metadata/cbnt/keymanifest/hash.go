@@ -103,20 +103,12 @@ func (u *Usage) Set(f Usage, v bool) {
 // all default values set.
 func NewHash() *Hash {
 	s := &Hash{}
-	// Recursively initializing a child structure:
-	// s.Digest = *cbnt.NewHashStructure()
-	// s.Rehash()
 	return s
 }
 
 // Validate (recursively) checks the structure if there are any unexpected
 // values. It returns an error if so.
 func (s *Hash) Validate() error {
-	// Recursively validating a child structure:
-	// if err := s.Digest.Validate(); err != nil {
-	// 	return fmt.Errorf("error on field 'Digest': %w", err)
-	// }
-
 	return nil
 }
 
@@ -155,6 +147,7 @@ func (s *Hash) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *Hash) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -165,6 +158,7 @@ func (s *Hash) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *Hash) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

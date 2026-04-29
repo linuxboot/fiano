@@ -44,6 +44,7 @@ func (s *IBBSegment) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *IBBSegment) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -77,6 +78,7 @@ func (s *IBBSegment) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *IBBSegment) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -86,6 +88,7 @@ func (s *IBBSegment) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *IBBSegment) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -250,6 +253,7 @@ func (s *SECBnT) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *SECBnT) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -418,6 +422,7 @@ func (s *SECBnT) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *SECBnT) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -427,6 +432,7 @@ func (s *SECBnT) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *SECBnT) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -549,6 +555,7 @@ type SEBG struct {
 	IBBSegments []IBBSegment `countType:"uint8" json:"seIBBSegments,omitempty"`
 }
 
+// Layout returns the structure's layout descriptor
 func (s *SEBG) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -734,6 +741,7 @@ func (s *SEBG) WriteTo(w io.Writer) (int64, error) {
 	return s.Common.WriteTo(w, s)
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *SEBG) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -743,6 +751,7 @@ func (s *SEBG) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *SEBG) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
