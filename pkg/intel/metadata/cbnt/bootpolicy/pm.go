@@ -58,6 +58,7 @@ func (s *PMCBnT) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *PMCBnT) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -91,6 +92,7 @@ func (s *PMCBnT) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *PMCBnT) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -100,6 +102,7 @@ func (s *PMCBnT) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *PMCBnT) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -181,6 +184,7 @@ type PMBG struct {
 	Data              []byte `json:"pcData"`
 }
 
+// Layout returns the structure's layout descriptor
 func (s *PMBG) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -207,6 +211,7 @@ func (s *PMBG) Layout() []cbnt.LayoutField {
 	}
 }
 
+// Validate implements Structure.Validate()
 func (s *PMBG) Validate() error {
 	// dummy
 	return nil
@@ -251,6 +256,7 @@ func (s *PMBG) WriteTo(w io.Writer) (int64, error) {
 	return s.Common.WriteTo(w, s)
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *PMBG) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -260,6 +266,7 @@ func (s *PMBG) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *PMBG) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

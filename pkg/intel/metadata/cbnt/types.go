@@ -22,7 +22,7 @@ type (
 		Size  func() uint64
 		Value func() any
 		Type  ManifestFieldType
-		// optional list reader onluy to be used for types that contain
+		// optional list reader, only to be used for types that contain
 		// ManifestFieldList
 		ReadList func(r io.Reader) (int64, error)
 		// optional list writer to be used for types that contain

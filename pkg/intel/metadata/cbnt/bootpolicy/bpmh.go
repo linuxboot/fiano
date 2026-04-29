@@ -68,6 +68,7 @@ type BPMHCBnT struct {
 	NEMDataStack Size4K `json:"bpmhNEMStackSize"`
 }
 
+// Layout returns the structure's layout descriptor
 func (s *BPMHCBnT) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -122,6 +123,7 @@ func (s *BPMHCBnT) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *BPMHCBnT) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -131,6 +133,7 @@ func (s *BPMHCBnT) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *BPMHCBnT) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -236,6 +239,7 @@ type BPMHBG struct {
 	NEMDataStack Size4K `json:"bpmhNEMStackSize"`
 }
 
+// Layout returns the structure's layout descriptor
 func (s *BPMHBG) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -290,6 +294,7 @@ func (s *BPMHBG) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *BPMHBG) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -299,6 +304,7 @@ func (s *BPMHBG) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *BPMHBG) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {

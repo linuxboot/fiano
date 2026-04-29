@@ -219,6 +219,7 @@ func NewKey() *Key {
 	return s
 }
 
+// Layout returns the structure's layout descriptor
 func (k *Key) Layout() []LayoutField {
 	return []LayoutField{
 		{
@@ -279,6 +280,7 @@ func (k *Key) WriteTo(w io.Writer) (int64, error) {
 	return k.Common.WriteTo(w, k)
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (k *Key) SizeOf(id int) (uint64, error) {
 	ret, err := k.Common.SizeOf(k, id)
 	if err != nil {
@@ -289,6 +291,7 @@ func (k *Key) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (k *Key) OffsetOf(id int) (uint64, error) {
 	ret, err := k.Common.OffsetOf(k, id)
 	if err != nil {

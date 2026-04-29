@@ -71,6 +71,7 @@ type ManifestBG struct {
 	PMSE Signature `json:"bpmSignature"`
 }
 
+// MarshalJSON implements json.Marshaler to serialize the interface-typed fields.
 func (s ManifestBG) MarshalJSON() ([]byte, error) {
 	type signatureJSON struct {
 		StructInfoID      cbnt.StructureID  `json:"StructInfoID"`
@@ -104,6 +105,8 @@ func (s ManifestBG) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
+// UnmarshalJSON implements json.Unmarshaler to deserialize the
+// interface-typed fields.
 func (s *ManifestBG) UnmarshalJSON(data []byte) error {
 	type signatureJSON struct {
 		StructInfoID      cbnt.StructureID  `json:"StructInfoID"`
@@ -174,6 +177,7 @@ type ManifestCBnT struct {
 	PMSE Signature `json:"bpmSignature"`
 }
 
+// MarshalJSON implements json.Marshaler to serialize the interface-typed fields.
 func (s ManifestCBnT) MarshalJSON() ([]byte, error) {
 	type signatureJSON struct {
 		StructInfoID          cbnt.StructureID  `json:"StructInfoID"`
@@ -217,6 +221,8 @@ func (s ManifestCBnT) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
+// UnmarshalJSON implements json.Unmarshaler to deserialize the
+// interface-typed fields.
 func (s *ManifestCBnT) UnmarshalJSON(data []byte) error {
 	type signatureJSON struct {
 		StructInfoID          cbnt.StructureID  `json:"StructInfoID"`
@@ -320,6 +326,7 @@ func (s *ManifestBG) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *ManifestBG) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -380,6 +387,7 @@ func (s *ManifestBG) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *ManifestBG) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -388,6 +396,7 @@ func (s *ManifestBG) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *ManifestBG) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -484,19 +493,25 @@ func (s *ManifestBG) ReadFrom(r io.Reader) (int64, error) {
 
 }
 
+// RehashRecursive calls Rehash (see below) recursively.
 func (s *ManifestBG) RehashRecursive() {
 	s.Rehash()
 }
 
+// Rehash sets values which are calculated automatically depending on the rest
+// data. It is usually about the total size field of an element.
 func (s *ManifestBG) Rehash() {
 	s.BPMHBG = s.rehashedBPMH()
 }
 
+// WriteTo writes the Manifest into 'w' in format defined in
+// the document #575623.
 func (s *ManifestBG) WriteTo(w io.Writer) (int64, error) {
 	s.Rehash()
 	return s.Common.WriteTo(w, s)
 }
 
+// Size returns the total size of the manifest
 func (s *ManifestBG) TotalSize() uint64 {
 	if s == nil {
 		return 0
@@ -533,18 +548,28 @@ func (s *ManifestBG) PrettyString(depth uint, withHeader bool, opts ...pretty.Op
 	return strings.Join(lines, "\n")
 }
 
+// StructInfo just returns StructInfo.
 func (s *ManifestBG) StructInfo() cbnt.StructInfo {
 	return s.StructInfoBG
 }
 
+// GetStructInfo returns current value of StructInfo of the structure.
+//
+// StructInfo is a set of standard fields with presented in any element
+// ("element" in terms of document #575623).
 func (s *ManifestBG) GetStructInfo() cbnt.StructInfo {
 	return s.StructInfoBG
 }
 
+// SetStructInfo sets new value of StructInfo to the structure.
+//
+// StructInfo is a set of standard fields with presented in any element
+// ("element" in terms of document #575623).
 func (s *ManifestBG) SetStructInfo(newStructInfo cbnt.StructInfo) {
 	s.StructInfoBG = newStructInfo.(cbnt.StructInfoBG)
 }
 
+// ValidateIBB returns an error if IBB segments does not match the signature
 func (s *ManifestBG) ValidateIBB(firmware uefi.Firmware) error {
 	if s.SE[0].Digest.TotalSize() == 0 {
 		return fmt.Errorf("no IBB hashes")
@@ -584,6 +609,7 @@ func (s *ManifestBG) rehashedBPMH() BPMHBG {
 	return s.BPMHBG
 }
 
+// Print prints the Manifest
 func (s ManifestBG) Print() {
 	fmt.Printf("%v", s.BPMHBG.PrettyString(1, true))
 	for _, item := range s.SE {
@@ -604,6 +630,9 @@ func (s ManifestBG) Print() {
 	}
 }
 
+// fieldIndexByStructID returns the position index within
+// structure Manifest of the field by its StructureID
+// (see document #575623, an example of StructureID value is "__KEYM__").
 func (ManifestCBnT) fieldIndexByStructID(structID string) int {
 	switch structID {
 	case StructureIDBPMH:
@@ -625,6 +654,8 @@ func (ManifestCBnT) fieldIndexByStructID(structID string) int {
 	return -1
 }
 
+// fieldNameByIndex returns the name of the field by its position number
+// within structure Manifest.
 func (ManifestCBnT) fieldNameByIndex(fieldIndex int) string {
 	switch fieldIndex {
 	case 0:
@@ -667,6 +698,7 @@ func (s *ManifestCBnT) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *ManifestCBnT) Layout() []cbnt.LayoutField {
 	// All fields marked with omitempty have to be checked for being
 	// empty in the clousure for Value. Otherwise we risk some nasty errors
@@ -781,6 +813,7 @@ func (s *ManifestCBnT) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *ManifestCBnT) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -790,6 +823,7 @@ func (s *ManifestCBnT) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *ManifestCBnT) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -914,6 +948,7 @@ func (s *ManifestCBnT) ReadFrom(r io.Reader) (int64, error) {
 	}
 }
 
+// RehashRecursive calls Rehash (see below) recursively.
 func (s *ManifestCBnT) RehashRecursive() {
 	s.BPMHCBnT.Rehash()
 	for idx := range s.SE {
@@ -934,15 +969,20 @@ func (s *ManifestCBnT) RehashRecursive() {
 	s.Rehash()
 }
 
+// Rehash sets values which are calculated automatically depending on the rest
+// data. It is usually about the total size field of an element.
 func (s *ManifestCBnT) Rehash() {
 	s.BPMHCBnT = s.rehashedBPMH()
 }
 
+// WriteTo writes the Manifest into 'w' in format defined in
+// the document #575623.
 func (s *ManifestCBnT) WriteTo(w io.Writer) (int64, error) {
 	s.Rehash()
 	return s.Common.WriteTo(w, s)
 }
 
+// Size returns the total size of the manifest
 func (s *ManifestCBnT) TotalSize() uint64 {
 	if s == nil {
 		return 0
@@ -985,14 +1025,23 @@ func (s *ManifestCBnT) PrettyString(depth uint, withHeader bool, opts ...pretty.
 	return strings.Join(lines, "\n")
 }
 
+// StructInfo just returns StructInfo.
 func (s *ManifestCBnT) StructInfo() cbnt.StructInfo {
 	return s.StructInfoCBNT
 }
 
+// GetStructInfo returns current value of StructInfo of the structure.
+//
+// StructInfo is a set of standard fields with presented in any element
+// ("element" in terms of document #575623).
 func (s *ManifestCBnT) GetStructInfo() cbnt.StructInfo {
 	return s.StructInfoCBNT
 }
 
+// SetStructInfo sets new value of StructInfo to the structure.
+//
+// StructInfo is a set of standard fields with presented in any element
+// ("element" in terms of document #575623).
 func (s *ManifestCBnT) SetStructInfo(newStructInfo cbnt.StructInfo) {
 	s.StructInfoCBNT = newStructInfo.(cbnt.StructInfoCBNT)
 }
@@ -1056,6 +1105,7 @@ func CalculateOffsetFromPhysAddr(physAddr uint64, imageSize uint64) uint64 {
 	return physAddr - startAddr
 }
 
+// FlashSizeIFD returns the size of the BIOS flash area calculated from IFD entries.
 func FlashSizeIFD(buf []byte) (uint64, error) {
 	if uint64(len(buf)) < uefi.FlashDescriptorLength {
 		return 0, fmt.Errorf("buffer too small for flash descriptior: %d", len(buf))
@@ -1093,6 +1143,7 @@ func (s *ManifestCBnT) rehashedBPMH() BPMHCBnT {
 	return bpmh
 }
 
+// Print prints the Manifest
 func (s ManifestCBnT) Print() {
 	fmt.Printf("%v", s.BPMHCBnT.PrettyString(1, true))
 	for _, item := range s.SE {

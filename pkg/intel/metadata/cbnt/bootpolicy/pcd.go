@@ -56,6 +56,7 @@ func (s *PCD) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *PCD) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -111,6 +112,7 @@ func (s *PCD) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *PCD) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -120,6 +122,7 @@ func (s *PCD) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *PCD) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -281,6 +284,7 @@ func (s *PDRS) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *PDRS) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -305,6 +309,7 @@ func (s *PDRS) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *PDRS) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -314,6 +319,7 @@ func (s *PDRS) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *PDRS) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
@@ -418,6 +424,7 @@ func (s *CNBS) Validate() error {
 	return nil
 }
 
+// Layout returns the structure's layout descriptor
 func (s *CNBS) Layout() []cbnt.LayoutField {
 	return []cbnt.LayoutField{
 		{
@@ -437,6 +444,7 @@ func (s *CNBS) Layout() []cbnt.LayoutField {
 	}
 }
 
+// SizeOf returns the size of the structure's field of a given id.
 func (s *CNBS) SizeOf(id int) (uint64, error) {
 	ret, err := s.Common.SizeOf(s, id)
 	if err != nil {
@@ -446,6 +454,7 @@ func (s *CNBS) SizeOf(id int) (uint64, error) {
 	return ret, nil
 }
 
+// OffsetOf returns the offset of the structure's field of a given id.
 func (s *CNBS) OffsetOf(id int) (uint64, error) {
 	ret, err := s.Common.OffsetOf(s, id)
 	if err != nil {
