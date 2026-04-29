@@ -82,13 +82,9 @@ func (s *PMCBnT) Layout() []cbnt.LayoutField {
 			Type:  cbnt.ManifestFieldArrayStatic,
 		},
 		{
-			ID:   3,
-			Name: "Data",
-			Size: func() uint64 {
-				size := uint64(binary.Size(uint16(0)))
-				size += uint64(binary.Size(s.DataSize))
-				return size
-			},
+			ID:    3,
+			Name:  "Data",
+			Size:  func() uint64 { return uint64(binary.Size(uint16(0))) + uint64(binary.Size(s.DataSize)) },
 			Value: func() any { return &s.Data },
 			Type:  cbnt.ManifestFieldArrayDynamicWithPrefix,
 		},
@@ -202,13 +198,9 @@ func (s *PMBG) Layout() []cbnt.LayoutField {
 			Type:  cbnt.ManifestFieldArrayStatic,
 		},
 		{
-			ID:   2,
-			Name: "Data",
-			Size: func() uint64 {
-				size := uint64(binary.Size(uint16(0)))
-				size += uint64(s.DataSize)
-				return size
-			},
+			ID:    2,
+			Name:  "Data",
+			Size:  func() uint64 { return uint64(binary.Size(uint16(0))) + uint64(s.DataSize) },
 			Value: func() any { return &s.Data },
 			Type:  cbnt.ManifestFieldArrayDynamicWithPrefix,
 		},
