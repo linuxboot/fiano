@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/linuxboot/fiano/pkg/log"
 	"github.com/linuxboot/fiano/pkg/uefi"
 )
 
@@ -220,6 +221,7 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 	switch f := f.(type) {
 	case *uefi.FirmwareVolume:
 		for i := 0; i < len(f.Files); i++ {
+			log.Warnf("file %d", i)
 			if f.Files[i] == v.FileMatch {
 				// TODO: use InsertWherePreposition to define the location, instead of InsertType
 				switch v.InsertType {
@@ -241,6 +243,7 @@ func (v *Insert) Visit(f uefi.Firmware) error {
 		}
 	}
 
+	log.Warnf("apply")
 	return f.ApplyChildren(v)
 }
 
@@ -343,6 +346,7 @@ func genInsertFileCLI() func(args []string) (uefi.Visitor, error) {
 		}
 
 		// Insert File.
+		log.Warnf("1")
 		return &Insert{
 			Predicate: pred,
 			NewFile:   file,
