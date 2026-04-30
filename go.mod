@@ -14,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/u-root/u-root v0.9.0
-	github.com/ulikunitz/xz v0.5.11
+	github.com/ulikunitz/xz v0.5.14
 	github.com/xaionaro-go/bytesextra v0.0.0-20220103144954-846e454ddea9
 	github.com/xaionaro-go/gosrc v0.0.0-20201124181305-3fdf8476a735
 	golang.org/x/text v0.6.0
