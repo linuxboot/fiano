@@ -1,6 +1,6 @@
 module github.com/linuxboot/fiano
 
-go 1.21
+go 1.24
 
 require (
 	github.com/dustin/go-humanize v1.0.0
@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/klauspost/compress v1.13.6
+	github.com/klauspost/compress v1.18.7
 	github.com/pierrec/lz4 v2.6.1+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1
